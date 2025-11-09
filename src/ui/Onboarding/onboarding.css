@@ -7,7 +7,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 150vh;
 }
 
 .onboarding-container {
@@ -62,7 +62,7 @@ p {
 .faction-card p {
   font-size: 1em;
   color: #444;
-  min-height: 60px;
+  min-height: 5px;
 }
 
 button {
