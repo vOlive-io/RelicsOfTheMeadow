@@ -1,97 +1,73 @@
-/* 🌾 Global Beige Background */
+/* 🎨 Global Onboarding Styles */
 body {
-  background: linear-gradient(to bottom, #f7f1df, #e9dcba);
+  background-color: #f5e8cc; /* beige background */
   font-family: "Georgia", serif;
+  color: #3a2b1f;
   margin: 0;
   padding: 0;
-  color: #3b2a18;
+  text-align: center;
 }
 
-/* 🏛 Onboarding Container */
-.onboarding-container {
+.onboarding-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 3rem 1rem;
-  background: linear-gradient(to bottom, #f7f1df, #e9dcba);
-  min-height: 100vh;
 }
 
-/* ✨ Title */
-.onboarding-title {
-  font-size: 2.75rem;
+.title {
+  font-size: 3rem;
   font-weight: 800;
-  color: #2b1d0b;
+  color: #3a2b1f;
   margin-bottom: 2rem;
-  text-shadow: 1px 1px 0 #f3e9d5;
 }
 
-/* 🧩 Faction Grid */
 .faction-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  width: 100%;
-  max-width: 1200px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 90%;
+  max-width: 1100px;
 }
 
-/* 🪶 Faction Card — JSON Palette Edition */
 .faction-card {
-  border: 3px solid var(--card-main, #bfa27a);
-  border-radius: 18px;
-  padding: 1.5rem 1.75rem;
-  text-align: left;
-  transition: all 0.3s ease;
+  border: 3px solid #3a2b1f;
+  border-radius: 12px;
+  padding: 1.5rem;
   cursor: pointer;
-  background: linear-gradient(
-    180deg,
-    var(--card-secondary, #fffaf0) 0%,
-    var(--card-dark, rgba(0, 0, 0, 0.05)) 120%
-  );
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 8px rgba(58, 43, 31, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: #2d1e12;
+  background: #fffdf6;
 }
 
-/* 🧊 Hover & Selected Effects */
 .faction-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(58, 43, 31, 0.25);
 }
 
 .faction-card.selected {
-  transform: scale(1.02);
-  box-shadow: 0 0 0 4px var(--card-main, #bfa27a),
-              0 10px 22px rgba(0,0,0,0.25);
+  outline: 3px solid #3a2b1f;
+  box-shadow: 0 0 10px rgba(58, 43, 31, 0.5);
 }
 
-/* 🧠 Card Content */
-.faction-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.faction-emoji {
-  font-size: 1.9rem;
+.emoji {
+  font-size: 2.2rem;
 }
 
 .faction-name {
-  font-size: 1.3rem;
-  margin: 0;
-  color: #2e1c0f;
+  margin: 0.5rem 0;
+  font-size: 1.5rem;
 }
 
-.faction-overview {
-  margin-top: 0.75rem;
+.faction-desc {
   font-size: 1rem;
-  color: #5c4932;
   line-height: 1.4;
 }
 
-/* ⚖️ Footer */
-.no-faction {
-  margin-top: 2.5rem;
-  font-weight: bold;
-  color: #6b3e1d;
-  font-size: 1.3rem;
-  text-shadow: 0 1px 1px rgba(255,255,255,0.6);
+.selection-status {
+  margin-top: 2rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #3a2b1f;
 }
