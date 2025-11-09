@@ -19,8 +19,8 @@ export default function OnboardingMenu() {
             key={key}
             className="faction-card"
             style={{
-              background: `linear-gradient(145deg, ${faction.palette?.[0]}, ${faction.palette?.[1]})`,
-              border: `2px solid ${faction.palette?.[2] || "#fff"}`,
+              background: `linear-gradient(165deg, ${faction.palette?.[1]}90, ${faction.palette?.[0]}dd)`,
+              border: `3px solid ${faction.palette?.[2] || "#4a3b2b"}`,
             }}
           >
             <div className="faction-header">
