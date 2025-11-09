@@ -7,7 +7,7 @@ const factions = [
     emoji: "🐺",
     overview: "Where they march, the ground remembers blood.",
     fullLore:
-      "The Crimson Horde are conquerors driven by vengeance. Formed from the broken remnants of empires lost to betrayal, they rise as one under banners of fury. Their unity is born not of loyalty, but of wrath—a singular purpose to reclaim and avenge what was taken from them. Once forgotten, they are now the nightmare the six great powers hoped never to remember.\n\nIn gameplay, the Horde excels in overwhelming assault and vengeance-based mechanics. When one of their settlements falls, their power surges in response, turning loss into momentum. They are at their strongest when cornered, burning everything to reclaim their pride.",
+      "The Crimson Horde are conquerors driven by vengeance. Formed from the broken remnants of empires lost to betrayal, they rise as one under banners of fury. Their unity is born not of loyalty, but of wrath—a singular purpose to reclaim and avenge what was taken from them. Once forgotten, they are now the nightmare the six great powers hoped never to remember.\n\nIn gameplay, the Horde excels in overwhelming assault and vengeance-based mechanics. When one of their settlements falls, their power surges in response, turning loss into momentum, burning everything to reclaim their pride.",
     specialMechanic: {},
     startingRelic: "🩸 Horn of Fury",
     defaultTraits: { prowess: "9/10", resilience: "2/10", economy: "4/10" },
