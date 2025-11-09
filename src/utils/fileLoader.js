@@ -1,30 +1,44 @@
-import fs from 'fs';
-import path from 'path';
+// src/utils/fileLoader.js
+import fs from "fs";
+import path from "path";
 
-/**
- * Recursively loads all .json files from a directory.
- * Returns an object with keys = filenames (no extension),
- * and values = parsed JSON data.
- */
-export function loadJSONDirectory(dirPath) {
+export function loadFactions(folderPath = path.resolve("./data/factions")) {
   const data = {};
+  const files = fs.readdirSync(folderPath);
+  for (const file of files) {
+    if (file.endsWith(".json")) {
+      const key = path.basename(file, ".json");
+      const content = JSON.parse(fs.readFileSync(path.join(folderPath, file), "utf8"));
+      data[key] = content;
+    }
+  }
+  return data;
+}
 
-  function recurse(currentPath) {
-    const files = fs.readdirSync(currentPath);
-    for (const file of files) {
-      const fullPath = path.join(currentPath, file);
-      const stat = fs.statSync(fullPath);
+export function loadRelics(rootRelicsPath = path.resolve("./data/relics")) {
+  const relics = {};
 
-      if (stat.isDirectory()) {
-        recurse(fullPath);
-      } else if (file.endsWith('.json')) {
-        const key = path.basename(file, '.json');
-        const fileData = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
-        data[key] = fileData;
+  function recurse(currentPath, categoryKey) {
+    const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        const cat = entry.name;
+        relics[cat] = relics[cat] || {};
+        recurse(full, cat);
+      } else if (entry.isFile() && entry.name.endsWith(".json")) {
+        const key = path.basename(entry.name, ".json");
+        const content = JSON.parse(fs.readFileSync(full, "utf8"));
+        if (categoryKey) {
+          relics[categoryKey][key] = content;
+        } else {
+          relics.misc = relics.misc || {};
+          relics.misc[key] = content;
+        }
       }
     }
   }
 
-  recurse(dirPath);
-  return data;
+  recurse(rootRelicsPath, null);
+  return relics;
 }
