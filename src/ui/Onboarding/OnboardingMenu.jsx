@@ -1,46 +1,43 @@
-// src/utils/fileLoader.js
-// Browser-based loader version for GitHub Pages (uses fetch instead of fs)
+import React, { useEffect, useState } from "react";
+import { loadFactions } from "../../utils/fileLoader";
+import "./../styles.css";
 
-export async function loadFactions() {
-  const factionFiles = [
-    "crimson_horde.json",
-    "devoured_faith.json",
-    "jade_empire.json",
-    "meadowfolk_union.json",
-    "mycelid_monarchy.json",
-    "spider_court.json",
-  ];
+export default function OnboardingMenu() {
+  const [factions, setFactions] = useState({});
 
-  const factions = {};
+  useEffect(() => {
+    const loaded = loadFactions();
+    setFactions(loaded);
+  }, []);
 
-  for (const file of factionFiles) {
-    const key = file.replace(".json", "");
-    const res = await fetch(`./data/factions/${file}`);
-    const json = await res.json();
-    factions[key] = json;
-  }
-
-  return factions;
-}
-
-export async function loadRelics() {
-  const relicCategories = [
-    "bane_and_friend",
-    "economy",
-    "faction_specific",
-    "prowess",
-    "resilience",
-  ];
-
-  const relics = {};
-
-  for (const category of relicCategories) {
-    relics[category] = {};
-    const folder = `./data/relics/${category}`;
-
-    // You’ll need to list files manually or store filenames in JSON
-    // This simple version assumes you’ll add them by hand for now
-  }
-
-  return relics;
+  return (
+    <div className="onboarding-container">
+      <h1 className="title">Choose Your Faction</h1>
+      <div className="faction-grid">
+        {Object.entries(factions).map(([key, faction]) => (
+          <div
+            key={key}
+            className="faction-card"
+            style={{
+              background: `linear-gradient(135deg, ${faction.palette?.[0]}, ${faction.palette?.[1]})`,
+            }}
+          >
+            <div className="faction-header">
+              <h2>
+                {faction.emoji} {faction.name}
+              </h2>
+            </div>
+            {faction.flag && (
+              <img
+                src={faction.flag}
+                alt={`${faction.name} flag`}
+                className="faction-flag"
+              />
+            )}
+            <p className="overview">{faction.overview}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
