@@ -1,0 +1,14 @@
+{
+  "id": "faction_specific_02",
+  "name": "🕷️ Spinner’s Veil",
+  "category": "Faction_specific",
+  "description": "Reduces diplomacy backlash by 20%; secret pacts form 1 turn faster.",
+  "effect": {
+    "type": "diplomacy_boost",
+    "value": 0.2
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": "The Spider Court"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "faction_specific_04",
+  "name": "🏯 Imperial Standard",
+  "category": "Faction_specific",
+  "description": "Trade to neutral +10%, allies +25%.",
+  "effect": {
+    "type": "trade_bonus",
+    "neutral": 0.1,
+    "ally": 0.25
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": "The Jade Empire"
+}

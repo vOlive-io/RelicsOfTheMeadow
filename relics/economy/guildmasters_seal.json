@@ -1,0 +1,15 @@
+{
+  "id": "economy_01",
+  "name": "🟨 Guildmaster’s Seal",
+  "category": "Economy",
+  "description": "10% increase to all income sources.",
+  "effect": {
+    "type": "income_multiplier",
+    "value": 0.1,
+    "applies_to": "all"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

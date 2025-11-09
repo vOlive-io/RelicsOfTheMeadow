@@ -1,0 +1,14 @@
+{
+  "id": "faction_specific_06",
+  "name": "🩸 Horn of Fury",
+  "category": "Faction_specific",
+  "description": "Once per advance, roll +2 attack.",
+  "effect": {
+    "type": "attack_bonus_roll",
+    "value": 2
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": "The Crimson Horde"
+}

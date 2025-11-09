@@ -1,0 +1,14 @@
+{
+  "id": "faction_specific_01",
+  "name": "💀 Cloak of Silent Sermons",
+  "category": "Faction_specific",
+  "description": "Grants invisibility during rituals; relic thefts undetectable for 1 turn.",
+  "effect": {
+    "type": "invisibility",
+    "duration": 1
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": "The Devoured Faith"
+}

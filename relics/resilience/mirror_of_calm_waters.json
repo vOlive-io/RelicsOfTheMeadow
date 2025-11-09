@@ -1,0 +1,14 @@
+{
+  "id": "resilience_04",
+  "name": "🟩 Mirror of Calm Waters",
+  "category": "Resilience",
+  "description": "Once per turn, cancel one negative effect targeting you.",
+  "effect": {
+    "type": "cancel_negative",
+    "limit": "once_per_turn"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

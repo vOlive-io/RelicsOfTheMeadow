@@ -1,0 +1,14 @@
+{
+  "id": "faction_specific_05",
+  "name": "🍄 Crown of Hyphae",
+  "category": "Faction_specific",
+  "description": "Spores grow 10% faster per colony.",
+  "effect": {
+    "type": "spore_growth",
+    "value": 0.1
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": "The Mycelid Monarchy"
+}

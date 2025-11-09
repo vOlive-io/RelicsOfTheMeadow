@@ -1,0 +1,15 @@
+{
+  "id": "prowess_01",
+  "name": "🟥 Medallion of Valor",
+  "category": "Prowess",
+  "description": "Boosts Prowess by granting extra recruits/unit gain, increasing your army size and replenishment rate.",
+  "effect": {
+    "type": "unit_gain_multiplier",
+    "value": 1.1,
+    "applies_to": "recruitment"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

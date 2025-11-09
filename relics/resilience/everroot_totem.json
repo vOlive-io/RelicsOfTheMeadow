@@ -1,0 +1,15 @@
+{
+  "id": "resilience_03",
+  "name": "🟩 Everroot Totem",
+  "category": "Resilience",
+  "description": "Reduces post-battle damage penalties by 15%.",
+  "effect": {
+    "type": "damage_reduction",
+    "value": 0.15,
+    "applies_to": "post_battle"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

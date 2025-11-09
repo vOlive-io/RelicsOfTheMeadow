@@ -1,0 +1,14 @@
+{
+  "id": "bane_and_friend_01",
+  "name": "💀 Bane of the Devoured Faith",
+  "category": "Bane_and_friend",
+  "description": "They can no longer steal from you or one chosen player you grant divine protection.",
+  "effect": {
+    "type": "block_theft",
+    "value": true
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

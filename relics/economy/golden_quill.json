@@ -1,0 +1,15 @@
+{
+  "id": "economy_02",
+  "name": "🟨 Golden Quill",
+  "category": "Economy",
+  "description": "+15% trade efficiency.",
+  "effect": {
+    "type": "trade_efficiency",
+    "value": 0.15,
+    "applies_to": "trade"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

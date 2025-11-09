@@ -1,0 +1,15 @@
+{
+  "id": "resilience_01",
+  "name": "🟩 Stone of Endurance",
+  "category": "Resilience",
+  "description": "Boosts Resilience by improving public morale and tolerance for prolonged campaigns.",
+  "effect": {
+    "type": "morale_boost",
+    "value": 0.1,
+    "applies_to": "population"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

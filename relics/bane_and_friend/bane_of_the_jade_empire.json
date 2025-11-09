@@ -1,0 +1,15 @@
+{
+  "id": "bane_and_friend_07",
+  "name": "🏯 Bane of the Jade Empire",
+  "category": "Bane_and_friend",
+  "description": "You gain 20% of their income; they cannot attack first.",
+  "effect": {
+    "type": "income_steal",
+    "value": 0.2,
+    "attack_lock": true
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

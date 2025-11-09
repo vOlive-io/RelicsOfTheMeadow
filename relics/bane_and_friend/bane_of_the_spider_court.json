@@ -1,0 +1,14 @@
+{
+  "id": "bane_and_friend_03",
+  "name": "🕷️ Bane of the Spider Court",
+  "category": "Bane_and_friend",
+  "description": "Whenever they steal income, 15% of that total goes to you.",
+  "effect": {
+    "type": "income_redirect",
+    "value": 0.15
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

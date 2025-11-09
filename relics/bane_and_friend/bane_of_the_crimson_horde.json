@@ -1,0 +1,15 @@
+{
+  "id": "bane_and_friend_11",
+  "name": "🩸 Bane of the Crimson Horde",
+  "category": "Bane_and_friend",
+  "description": "Vengeance bonuses are 25% weaker; lose 2 vengeance slots.",
+  "effect": {
+    "type": "vengeance_nerf",
+    "value": 0.25,
+    "slots_lost": 2
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

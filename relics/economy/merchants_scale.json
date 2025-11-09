@@ -1,0 +1,15 @@
+{
+  "id": "economy_03",
+  "name": "🟨 Merchant’s Scale",
+  "category": "Economy",
+  "description": "Resource production increases by 10% across all goods.",
+  "effect": {
+    "type": "resource_production",
+    "value": 0.1,
+    "applies_to": "resources"
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}

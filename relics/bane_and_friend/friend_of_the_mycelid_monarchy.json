@@ -1,0 +1,14 @@
+{
+  "id": "bane_and_friend_10",
+  "name": "🍄 Friend of the Mycelid Monarchy",
+  "category": "Bane_and_friend",
+  "description": "They cannot convert you; their spores grow +50% faster.",
+  "effect": {
+    "type": "growth_boost",
+    "value": 0.5
+  },
+  "trigger_conditions": [
+    "turn_start"
+  ],
+  "current_owner": null
+}
