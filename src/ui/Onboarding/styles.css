@@ -26,7 +26,7 @@ body {
   text-shadow: 1px 1px 0 #f3e9d5;
 }
 
-/* 🧩 Grid */
+/* 🧩 Faction Grid */
 .faction-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -35,28 +35,32 @@ body {
   max-width: 1200px;
 }
 
-/* 🪶 Faction Card — Restored Elegance */
+/* 🪶 Faction Card — JSON Palette Edition */
 .faction-card {
-  background-color: var(--card-bg, #fffaf0);
-  border: 3px solid var(--card-border, #bfa27a);
+  border: 3px solid var(--card-main, #bfa27a);
   border-radius: 18px;
   padding: 1.5rem 1.75rem;
   text-align: left;
   transition: all 0.3s ease;
   cursor: pointer;
+  background: linear-gradient(
+    180deg,
+    var(--card-secondary, #fffaf0) 0%,
+    var(--card-dark, rgba(0, 0, 0, 0.05)) 120%
+  );
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
 }
 
-/* 🧊 Hover & Active */
+/* 🧊 Hover & Selected Effects */
 .faction-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
 .faction-card.selected {
   transform: scale(1.02);
-  box-shadow: 0 0 0 4px var(--card-border, #bfa27a),
-              0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 4px var(--card-main, #bfa27a),
+              0 10px 22px rgba(0,0,0,0.25);
 }
 
 /* 🧠 Card Content */
