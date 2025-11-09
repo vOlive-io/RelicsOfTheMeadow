@@ -28,12 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <p>🍃 <strong>Resilience:</strong> ${faction.defaultTraits?.resilience ?? '?'}</p>
         <p>💰 <strong>Economy:</strong> ${faction.defaultTraits?.economy ?? '?'}</p>
       </div>
-      <button class="select-btn">Choose ${faction.name}</button>
+      <button class="select-btn">Pledge to ${faction.name}</button>
     `;
 
     card.querySelector('.select-btn').addEventListener('click', () => {
       localStorage.setItem('selectedFaction', faction.name);
-      alert(`You’ve chosen ${faction.name}! 🌿`);
+      alert(`You’ve pledged to ${faction.name}! 🌿`);
       window.location.href = '../../game/index.html'; // adjust if needed
     });
 
