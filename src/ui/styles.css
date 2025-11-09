@@ -1,47 +1,45 @@
-body {
-  background-color: #f3e5ab;
-  font-family: 'Georgia', serif;
-  color: #2c1b10;
+/* src/ui/styles.css */
+
+.onboarding-container {
   text-align: center;
-  margin: 0;
-  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  color: #fff;
+  background: #1e1e2f;
+  min-height: 100vh;
+  padding: 2rem;
 }
 
 .title {
   font-size: 2rem;
-  margin-top: 1rem;
-  color: #3e2a1f;
-}
-
-.onboarding-container {
-  padding: 2rem;
+  margin-bottom: 2rem;
 }
 
 .faction-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
-  justify-items: center;
-  margin-top: 1.5rem;
 }
 
 .faction-card {
-  width: 200px;
-  height: 200px;
-  background-color: #fdf4dc;
-  border: 3px solid #3e2a1f;
-  border-radius: 12px;
+  background: #2c2c3d;
+  border: 2px solid #444;
+  border-radius: 16px;
   padding: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s;
 }
 
 .faction-card:hover {
+  border-color: #888;
   transform: translateY(-4px);
-  background-color: #f8e9c0;
 }
 
 .faction-card.selected {
-  border-color: #7c3f00;
-  box-shadow: 0 0 10px rgba(124, 63, 0, 0.5);
+  border-color: #00ffaa;
+  background: #2f4050;
+}
+
+.selected h2 {
+  margin-top: 2rem;
+  color: #00ffaa;
 }
