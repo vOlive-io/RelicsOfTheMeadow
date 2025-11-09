@@ -1,66 +1,81 @@
+/* 🌾 Global Beige Background */
 body {
-  background-color: #f6f0e3; /* cozy beige backdrop */
-  font-family: 'Playfair Display', serif;
+  background: linear-gradient(to bottom, #f7f1df, #e9dcba);
+  font-family: "Georgia", serif;
   margin: 0;
   padding: 0;
+  color: #3b2a18;
 }
 
+/* 🌿 Onboarding Container */
 .onboarding-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  padding: 3rem 1rem;
 }
 
-.title {
-  font-size: 2rem;
+/* 🏰 Title */
+.onboarding-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #3b2a18;
   margin-bottom: 2rem;
-  color: #3e2f1c;
-  text-align: center;
 }
 
+/* 🧩 3x2 Grid */
 .faction-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 1.5rem;
-  width: 90%;
+  gap: 2rem;
+  width: 100%;
   max-width: 1200px;
 }
 
+/* 🪶 Faction Card Styling */
 .faction-card {
-  border-radius: 20px;
+  background: #fffaf0;
+  border: 2px solid #bfa27a;
+  border-radius: 16px;
   padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  color: #fff;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-height: 250px;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  text-align: left;
 }
 
 .faction-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+  transform: translateY(-6px);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* 🧠 Card Content */
+.faction-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .faction-emoji {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
 }
 
 .faction-name {
-  font-size: 1.3rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  margin: 0;
+  color: #3b2a18;
 }
 
 .faction-overview {
+  margin-top: 0.75rem;
   font-size: 1rem;
-  opacity: 0.9;
+  color: #5c4932;
   line-height: 1.4;
+}
+
+/* ⚖️ Footer */
+.no-faction {
+  margin-top: 2rem;
+  font-weight: bold;
+  color: #6b3e1d;
+  font-size: 1.2rem;
 }

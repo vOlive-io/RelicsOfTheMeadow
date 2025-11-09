@@ -7,13 +7,15 @@ export default function FactionCard({ faction }) {
     <div
       className="faction-card"
       style={{
-        background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`,
-        border: `3px solid ${palette[2]}`
+        borderColor: palette?.[0] || "#bfa27a",
+        boxShadow: `0 4px 10px ${palette?.[1] || "rgba(0,0,0,0.1)"}`,
       }}
     >
-      <div className="faction-emoji">{emoji}</div>
-      <div className="faction-name">{name}</div>
-      <div className="faction-overview">{overview}</div>
+      <div className="faction-header">
+        <span className="faction-emoji">{emoji}</span>
+        <h2 className="faction-name">{name}</h2>
+      </div>
+      <p className="faction-overview">{overview}</p>
     </div>
   );
 }
