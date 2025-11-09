@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  font-family: 'IM Fell English', serif;
+  background-color: #f7f0d5;
+  background-image: url('/assets/parchment_texture.png');
+  background-size: cover;
+  background-repeat: repeat;
+  color: #3b2f2f;
+}
