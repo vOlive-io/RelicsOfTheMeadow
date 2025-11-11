@@ -2,13 +2,13 @@ let energy = 10;
 let gold = 200;
 const eventLog = document.getElementById('event-log');
 const energyEl = document.getElementById('energy');
-
+let numTradePosts = 0;
 // Main action cost map
 const actions = {
   'declare-war': { cost: 5, gold: 100 },
   'battle': { cost: 1, gold: 0 },
   'fortify': { cost: 2, gold: 50 },
-  'build': { cost: 2, gold: 25 },
+  'build': { cost: 2, gold: 25*numTradePosts },
   'trade': { cost: 1, gold: 0 },
   'use-relic': { cost: 1, gold: 15 },
   'faction-abilities': { cost: 1, gold: 0 },
