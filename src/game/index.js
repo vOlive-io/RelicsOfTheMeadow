@@ -1,74 +1,155 @@
 import factions from "../../data/factions.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("Factions loaded:", factions.map(f => f.name));
+let player = {
+  faction: null,
+  energy: 0,
+  gold: 0,
+  relics: [],
+};
 
-  const selectedFaction = factions.find(f => f.name === "The Crimson Horde"); // later we’ll make this dynamic
-  renderFactionInfo(selectedFaction);
+// === INITIALIZE GAME ===
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ Factions loaded:", factions.map(f => f.name));
+
+  // TEMP: start as Crimson Horde (later, we’ll add a faction select screen)
+  const startingFaction = factions.find(f => f.name === "The Crimson Horde");
+  startGame(startingFaction);
 });
 
-function renderFactionInfo(faction) {
-  const hud = document.getElementById("hud");
-  hud.innerHTML = `
-    <div id="faction-info" class="faction-card">
-      <h2>${faction.emoji} ${faction.name}</h2>
-      <p>${faction.overview}</p>
-      <p><strong>Prowess:</strong> ${faction.defaultTraits.prowess} | 
-         <strong>Resilience:</strong> ${faction.defaultTraits.resilience} | 
-         <strong>Economy:</strong> ${faction.defaultTraits.economy}</p>
-      <p><strong>Starting Relic:</strong> ${faction.startingRelic}</p>
-      <button id="show-abilities">Faction Abilities</button>
-    </div>
+// === START GAME WITH SELECTED FACTION ===
+function startGame(faction) {
+  player.faction = faction;
+  player.energy = calcStartingEnergy(faction);
+  player.gold = 200; // default starting gold
+  player.relics = [faction.startingRelic];
 
-    <div id="faction-abilities" class="abilities-tab hidden"></div>
+  renderHUD();
+  setupActionButtons();
+}
 
-    <div id="actions">
-      <button>Battle</button>
-      <button>Declare War</button>
-      <button>Offer Alliance</button>
-      <button>Fortify</button>
-      <button>Build</button>
-      <button>Manage Trade</button>
-      <button>Use Relic</button>
-      <button>End Turn</button>
-    </div>
-  `;
+function calcStartingEnergy(faction) {
+  // Energy = sum of base stats (1–10 each) / 3, rounded up
+  const toNum = (s) => parseInt(s);
+  const { prowess, resilience, economy } = faction.defaultTraits;
+  return Math.ceil((toNum(prowess) + toNum(resilience) + toNum(economy)) / 3);
+}
 
-  // Add event for "Faction Abilities" tab
-  document.getElementById("show-abilities").addEventListener("click", () => {
-    toggleFactionAbilities(faction);
+// === RENDER HUD INFO ===
+function renderHUD() {
+  const f = player.faction;
+  document.getElementById("faction-name").textContent = `${f.emoji} ${f.name}`;
+  document.getElementById(
+    "stats"
+  ).textContent = `Prowess: ${f.defaultTraits.prowess} | Resilience: ${f.defaultTraits.resilience} | Economy: ${f.defaultTraits.economy}`;
+  document.getElementById("relics").textContent = `Relics: ${player.relics.join(", ")}`;
+  document.getElementById("energy").textContent = `Energy: ${player.energy} ⚡ | Gold: ${player.gold} 💰`;
+}
+
+// === SET UP ACTION BUTTONS ===
+function setupActionButtons() {
+  document.querySelectorAll("#actions button").forEach((btn) => {
+    const action = btn.dataset.action;
+    btn.addEventListener("click", () => handleAction(action));
   });
+
+  // Popup close buttons
+  document.getElementById("close-trade").addEventListener("click", () => togglePopup("trade-popup", false));
+  document.getElementById("close-faction").addEventListener("click", () => togglePopup("faction-popup", false));
 }
 
-function toggleFactionAbilities(faction) {
-  const tab = document.getElementById("faction-abilities");
-  tab.classList.toggle("hidden");
-
-  if (!tab.classList.contains("hidden")) {
-    const abilities = flattenAbilities(faction.specialMechanic);
-    tab.innerHTML = `
-      <h3>${faction.emoji} ${faction.name} Abilities</h3>
-      ${abilities
-        .map(
-          (a) => `
-        <div class="ability">
-          <strong>${a.name}</strong> - ${a.desc} 
-          ${a.cost > 0 ? `<em>(Cost: ${a.cost} gold)</em>` : ""}
-        </div>
-      `
-        )
-        .join("")}
-    `;
+// === ACTION HANDLERS ===
+function handleAction(action) {
+  switch (action) {
+    case "declare-war":
+      spendEnergyAndGold(5, 100, "Declared war! Loot potential increased.");
+      break;
+    case "battle":
+      spendEnergyAndGold(1, 0, "Engaged in battle!");
+      break;
+    case "fortify":
+      spendEnergyAndGold(0, 50, "Fortified your structures.");
+      break;
+    case "build":
+      spendEnergyAndGold(0, 25, "Constructed a new building!");
+      break;
+    case "trade":
+      togglePopup("trade-popup", true);
+      break;
+    case "use-relic":
+      logEvent(`You invoked ${player.relics.join(", ")}!`);
+      break;
+    case "faction-abilities":
+      showFactionAbilities(player.faction);
+      break;
+    case "end-turn":
+      endTurn();
+      break;
   }
+  renderHUD();
 }
 
-function flattenAbilities(specialMechanic) {
-  const flat = [];
-  for (const phase in specialMechanic) {
-    for (const abilityName in specialMechanic[phase]) {
-      const ability = specialMechanic[phase][abilityName];
-      flat.push({ name: abilityName, ...ability });
+// === POPUPS ===
+function togglePopup(id, show = true) {
+  const popup = document.getElementById(id);
+  popup.classList.toggle("hidden", !show);
+}
+
+function showFactionAbilities(faction) {
+  const list = document.getElementById("faction-abilities-list");
+  const flatAbilities = flattenAbilities(faction.specialMechanic);
+
+  list.innerHTML = flatAbilities
+    .map(
+      (a) => `
+      <div class="ability">
+        <strong>${a.name}</strong> — ${a.desc}
+        ${a.cost > 0 ? `<em>(Cost: ${a.cost}💰)</em>` : ""}
+      </div>
+    `
+    )
+    .join("");
+
+  togglePopup("faction-popup", true);
+}
+
+// === ABILITY FLATTENER ===
+function flattenAbilities(mechanic) {
+  const list = [];
+  for (const phase in mechanic) {
+    for (const name in mechanic[phase]) {
+      list.push({ name, ...mechanic[phase][name] });
     }
   }
-  return flat;
+  return list;
+}
+
+// === ENERGY & GOLD SPENDING ===
+function spendEnergyAndGold(energyCost, goldCost, successMsg) {
+  if (player.energy < energyCost) {
+    logEvent("❌ Not enough energy!");
+    return;
+  }
+  if (player.gold < goldCost) {
+    logEvent("❌ Not enough gold!");
+    return;
+  }
+
+  player.energy -= energyCost;
+  player.gold -= goldCost;
+  logEvent(`✅ ${successMsg}`);
+}
+
+// === END TURN ===
+function endTurn() {
+  logEvent("🌙 Turn ended. Energy restored!");
+  player.energy = calcStartingEnergy(player.faction);
+}
+
+// === EVENT LOGGING ===
+function logEvent(msg) {
+  const log = document.getElementById("event-log");
+  const entry = document.createElement("p");
+  entry.textContent = msg;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
 }
