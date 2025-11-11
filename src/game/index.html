@@ -2,10 +2,10 @@
 
 <div id="hud">
   <div id="faction-info">
-    <h2 id="faction-name">🐺 The Crimson Horde</h2>
-    <p id="stats">Prowess: 5 | Resilience: 3 | Economy: 2</p>
-    <p id="relics">Relics: Horn of Fury</p>
-    <p id="energy">Energy: 10 ⚡ | Gold: 200 💰</p>
+    <h2 id="faction-name"></h2>
+    <p id="stats"></p>
+    <p id="relics"></p>
+    <p id="energy"></p>
   </div>
 
   <div id="actions">
@@ -22,7 +22,7 @@
 
 <div id="event-log"></div>
 
-<!-- Popup containers -->
+<!-- Trade Popup -->
 <div id="trade-popup" class="popup hidden">
   <h3>Trade Management</h3>
   <button data-trade="cut">Cut Trade (Free)</button>
@@ -31,8 +31,27 @@
   <button id="close-trade">Close</button>
 </div>
 
+<!-- Faction Abilities Popup -->
 <div id="faction-popup" class="popup hidden">
   <h3>Faction Abilities</h3>
   <div id="faction-abilities-list"></div>
   <button id="close-faction">Close</button>
 </div>
+
+<script type="module">
+  import { factions } from "../data/factions.js";
+
+  // get chosen faction (maybe stored earlier)
+  const chosenFactionName = localStorage.getItem("chosenFaction") || "The Crimson Horde";
+
+  const faction = factions.find(f => f.name === chosenFactionName);
+
+  if (faction) {
+    document.getElementById("faction-name").textContent = `${faction.emoji} ${faction.name}`;
+    document.getElementById("stats").textContent = `Prowess: ${faction.stats.prowess} | Resilience: ${faction.stats.resilience} | Economy: ${faction.stats.economy}`;
+    document.getElementById("relics").textContent = `Relics: ${faction.relics.join(", ")}`;
+    document.getElementById("energy").textContent = `Energy: ${faction.energy} ⚡ | Gold: ${faction.gold} 💰`;
+  } else {
+    document.getElementById("faction-name").textContent = "❓ Unknown Faction";
+  }
+</script>
