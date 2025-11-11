@@ -1,15 +1,16 @@
+import { factions } from "../../data/factions.js"; // ✅ named import fixed!
+
 document.addEventListener('DOMContentLoaded', () => {
   const factionList = document.getElementById('faction-list');
 
-  // Safety check if the factions variable exists
+  // Safety check
   if (typeof factions === 'undefined' || !Array.isArray(factions)) {
     factionList.innerHTML = '<p style="color:red;">⚠️ No faction data found!</p>';
-    console.error('No faction data found. Make sure data/factions.js defines "factions".');
+    console.error('No faction data found. Make sure data/factions.js exports { factions }.');
     return;
   }
 
-  // Clear any placeholder content
-  factionList.innerHTML = '';
+  factionList.innerHTML = ''; // clear placeholder content
 
   // Create a card for each faction
   factions.forEach(faction => {
@@ -31,11 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="select-btn">Pledge to ${faction.name}</button>
     `;
 
+    // Select faction handler
     card.querySelector('.select-btn').addEventListener('click', () => {
       localStorage.setItem('selectedFaction', faction.name);
-      alert(`You’ve pledged to ${faction.name}! 🌿`);
       localStorage.setItem("chosenFaction", faction.name);
-      window.location.href = '../../game/index.html'; // adjust if needed
+      alert(`You’ve pledged to ${faction.name}! ${faction.emoji}`);
+      window.location.href = '../../game/index.html'; // ✅ adjust path if needed
     });
 
     factionList.appendChild(card);
