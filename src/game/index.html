@@ -48,10 +48,12 @@
 
   if (faction) {
     document.getElementById("faction-name").textContent = `${faction.emoji} ${faction.name}`;
-    document.getElementById("stats").textContent = `Prowess: ${faction.stats.prowess} | Resilience: ${faction.stats.resilience} | Economy: ${faction.stats.economy}`;
+    document.getElementById("stats").textContent = `Prowess: ${faction.defaultTraits.prowess} | Resilience: ${faction.defaultTraits.resilience} | Economy: ${faction.defaultTraits.economy}`;
     document.getElementById("relics").textContent = `Relics: ${faction.relics.join(", ")}`;
     document.getElementById("energy").textContent = `Energy: ${faction.energy} ⚡ | Gold: ${faction.gold} 💰`;
   } else {
     document.getElementById("faction-name").textContent = "❓ Unknown Faction";
   }
 </script>
+document.getElementById("stats").textContent = 
+  `Prowess: ${faction.defaultTraits.prowess} | Resilience: ${faction.defaultTraits.resilience} | Economy: ${faction.defaultTraits.economy}`;
