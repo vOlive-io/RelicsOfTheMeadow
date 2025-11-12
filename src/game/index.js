@@ -1,5 +1,7 @@
-import { factions } from "../data/factions.js";
-import { relics } from "../data/relics.js";
+console.log("✅ Game JS loaded!");
+
+import { factions } from "../../data/factions.js"; 
+import { relics } from "../../data/relics.js"; 
 
 let player = {
   faction: null,
@@ -12,18 +14,8 @@ let player = {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Factions loaded:", factions.map(f => f.name));
 
-  // 🧠 read faction name from localStorage (set by onboarding)
-  const selectedName =
-    localStorage.getItem("chosenFaction") ||
-    localStorage.getItem("selectedFaction");
-
-  // 🔍 Find the faction or fallback to first
+  const selectedName = localStorage.getItem("chosenFaction");
   const startingFaction = factions.find(f => f.name === selectedName) || factions[0];
-
-  if (!startingFaction) {
-    console.error("❌ No valid faction found. Check factions.js or localStorage key.");
-    return;
-  }
 
   startGame(startingFaction);
 });
@@ -34,13 +26,11 @@ function startGame(faction) {
   player.energy = calcStartingEnergy(faction);
   player.gold = 200;
 
-  // 🧿 Find the unique relic
-  const match = relics.find(
-    r => r.type === faction.name || r.type === faction.emoji
-  );
+  const match = relics.find(r => r.type === faction.name || r.type === faction.emoji);
   player.relics = match ? [match.name] : ["None"];
 
   console.log(`🎯 Starting as ${faction.name} with relic: ${player.relics}`);
+
   renderHUD();
   setupActionButtons();
 }
@@ -48,10 +38,8 @@ function startGame(faction) {
 // ⚡ Calculate energy based on faction traits
 function calcStartingEnergy(faction) {
   const { prowess, resilience, economy } = faction.defaultTraits || {};
-  if (prowess == null || resilience == null || economy == null) return 5; // fallback
-  return Math.ceil(
-    (parseInt(prowess) + parseInt(resilience) + parseInt(economy)) / 3
-  );
+  if (prowess == null || resilience == null || economy == null) return 5;
+  return Math.ceil((parseInt(prowess) + parseInt(resilience) + parseInt(economy)) / 3);
 }
 
 // 🧠 Draw HUD data
@@ -63,11 +51,10 @@ function renderHUD() {
     ? player.relics.join(", ")
     : "None";
 
-  document.getElementById("faction-name").textContent = `${f.emoji} ${f.name}`;
-  document.getElementById("stats").textContent = 
-    `Prowess: ${f.defaultTraits?.prowess ?? "?"} | Resilience: ${f.defaultTraits?.resilience ?? "?"} | Economy: ${f.defaultTraits?.economy ?? "?"}`;
-  document.getElementById("relics").textContent = `Relics: ${relicList}`;
-  document.getElementById("energy").textContent = `Energy: ${player.energy} ⚡ | Gold: ${player.gold} 💰`;
+  document.getElementById("factionDisplay").textContent = `${f.emoji} ${f.name}`;
+  document.getElementById("factionList").textContent =
+    `Prowess: ${f.defaultTraits.prowess} | Resilience: ${f.defaultTraits.resilience} | Economy: ${f.defaultTraits.economy}`;
+  document.getElementById("actionButtons").textContent = `Relics: ${relicList} | Energy: ${player.energy} ⚡ | Gold: ${player.gold} 💰`;
 }
 
 // 🕹️ Setup buttons
@@ -133,9 +120,16 @@ function endTurn() {
 
 // 🪶 Log events to UI
 function logEvent(msg) {
-  const log = document.getElementById("event-log");
+  const log = document.getElementById("event-log") || createLog();
   const entry = document.createElement("p");
   entry.textContent = msg;
   log.appendChild(entry);
   log.scrollTop = log.scrollHeight;
+}
+
+function createLog() {
+  const log = document.createElement("div");
+  log.id = "event-log";
+  document.body.appendChild(log);
+  return log;
 }
