@@ -12,8 +12,18 @@ let player = {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Factions loaded:", factions.map(f => f.name));
 
-  const selectedName = localStorage.getItem("chosenFaction");
+  // 🧠 read faction name from localStorage (set by onboarding)
+  const selectedName =
+    localStorage.getItem("chosenFaction") ||
+    localStorage.getItem("selectedFaction");
+
+  // 🔍 Find the faction or fallback to first
   const startingFaction = factions.find(f => f.name === selectedName) || factions[0];
+
+  if (!startingFaction) {
+    console.error("❌ No valid faction found. Check factions.js or localStorage key.");
+    return;
+  }
 
   startGame(startingFaction);
 });
@@ -24,11 +34,13 @@ function startGame(faction) {
   player.energy = calcStartingEnergy(faction);
   player.gold = 200;
 
-  const match = relics.find(r => r.type === faction.name || r.type === faction.emoji);
+  // 🧿 Find the unique relic
+  const match = relics.find(
+    r => r.type === faction.name || r.type === faction.emoji
+  );
   player.relics = match ? [match.name] : ["None"];
 
   console.log(`🎯 Starting as ${faction.name} with relic: ${player.relics}`);
-
   renderHUD();
   setupActionButtons();
 }
@@ -36,8 +48,10 @@ function startGame(faction) {
 // ⚡ Calculate energy based on faction traits
 function calcStartingEnergy(faction) {
   const { prowess, resilience, economy } = faction.defaultTraits || {};
-  if (prowess == null || resilience == null || economy == null) return 5;
-  return Math.ceil((parseInt(prowess) + parseInt(resilience) + parseInt(economy)) / 3);
+  if (prowess == null || resilience == null || economy == null) return 5; // fallback
+  return Math.ceil(
+    (parseInt(prowess) + parseInt(resilience) + parseInt(economy)) / 3
+  );
 }
 
 // 🧠 Draw HUD data
@@ -51,7 +65,7 @@ function renderHUD() {
 
   document.getElementById("faction-name").textContent = `${f.emoji} ${f.name}`;
   document.getElementById("stats").textContent = 
-    `Prowess: ${f.defaultTraits.prowess} | Resilience: ${f.defaultTraits.resilience} | Economy: ${f.defaultTraits.economy}`;
+    `Prowess: ${f.defaultTraits?.prowess ?? "?"} | Resilience: ${f.defaultTraits?.resilience ?? "?"} | Economy: ${f.defaultTraits?.economy ?? "?"}`;
   document.getElementById("relics").textContent = `Relics: ${relicList}`;
   document.getElementById("energy").textContent = `Energy: ${player.energy} ⚡ | Gold: ${player.gold} 💰`;
 }
