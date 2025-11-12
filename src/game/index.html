@@ -1,59 +1,26 @@
-<div id="game-board"></div>
-
-<div id="hud">
-  <div id="faction-info">
-    <h2 id="faction-name"></h2>
-    <p id="stats"></p>
-    <p id="relics"></p>
-    <p id="energy"></p>
-  </div>
-
-  <div id="actions">
-    <button data-action="declare-war">⚔️ Declare War</button>
-    <button data-action="battle">🩸 Battle / Siege</button>
-    <button data-action="fortify">🧱 Fortify</button>
-    <button data-action="build">🏗️ Build</button>
-    <button data-action="trade">💰 Manage Trade</button>
-    <button data-action="use-relic">🧿 Use Relic</button>
-    <button data-action="faction-abilities">🌟 Faction Abilities</button>
-    <button data-action="end-turn">🌙 End Turn</button>
-  </div>
-</div>
-
-<div id="event-log"></div>
-
-<!-- Trade Popup -->
-<div id="trade-popup" class="popup hidden">
-  <h3>Trade Management</h3>
-  <button data-trade="cut">Cut Trade (Free)</button>
-  <button data-trade="expand">Expand Route (-25💰)</button>
-  <button data-trade="deal">Form Deal (-50💰)</button>
-  <button id="close-trade">Close</button>
-</div>
-
-<!-- Faction Abilities Popup -->
-<div id="faction-popup" class="popup hidden">
-  <h3>Faction Abilities</h3>
-  <div id="faction-abilities-list"></div>
-  <button id="close-faction">Close</button>
-</div>
-
 <script type="module">
   import { factions } from "../../data/factions.js";
 
   // get chosen faction (maybe stored earlier)
   const chosenFactionName = localStorage.getItem("chosenFaction") || "The Crimson Horde";
-
   const faction = factions.find(f => f.name === chosenFactionName);
+
+  // safety defaults in case faction or its properties are missing
+  const defaultTraits = faction?.defaultTraits || { prowess: 0, resilience: 0, economy: 0 };
+  const relicList = Array.isArray(faction?.relics) ? faction.relics.join(", ") : "None";
+  const energy = faction?.energy ?? 0;
+  const gold = faction?.gold ?? 0;
 
   if (faction) {
     document.getElementById("faction-name").textContent = `${faction.emoji} ${faction.name}`;
-    document.getElementById("stats").textContent = `Prowess: ${faction.defaultTraits.prowess} | Resilience: ${faction.defaultTraits.resilience} | Economy: ${faction.defaultTraits.economy}`;
-    document.getElementById("relics").textContent = `Relics: ${faction.relics.join(", ")}`;
-    document.getElementById("energy").textContent = `Energy: ${faction.energy} ⚡ | Gold: ${faction.gold} 💰`;
+    document.getElementById("stats").textContent =
+      `Prowess: ${defaultTraits.prowess} | Resilience: ${defaultTraits.resilience} | Economy: ${defaultTraits.economy}`;
+    document.getElementById("relics").textContent = `Relics: ${relicList}`;
+    document.getElementById("energy").textContent = `Energy: ${energy} ⚡ | Gold: ${gold} 💰`;
   } else {
     document.getElementById("faction-name").textContent = "❓ Unknown Faction";
+    document.getElementById("stats").textContent = "No stats available.";
+    document.getElementById("relics").textContent = "Relics: None";
+    document.getElementById("energy").textContent = "Energy: 0 ⚡ | Gold: 0 💰";
   }
 </script>
-document.getElementById("stats").textContent = 
-  `Prowess: ${faction.defaultTraits.prowess} | Resilience: ${faction.defaultTraits.resilience} | Economy: ${faction.defaultTraits.economy}`;
