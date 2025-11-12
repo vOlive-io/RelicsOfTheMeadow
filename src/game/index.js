@@ -1,4 +1,6 @@
+// ✅ index.js
 import { factions } from "../../data/factions.js";
+import { relics } from "../../data/relics.js";
 
 let player = {
   faction: null,
@@ -7,40 +9,55 @@ let player = {
   relics: [],
 };
 
+// 🌅 Start once page fully loads
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Factions loaded:", factions.map(f => f.name));
 
-  // Load the faction player picked
+  // 🪞 Get chosen faction or default to first one
   const selectedName = localStorage.getItem("chosenFaction");
   const startingFaction = factions.find(f => f.name === selectedName) || factions[0];
 
   startGame(startingFaction);
 });
 
+// 🎮 Begin the game for chosen faction
 function startGame(faction) {
   player.faction = faction;
   player.energy = calcStartingEnergy(faction);
   player.gold = 200;
-  player.relics = [faction.startingRelic];
+
+  // 🧿 Find faction’s unique relic from relics.js
+  const match = relics.find(r => r.type === faction.name || r.type === faction.emoji);
+  player.relics = match ? [match.name] : ["None"];
+
+  console.log(`🎯 Starting as ${faction.name} with relic: ${player.relics}`);
 
   renderHUD();
   setupActionButtons();
 }
 
+// ⚡ Calculate energy based on faction traits
 function calcStartingEnergy(faction) {
-  const toNum = s => parseInt(s);
-  const { prowess, resilience, economy } = faction.defaultTraits;
-  return Math.ceil((toNum(prowess) + toNum(resilience) + toNum(economy)) / 3);
+  const { prowess, resilience, economy } = faction.defaultTraits || {};
+  if (prowess == null || resilience == null || economy == null) return 5; // fallback
+  return Math.ceil((parseInt(prowess) + parseInt(resilience) + parseInt(economy)) / 3);
 }
 
+// 🧠 Draw HUD data
 function renderHUD() {
   const f = player.faction;
+  const relicList = Array.isArray(player.relics)
+    ? player.relics.join(", ")
+    : "None";
+
   document.getElementById("faction-name").textContent = `${f.emoji} ${f.name}`;
-  document.getElementById("stats").textContent = `Prowess: ${f.defaultTraits.prowess} | Resilience: ${f.defaultTraits.resilience} | Economy: ${f.defaultTraits.economy}`;
-  document.getElementById("relics").textContent = `Relics: ${player.relics.join(", ")}`;
+  document.getElementById("stats").textContent = 
+    `Prowess: ${f.defaultTraits.prowess} | Resilience: ${f.defaultTraits.resilience} | Economy: ${f.defaultTraits.economy}`;
+  document.getElementById("relics").textContent = `Relics: ${relicList}`;
   document.getElementById("energy").textContent = `Energy: ${player.energy} ⚡ | Gold: ${player.gold} 💰`;
 }
 
+// 🕹️ Setup buttons
 function setupActionButtons() {
   document.querySelectorAll("#actions button").forEach(btn => {
     const action = btn.dataset.action;
@@ -48,6 +65,7 @@ function setupActionButtons() {
   });
 }
 
+// 💥 Handle game actions
 function handleAction(action) {
   switch (action) {
     case "declare-war":
@@ -78,6 +96,7 @@ function handleAction(action) {
   renderHUD();
 }
 
+// 💸 Spend resources
 function spendEnergyAndGold(energyCost, goldCost, successMsg) {
   if (player.energy < energyCost) {
     logEvent("❌ Not enough energy!");
@@ -93,11 +112,13 @@ function spendEnergyAndGold(energyCost, goldCost, successMsg) {
   logEvent(`✅ ${successMsg}`);
 }
 
+// 🌙 End of turn
 function endTurn() {
   logEvent("🌙 Turn ended. Energy restored!");
   player.energy = calcStartingEnergy(player.faction);
 }
 
+// 🪶 Log events to UI
 function logEvent(msg) {
   const log = document.getElementById("event-log");
   const entry = document.createElement("p");
