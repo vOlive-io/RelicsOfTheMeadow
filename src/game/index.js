@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function startGame(faction) {
   player.faction = faction;
   player.energy = calcStartingEnergy(faction);
-  player.gold = parseInt(faction.defaultTraits.economy);
+  player.gold = parseInt(faction.defaultTraits.economy) * 100;
   player.troops = parseInt(faction.defaultTraits.prowess) * 10;
   player.happiness = 1;
   player.protection = 1;
