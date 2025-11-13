@@ -7,7 +7,6 @@ import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEn
 console.log("✅ Game JS loaded!");
 
 
-
 ////////////////////////////////
 ///        TURN ORDER        ///
 ////////////////////////////////
@@ -27,9 +26,10 @@ function renderHUD() {
   document.getElementById("factionList").innerHTML = `
     💖 Happiness: ${player.happiness} <br>
     🛡️ Protection: ${player.protection} <br>
+    💰 Gold: ${player.gold} <br>
+    <br>
     💪 Prowess: ${player.prowess}/10 <br>
     🧱 Resilience: ${player.resilience}/10 <br>
-    💰 Gold: ${player.gold} <br>
     📊 Economy: ${player.economy}/10 <br>
     ⚡ Energy: ${player.energy}
   `;
