@@ -4,15 +4,15 @@ export function calculateResilience(player) {
 }
 
 export function calculateEconomy(gold) {
-  if (gold < 50) return 1;
-  if (gold < 150) return 2;
-  if (gold < 300) return 3;
-  if (gold < 600) return 4;
-  if (gold < 1200) return 5;
-  if (gold < 2500) return 6;
-  if (gold < 4200) return 7;
-  if (gold < 6000) return 8;
-  if (gold < 7500) return 9;
+  if (gold < 10) return 1;
+  if (gold < 25) return 2;
+  if (gold < 100) return 3;
+  if (gold < 250) return 4;
+  if (gold < 500) return 5;
+  if (gold < 1000) return 6;
+  if (gold < 250) return 7;
+  if (gold < 5000) return 8;
+  if (gold < 10000) return 9;
   return 10;
 }
 
