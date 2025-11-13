@@ -4,6 +4,7 @@
 import { factions } from "../../data/factions.js";
 import buildings from "../../data/buildings.js";
 import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEnergy } from "../utils/statCalc.js";
+import { importItems } from "../../data/importItems.js";
 console.log("✅ Game JS loaded!");
 
 
@@ -51,7 +52,9 @@ function handleAction(action) {
     case "trade":
       if(player.canTrade) {
         player.canTrade = false;  
-        spendEnergyAndGold(1, 0, "Trade complete! Gained 30 gold.", () => player.gold += 30);
+        let num = Math.floor(Math.random() * 15) + 1;
+        spendEnergyAndGold(1, 0, "Trade complete! Gained "+num+" gold", () => player.gold += Math.floor(Math.random() * 15) + 1;
+ *player.economy);
       } else {
         logEvent("You have already tradeed this turn!");
       }
@@ -59,7 +62,8 @@ function handleAction(action) {
     case "collect":
       if(player.imports > 0) {
         player.imports--;
-        spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
+        let import = importItems[Math.floor(Math.random() * 15)];
+        spendEnergyAndGold(0, 0, "Collected imported "+import[0]+"! Gained "+import[1]+" gold.", () => player.gold += import[1]);
       } else {
         logEvent("No imports to collect!");
       }
@@ -169,7 +173,6 @@ function startGame(faction) {
   player.troops = parseInt(faction.defaultTraits.prowess) * 10;
   player.happiness = 1;
   player.protection = 1;
-  player.imports = Math.floor(Math.random() * 5) + 1;
   player.imports = Math.floor(Math.random() * 5) + 1;
   player.relics = [faction.startingRelic || "None"];
   player.buildings = [];
