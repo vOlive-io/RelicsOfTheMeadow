@@ -129,7 +129,7 @@ function handleAction(action) {
       break;
     case "collect":
       if(player.imports > 0) {
-        .playerimports--;
+        player.imports--;
         spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
       } else {
         logEvent("No imports to collect!");
