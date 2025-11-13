@@ -62,13 +62,13 @@ function handleAction(action) {
     case "collect":
       if(player.imports > 0) {
         player.imports--;
+        let bonus = ["", "", "", ""];
         let import = importItems[Math.floor(Math.random() * 15)];
-        if (selected.statBoosts.happiness) player.happiness += selected.statBoosts.happiness;
-        if (selected.statBoosts.protection) player.protection += selected.statBoosts.protection;
-        if (selected.statBoosts.troops) player.troops += selected.statBoosts.troops;
-        if (selected.statBoosts.gold) player.gold += selected.statBoosts.gold;
-        if (selected.statBoosts.energy) player.energy += selected.statBoosts.energy;
-        spendEnergyAndGold(0, 0, "Collected imported "+import.name+"! Gained "+import.price+" gold.", () => player.gold += import.price);
+        if (selected.statBoosts.happiness) {player.happiness += selected.statBoosts.happiness; bonus[0] = selected.statBoosts.happiness + " happiness";}
+        if (selected.statBoosts.protection) {player.protection += selected.statBoosts.protection; bonus[1] = selected.statBoosts.protection + " protection";}
+        if (selected.statBoosts.troops) {player.troops += selected.statBoosts.troops; bonus[2] = selected.statBoosts.troops + " troops";}
+        if (selected.statBoosts.energy) {player.energy += selected.statBoosts.energy; bonus[3] = selected.statBoosts.energy + " energy";}
+        spendEnergyAndGold(0, 0, "Collected imported "+import.name+"! Gained "+import.price+" gold and a bonus of "+bonus[0]+bonus[1]+bonus[2]+bonus[3] + "!", () => player.gold += import.price);
       } else {
         logEvent("No imports to collect!");
       }
