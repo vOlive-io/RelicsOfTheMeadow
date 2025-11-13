@@ -17,7 +17,7 @@ let player = {
   resilience: 0,
   economy: 1,
   imports: 0,
-  canTrade: true;
+  canTrade: true,
   relics: [],
   buildings: [],
 };
