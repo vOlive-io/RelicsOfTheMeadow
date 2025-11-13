@@ -49,7 +49,7 @@ const buildings = [
     cost: { gold: 400, energy: 20 },
     statBoosts: { gold: 50 },
     tradeBoost: true,
-    availableTo: ["Meadowfolk Union", "Jade Empire"]
+    availableTo: "all"
   }
 ];
 
