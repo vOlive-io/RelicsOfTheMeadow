@@ -1,16 +1,23 @@
 console.log("✅ Game JS loaded!");
 
-// import faction data
+// Imports
 import { factions } from "../../data/factions.js";
+import buildings from "../../data/buildings.js";
+import { calculateResilience, calculateEconomy, calculateProwess } from "../utils/statCalc.js";
 
 // 🧍 Player data
 let player = {
   faction: null,
   energy: 0,
   gold: 0,
+  troops: 0,
+  happiness: 0,
+  protection: 0,
   prowess: 0,
   resilience: 0,
+  economy: 1,
   relics: [],
+  buildings: [],
 };
 
 // 🌅 Start game after DOM loads
@@ -24,11 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
 function startGame(faction) {
   player.faction = faction;
   player.energy = calcStartingEnergy(faction);
-  player.gold = parseInt(faction.defaultTraits.economy); // economy = gold
-  player.prowess = parseInt(faction.defaultTraits.prowess);
-  player.resilience = parseInt(faction.defaultTraits.resilience);
+  player.gold = parseInt(faction.defaultTraits.economy);
+  player.troops = parseInt(faction.defaultTraits.prowess) * 10;
+  player.happiness = 1;
+  player.protection = 1;
   player.relics = [faction.startingRelic || "None"];
+  player.buildings = [];
 
+  updateDerivedStats();
   renderHUD();
   setupActionButtons();
   logEvent(`🌿 Welcome, ${faction.name}!`);
@@ -36,21 +46,31 @@ function startGame(faction) {
 
 // ⚙️ Calculate starting energy
 function calcStartingEnergy(faction) {
-  const t = faction.defaultTraits;
-  const avg = (parseInt(player.prowess) + parseInt(player.resilience) + parseInt(player.economy)) / 3;
+  const avg = (player.prowess + player.resilience + player.economy) / 3;
   return Math.ceil(avg);
+}
+
+// 🧠 Recalculate resilience, economy, prowess
+function updateDerivedStats() {
+  player.resilience = calculateResilience(player);
+  player.economy = calculateEconomy(player.gold);
+  player.prowess = calculateProwess(player);
 }
 
 // 🧱 Render HUD
 function renderHUD() {
   const f = player.faction;
   document.getElementById("factionDisplay").textContent = `${f.emoji} ${f.name}`;
+  updateDerivedStats();
 
   document.getElementById("factionList").innerHTML = `
-    🗡️ Prowess: ${player.prowess}/10 |\n
-    🌱 Resilience: ${player.resilience}/10 |\n
-    💰 Gold: ${player.gold} |\n
-    ⚡ Energy: ${player.energy}\n
+    💖 Happiness: ${player.happiness} |
+    🛡️ Protection: ${player.protection} |
+    💪 Prowess: ${player.prowess}/10 |
+    🧱 Resilience: ${player.resilience}/10 |
+    💰 Gold: ${player.gold} |
+    📊 Economy: ${player.economy}/10 |
+    ⚡ Energy: ${player.energy}
   `;
 }
 
@@ -65,7 +85,7 @@ function setupActionButtons() {
     { id: "fortify", label: "🏰 Fortify" },
     { id: "build", label: "🔨 Build" },
     { id: "trade", label: "📦 Choose Export" },
-    { id: "trade", label: "💰 Collect Imports" },
+    { id: "collect", label: "💰 Collect Imports" },
     { id: "use-relic", label: "🔮 Use Relic" },
     { id: "faction-abilities", label: "🧠 Abilities" },
   ];
@@ -85,25 +105,28 @@ function setupActionButtons() {
 function handleAction(action) {
   switch (action) {
     case "declare-war":
-      spendEnergyAndGold(4, 50, "Declared war! Prowess increased slightly.", () => player.prowess += 1);
+      spendEnergyAndGold(4, 50, "Declared war! Troop count increased.", () => player.troops += 10);
       break;
     case "battle":
-      spendEnergyAndGold(2, 0, "Fought a battle! Prowess increased, but resilience fell slightly.", () => {
-        player.prowess += 1;
-        player.resilience = Math.max(1, player.resilience - 1);
+      spendEnergyAndGold(2, 0, "Fought a battle! Gained troops, lost protection.", () => {
+        player.troops += 10;
+        player.protection = Math.max(0, player.protection - 1);
       });
       break;
     case "fortify":
-      spendEnergyAndGold(1, 25, "Fortified your lands! Resilience increased!", () => player.resilience += 1);
+      spendEnergyAndGold(1, 25, "Fortified! Protection increased.", () => player.protection += 1);
       break;
     case "build":
-      spendEnergyAndGold(1, 15, "Constructed a structure! Economy increased!", () => player.gold += 10);
+      buildMenu();
       break;
     case "trade":
-      spendEnergyAndGold(0, 0, "Successful trade! Earned gold!", () => player.gold += 20);
+      spendEnergyAndGold(0, 0, "Trade successful! Earned gold.", () => player.gold += 20);
+      break;
+    case "collect":
+      spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
       break;
     case "use-relic":
-      logEvent(`You invoked ${player.relics.join(", ")}! Magical effects swirl...`);
+      logEvent(`You used ${player.relics.join(", ")}! Magic surges...`);
       player.energy += 2;
       break;
     case "faction-abilities":
@@ -113,7 +136,38 @@ function handleAction(action) {
       endTurn();
       break;
   }
+
   renderHUD();
+}
+
+// 🧱 Show build menu
+function buildMenu() {
+  const available = buildings.filter(b =>
+    b.availableTo === "all" || b.availableTo.includes(player.faction.name)
+  );
+
+  const choice = prompt(
+    `Choose building:\n${available
+      .map((b, i) => `${i + 1}. ${b.name} — 💰${b.cost.gold}, ⚡${b.cost.energy}`)
+      .join("\n")}`
+  );
+
+  const index = parseInt(choice) - 1;
+  const selected = available[index];
+
+  if (!selected) return logEvent("❌ Invalid choice.");
+
+  spendEnergyAndGold(
+    selected.cost.energy,
+    selected.cost.gold,
+    `Built ${selected.name}!`,
+    () => {
+      player.buildings.push(selected.name);
+      if (selected.statBoosts.happiness) player.happiness += selected.statBoosts.happiness;
+      if (selected.statBoosts.protection) player.protection += selected.statBoosts.protection;
+      if (selected.statBoosts.gold) player.gold += selected.statBoosts.gold;
+    }
+  );
 }
 
 // 💸 Spend energy + gold, apply effects
