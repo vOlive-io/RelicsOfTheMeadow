@@ -1,7 +1,7 @@
 const buildings = [
   {
     name: "Townhouse",
-    upgradeTo: "Villa",
+    preRec: "none",
     type: "town",
     description: "A cozy starter home that builds happiness.",
     cost: { gold: 150, energy: 5 },
@@ -10,7 +10,7 @@ const buildings = [
   },
   {
     name: "Villa",
-    upgradeTo: "Humble Mansion",
+    preRec: "Townhouse",
     type: "town",
     description: "A refined estate that attracts prosperity.",
     cost: { gold: 265, energy: 10 },
@@ -19,7 +19,7 @@ const buildings = [
   },
   {
     name: "Humble Mansion",
-    upgradeTo: "Manor",
+    preRec: "Villa",
     type: "town",
     description: "A big house for big vibes and bigger taxes.",
     cost: { gold: 465, energy: 20 },
@@ -28,6 +28,7 @@ const buildings = [
   },
   {
     name: "Manor",
+    preRec: "Humble Mansion",
     type: "town",
     description: "An aristocratic estate that rules the suburbia.",
     cost: { gold: 815, energy: 30 },
