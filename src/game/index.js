@@ -63,7 +63,12 @@ function handleAction(action) {
       if(player.imports > 0) {
         player.imports--;
         let import = importItems[Math.floor(Math.random() * 15)];
-        spendEnergyAndGold(0, 0, "Collected imported "+import[0]+"! Gained "+import[1]+" gold.", () => player.gold += import[1]);
+        if (selected.statBoosts.happiness) player.happiness += selected.statBoosts.happiness;
+        if (selected.statBoosts.protection) player.protection += selected.statBoosts.protection;
+        if (selected.statBoosts.troops) player.troops += selected.statBoosts.troops;
+        if (selected.statBoosts.gold) player.gold += selected.statBoosts.gold;
+        if (selected.statBoosts.energy) player.energy += selected.statBoosts.energy;
+        spendEnergyAndGold(0, 0, "Collected imported "+import.name+"! Gained "+import.price+" gold.", () => player.gold += import.price);
       } else {
         logEvent("No imports to collect!");
       }
@@ -168,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function startGame(faction) {
   player.faction = faction;
-  player.energy = calcStartingEnergy(player.faction);
+  player.energy = calcStartingEnergy(player);
   player.gold = parseInt(faction.defaultTraits.economy) * 250;
   player.troops = parseInt(faction.defaultTraits.prowess) * 10;
   player.happiness = 1;
