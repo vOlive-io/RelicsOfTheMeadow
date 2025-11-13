@@ -85,7 +85,6 @@ function setupActionButtons() {
   const actions = [
     { id: "declare-war", label: "⚔️ Declare War" },
     { id: "battle", label: "🛡️ Battle" },
-    { id: "fortify", label: "🏰 Fortify" },
     { id: "build", label: "🔨 Build" },
     { id: "trade", label: "📦 Trade" },
     { id: "collect", label: "💰 Collect Imports" },
@@ -115,9 +114,6 @@ function handleAction(action) {
         player.troops += 10;
         player.protection = Math.max(0, player.protection - 1);
       });
-      break;
-    case "fortify":
-      spendEnergyAndGold(1, 25, "Fortified! Protection increased.", () => player.protection += 1);
       break;
     case "build":
       buildMenu();
