@@ -119,16 +119,16 @@ function handleAction(action) {
       buildMenu();
       break;
     case "trade":
-      if(canTraded) {
-        canTrade = false;  
+      if(play.canTrade) {
+        player.canTrade = false;  
         spendEnergyAndGold(1, 0, "Trade complete! Gained 30 gold.", () => player.gold += 30);
       } else {
         logEvent("You have already tradeed this turn!");
       }
       break;
     case "collect":
-      if(importNum > 0) {
-        importNum--;
+      if(player.imports > 0) {
+        .playerimports--;
         spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
       } else {
         logEvent("No imports to collect!");
