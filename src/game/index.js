@@ -16,6 +16,8 @@ let player = {
   prowess: 0,
   resilience: 0,
   economy: 1,
+  imports: 0,
+  canTrade: true;
   relics: [],
   buildings: [],
 };
@@ -55,6 +57,8 @@ function updateDerivedStats() {
   player.resilience = calculateResilience(player);
   player.economy = calculateEconomy(player.gold);
   player.prowess = calculateProwess(player);
+  player.canTrade = true;
+  player.imports = Math.floor(Math.random() * 5) + 1;
 }
 
 // 🧱 Render HUD
@@ -62,7 +66,6 @@ function renderHUD() {
   const f = player.faction;
   document.getElementById("factionDisplay").textContent = `${f.emoji} ${f.name}`;
   updateDerivedStats();
-
   document.getElementById("factionList").innerHTML = `
     💖 Happiness: ${player.happiness} \n
     🛡️ Protection: ${player.protection} \n
@@ -84,7 +87,7 @@ function setupActionButtons() {
     { id: "battle", label: "🛡️ Battle" },
     { id: "fortify", label: "🏰 Fortify" },
     { id: "build", label: "🔨 Build" },
-    { id: "trade", label: "📦 Choose Export" },
+    { id: "trade", label: "📦 Trade" },
     { id: "collect", label: "💰 Collect Imports" },
     { id: "use-relic", label: "🔮 Use Relic" },
     { id: "faction-abilities", label: "🧠 Abilities" },
@@ -120,10 +123,20 @@ function handleAction(action) {
       buildMenu();
       break;
     case "trade":
-      spendEnergyAndGold(0, 0, "Trade successful! Earned gold.", () => player.gold += 20);
+      if(canTraded) {
+        canTrade = false;  
+        spendEnergyAndGold(1, 0, "Trade complete! Gained 30 gold.", () => player.gold += 30);
+      } else {
+        logEvent("You have already tradeed this turn!");
+      }
       break;
     case "collect":
-      spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
+      if(importNum > 0) {
+        importNum--;
+        spendEnergyAndGold(0, 0, "Collected imports! Gained 30 gold.", () => player.gold += 30);
+      } else {
+        logEvent("No imports to collect!");
+      }
       break;
     case "use-relic":
       logEvent(`You used ${player.relics.join(", ")}! Magic surges...`);
