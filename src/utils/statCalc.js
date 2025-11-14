@@ -22,7 +22,31 @@ export function calculateProwess(player) {
   return Math.min(10, rawProwess);
 }
 
-export function calcStartingEnergy(player) {
-  const avg = (player.prowess + player.resilience + player.economy) / 2;
-  return Math.ceil(avg);
+function resolveStat(subject, statName) {
+  const direct = subject?.[statName];
+  if (typeof direct === "number" && Number.isFinite(direct)) return direct;
+  if (typeof direct === "string") {
+    const parsedDirect = parseInt(direct, 10);
+    if (!Number.isNaN(parsedDirect)) return parsedDirect;
+  }
+
+  const defaults = subject?.defaultTraits || subject?.faction?.defaultTraits;
+  if (defaults) {
+    const fallback = defaults[statName];
+    if (typeof fallback === "number" && Number.isFinite(fallback)) return fallback;
+    if (typeof fallback === "string") {
+      const parsedFallback = parseInt(fallback, 10);
+      if (!Number.isNaN(parsedFallback)) return parsedFallback;
+    }
+  }
+  return 0;
+}
+
+export function calcStartingEnergy(subject) {
+  const total = ["prowess", "resilience", "economy"].reduce(
+    (sum, stat) => sum + resolveStat(subject, stat),
+    0
+  );
+  const avg = total / 2;
+  return Math.max(1, Math.ceil(avg));
 }

@@ -50,23 +50,42 @@ function handleAction(action) {
       buildMenu();
       break;
     case "trade":
-      if(player.canTrade) {
-        player.canTrade = false;  
-        let num = Math.floor(Math.random() * 15) + 1;
-        spendEnergyAndGold(1, 0, "Trade complete! Gained "+num+" gold", () => player.gold += num);      } else {
-        logEvent("You have already tradeed this turn!");
+      if (player.canTrade) {
+        player.canTrade = false;
+        const num = Math.floor(Math.random() * 15) + 1;
+        spendEnergyAndGold(1, 0, `Trade complete! Gained ${num} gold`, () => (player.gold += num));
+      } else {
+        logEvent("You have already traded this turn!");
       }
       break;
     case "collect":
-      if(player.imports > 0) {
+      if (player.imports > 0) {
         player.imports--;
-        let bonus = ["", "", "", ""];
-        let importItem = importItems[Math.floor(Math.random() * 15)];
-        if (selected.statBoosts.happiness) {player.happiness += selected.statBoosts.happiness; bonus[0] = selected.statBoosts.happiness + " happiness";}
-        if (selected.statBoosts.protection) {player.protection += selected.statBoosts.protection; bonus[1] = selected.statBoosts.protection + " protection";}
-        if (selected.statBoosts.troops) {player.troops += selected.statBoosts.troops; bonus[2] = selected.statBoosts.troops + " troops";}
-        if (selected.statBoosts.energy) {player.energy += selected.statBoosts.energy; bonus[3] = selected.statBoosts.energy + " energy";}
-        spendEnergyAndGold(0, 0, "Collected imported "+importItem.name+"! Gained "+importItem.price+" gold and a bonus of "+bonus[0]+bonus[1]+bonus[2]+bonus[3] + "!", () => player.gold += importItem.price);
+        const importItem = importItems[Math.floor(Math.random() * importItems.length)];
+        const bonuses = [];
+        if (importItem.statBoosts.happiness) {
+          player.happiness += importItem.statBoosts.happiness;
+          bonuses.push(`${importItem.statBoosts.happiness} happiness`);
+        }
+        if (importItem.statBoosts.protection) {
+          player.protection += importItem.statBoosts.protection;
+          bonuses.push(`${importItem.statBoosts.protection} protection`);
+        }
+        if (importItem.statBoosts.troops) {
+          player.troops += importItem.statBoosts.troops;
+          bonuses.push(`${importItem.statBoosts.troops} troops`);
+        }
+        if (importItem.statBoosts.energy) {
+          player.energy += importItem.statBoosts.energy;
+          bonuses.push(`${importItem.statBoosts.energy} energy`);
+        }
+        const bonusMsg = bonuses.length ? ` and bonus ${bonuses.join(", ")}` : "";
+        spendEnergyAndGold(
+          0,
+          0,
+          `Collected imported ${importItem.name}! Gained ${importItem.price} gold${bonusMsg}!`,
+          () => (player.gold += importItem.price)
+        );
       } else {
         logEvent("No imports to collect!");
       }
@@ -87,11 +106,28 @@ function handleAction(action) {
 
 // 🧱 Show build menu
 function buildMenu() {
-  const available = buildings.filter(b =>
-    ((b.availableTo === "all" || b.availableTo.includes(player.faction.name)) && player.buildings.incudes(b.preRec)));
+  const available = buildings.filter(b => {
+    const factionAllowed =
+      b.availableTo === "all" ||
+      (Array.isArray(b.availableTo) && b.availableTo.includes(player.faction.name));
+    if (!factionAllowed) return false;
+    if (!b.preRec || b.preRec === "none") return true;
+    return player.buildings.includes(b.preRec);
+  });
+
+  if (!available.length) {
+    logEvent("No buildings available right now.");
+    return;
+  }
+
   const choice = prompt(
     `Choose building:\n${available
-      .map((b, i) => `${i + 1}. ${b.name} —— 💰${b.cost.gold}, ⚡${b.cost.energy} —— {player.buildings.filter(item => item === b.name).length} built`)
+      .map(
+        (b, i) =>
+          `${i + 1}. ${b.name} —— 💰${b.cost.gold}, ⚡${b.cost.energy} —— ${
+            player.buildings.filter(item => item === b.name).length
+          } built`
+      )
       .join("\n")}`
   );
   const index = parseInt(choice) - 1;
@@ -137,7 +173,7 @@ function logEvent(msg) {
 
 // 🌙 End turn
 function endTurn() {
-  player.energy = calcStartingEnergy(player.faction);
+  player.energy = calcStartingEnergy(player);
   logEvent("🌙 Turn ended. Energy restored!");
   player.canTrade = true;
   player.imports = Math.floor(Math.random() * 5) + 1;
@@ -171,15 +207,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function startGame(faction) {
   player.faction = faction;
-  player.energy = calcStartingEnergy(player);
-  player.gold = parseInt(faction.defaultTraits.economy) * 250;
-  player.troops = parseInt(faction.defaultTraits.prowess) * 10;
+  player.gold = parseInt(faction.defaultTraits.economy, 10) * 250;
+  player.troops = parseInt(faction.defaultTraits.prowess, 10) * 10;
   player.happiness = 1;
   player.protection = 1;
   player.imports = Math.floor(Math.random() * 5) + 1;
   player.relics = [faction.startingRelic || "None"];
   player.buildings = [];
   updateDerivedStats();
+  player.energy = calcStartingEnergy(player);
   renderHUD();
   setupActionButtons();
   logEvent(`🌿 Welcome, ${faction.name}!`);
