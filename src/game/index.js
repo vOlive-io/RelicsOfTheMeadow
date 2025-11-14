@@ -121,12 +121,20 @@ function showRelicMenu() {
     logEvent(`${relicName} has no defined power yet.`);
     return;
   }
+  if (!(player.relicsUsedThisTurn instanceof Set)) {
+    player.relicsUsedThisTurn = new Set();
+  }
+  if (player.relicsUsedThisTurn.has(relicName)) {
+    logEvent(`${relicName} has already been invoked this turn.`);
+    return;
+  }
   const energyCost = relic.energyCost ?? 1;
   if (player.energy < energyCost) {
     logEvent("❌ Not enough energy to awaken that relic.");
     return;
   }
   player.energy -= energyCost;
+  player.relicsUsedThisTurn.add(relicName);
   if (typeof relic.logic === "function") {
     relic.logic({
       player,
