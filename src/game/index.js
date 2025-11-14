@@ -1,17 +1,18 @@
-////////////////////////////////
-///          IMPORTS         ///
-////////////////////////////////
+/////////////////////////////////////
+///// MODULE IMPORTS /////
+/////////////////////////////////////
 import { factions } from "../../data/factions.js";
 import buildings from "../../data/buildings.js";
 import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEnergy } from "../utils/statCalc.js";
 import { importItems } from "../../data/importItems.js";
 import { battleSpoils } from "../../data/spoils.js";
+import { startPlayerGame } from "./gameSetup.js";
 console.log("✅ Game JS loaded!");
 
 
-////////////////////////////////
-///        TURN ORDER        ///
-////////////////////////////////
+/////////////////////////////////////
+///// DERIVED STATS & HUD /////
+/////////////////////////////////////
 function updateDerivedStats() {
   player.resilience = calculateResilience(player);
   player.economy = calculateEconomy(player);
@@ -34,6 +35,9 @@ function renderHUD() {
   `;
 }
 
+/////////////////////////////////////
+///// TARGETING & SPOILS HELPERS /////
+/////////////////////////////////////
 function chooseOpponent(actionLabel, filterFn = () => true) {
   const others = factions.filter(
     f => f.name !== player.faction.name && filterFn(f)
