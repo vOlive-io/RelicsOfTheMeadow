@@ -396,6 +396,17 @@ let player = {
 };
 // 🌅 Start game after DOM loads
 document.addEventListener("DOMContentLoaded", () => {
+  diplomacyModal = document.getElementById("diplomacyModal");
+  diplomacyList = document.getElementById("diplomacyList");
+  const closeBtn = document.getElementById("closeDiplomacy");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", hideDiplomacyMenu);
+  }
+  if (diplomacyModal) {
+    diplomacyModal.addEventListener("click", event => {
+      if (event.target === diplomacyModal) hideDiplomacyMenu();
+    });
+  }
   const chosen = localStorage.getItem("chosenFaction") || factions[0].name;
   const faction = factions.find(f => f.name === chosen) || factions[0];
   startGame(faction);
@@ -411,6 +422,7 @@ function startGame(faction) {
   player.relics = [faction.startingRelic || "None"];
   player.buildings = [];
   player.declaredWars = [];
+  player.alliances = [];
   updateDerivedStats();
   player.energy = calcStartingEnergy(player);
   renderHUD();
