@@ -177,9 +177,36 @@ export const factions = [
     fullLore:
       "The Meadowfolk Union are builders, tenders, and dreamers. They thrive on harmony between land and life, weaving a civilization from roots and sunlight. Once scattered across open plains, the Meadowfolk united to resist conquest—not through might, but through unity and patience. They measure time in harvests, not wars, and see prosperity as something cultivated, not taken.\n\nIn gameplay, the Union excels in synergy and growth. They gain strength from cooperation—units that stand together become stronger, and clearings left in peace reward them richly. Their structures and trade routes bloom faster when left undisturbed, turning stability into power. They represent the patient hand of creation in a world obsessed with destruction.",
     abilities: [
-      { name: "Harmony", desc: "Gain +1 resilience for each undisturbed clearing you rule.", cost: 0 },
-      { name: "Cooperation", desc: "If two or more friendly units are adjacent, they generate +1 shared economy.", cost: 0 },
-      { name: "Regrow", desc: "Regrow 1 destroyed structure if adjacent to a thriving meadow.", cost: 10 },
+      {
+        name: "Harmony",
+        desc: "Let tranquil lands restore your people.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.resilience = Math.min(10, player.resilience + 2);
+          player.happiness += 1;
+          logEvent("🌾 Harmony blooms, lifting resilience and spirits.");
+        },
+      },
+      {
+        name: "Cooperation",
+        desc: "Neighbors pool harvests for shared prosperity.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          const gain = 35;
+          player.gold += gain;
+          logEvent(`🌾 Cooperation yields an extra ${gain} gold in shared economy.`);
+        },
+      },
+      {
+        name: "Regrow",
+        desc: "Rebuild a thriving meadow after devastation.",
+        cost: { energy: 1, gold: 10 },
+        logic: ({ player, logEvent }) => {
+          player.protection += 2;
+          player.happiness += 1;
+          logEvent("🌾 Ruins turn to bloom again. Defenses and joy rise.");
+        },
+      },
     ],
     startingRelic: "🌾 Heart of Spring",
     defaultTraits: { prowess: "4/10", resilience: "7/10", economy: "5/10" },
