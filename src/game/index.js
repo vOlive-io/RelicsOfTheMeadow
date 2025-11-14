@@ -5,6 +5,7 @@ import { factions } from "../../data/factions.js";
 import buildings from "../../data/buildings.js";
 import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEnergy } from "../utils/statCalc.js";
 import { importItems } from "../../data/importItems.js";
+import { battleSpoils } from "../../data/spoils.js";
 console.log("✅ Game JS loaded!");
 
 
