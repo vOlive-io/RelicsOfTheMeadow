@@ -1,5 +1,5 @@
 /////////////////////////////////////
-///// MODULE IMPORTS /////
+///        MODULE IMPORTS         ///
 /////////////////////////////////////
 import { factions } from "../../data/factions.js";
 import buildings from "../../data/buildings.js";
@@ -11,7 +11,7 @@ console.log("✅ Game JS loaded!");
 
 
 /////////////////////////////////////
-///// DERIVED STATS & HUD /////
+///      DERIVED STATS & HUD      ///
 /////////////////////////////////////
 function updateDerivedStats() {
   player.resilience = calculateResilience(player);
@@ -86,23 +86,20 @@ function grantBattleSpoils(targetFaction, atWar) {
 }
 
 /////////////////////////////////////
-///// DIPLOMACY MENU LOGIC /////
+///      DIPLOMACY MENU LOGIC     ///
 /////////////////////////////////////
 let diplomacyModal = null;
 let diplomacyList = null;
-
 function showDiplomacyMenu() {
   if (!diplomacyModal || !diplomacyList) return;
   renderDiplomacyMenu();
   diplomacyModal.classList.add("open");
 }
-
 function hideDiplomacyMenu() {
   if (diplomacyModal) {
     diplomacyModal.classList.remove("open");
   }
 }
-
 function renderDiplomacyMenu() {
   if (!diplomacyList) return;
   diplomacyList.innerHTML = "";
@@ -155,7 +152,6 @@ function renderDiplomacyMenu() {
     diplomacyList.appendChild(card);
   });
 }
-
 function offerAlliance(faction) {
   if (player.alliances.includes(faction.name)) {
     logEvent(`Already allied with ${faction.name}.`);
@@ -173,7 +169,6 @@ function offerAlliance(faction) {
     logEvent(`${faction.name} declined your request for alliance.`);
   }
 }
-
 function breakAlliance(faction) {
   if (!player.alliances.includes(faction.name)) {
     logEvent(`No alliance exists with ${faction.name}.`);
@@ -182,7 +177,6 @@ function breakAlliance(faction) {
   player.alliances = player.alliances.filter(name => name !== faction.name);
   logEvent(`❌ Alliance with ${faction.name} has been dissolved.`);
 }
-
 function startWarWithFaction(faction) {
   if (player.declaredWars.includes(faction.name)) {
     logEvent(`Already at war with ${faction.name}.`);
@@ -202,7 +196,6 @@ function startWarWithFaction(faction) {
     }
   );
 }
-
 function offerPeace(faction) {
   if (!player.declaredWars.includes(faction.name)) {
     logEvent(`You are not currently at war with ${faction.name}.`);
@@ -218,9 +211,8 @@ function offerPeace(faction) {
 }
 
 /////////////////////////////////////
-///// ACTION ROUTER /////
+///         ACTION ROUTER         ///
 /////////////////////////////////////
-// 🎮 Handle action logic
 function handleAction(action) {
   switch (action) {
     case "diplomacy":
@@ -307,11 +299,9 @@ function handleAction(action) {
   }
   renderHUD();
 }
-
 /////////////////////////////////////
-///// ECONOMY & LOG HELPERS /////
+///     ECONOMY & LOG HELPERS     ///
 /////////////////////////////////////
-// 🧱 Show build menu
 function buildMenu() {
   const available = buildings.filter(b => {
     const factionAllowed =
@@ -352,8 +342,6 @@ function buildMenu() {
     }
   );
 }
-
-// 💸 Spend energy + gold, apply effects
 function spendEnergyAndGold(energyCost, goldCost, msg, onSuccess) {
   if (player.energy < energyCost) return logEvent("❌ Not enough energy!");
   if (player.gold < goldCost) return logEvent("❌ Not enough gold!");
@@ -362,14 +350,12 @@ function spendEnergyAndGold(energyCost, goldCost, msg, onSuccess) {
   logEvent(`✅ ${msg}`);
   if (onSuccess) onSuccess();
 }
-
 // 🧠 NEED TO UPDATE/REMOVE - BUTTONS WILL DISPLAY AT START OF GAME AND NOT IN LIST
 function showFactionAbilities() {
   const abilities = player.faction.abilities;
   logEvent(`🧠 ${player.faction.name}'s Abilities:`);
   abilities.forEach(a => logEvent(`• ${a.name}: ${a.desc} (Cost: ${a.cost})`));
 }
-
 function logEvent(msg) {
   const log = document.getElementById("event-log");
   const entry = document.createElement("p");
@@ -377,8 +363,6 @@ function logEvent(msg) {
   log.appendChild(entry);
   log.scrollTop = log.scrollHeight;
 }
-
-// 🌙 End turn
 function endTurn() {
   player.energy = calcStartingEnergy(player);
   logEvent("🌙 Turn ended. Energy restored!");
@@ -407,7 +391,6 @@ let player = {
   declaredWars: [],
   alliances: [],
 };
-// 🌅 Start game after DOM loads
 document.addEventListener("DOMContentLoaded", () => {
   diplomacyModal = document.getElementById("diplomacyModal");
   diplomacyList = document.getElementById("diplomacyList");
@@ -424,7 +407,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const faction = factions.find(f => f.name === chosen) || factions[0];
   startGame(faction);
 }); 
-
 function startGame(faction) {
   startPlayerGame({
     player,
