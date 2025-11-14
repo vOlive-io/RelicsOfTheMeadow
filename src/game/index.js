@@ -34,6 +34,51 @@ function renderHUD() {
   `;
 }
 
+function chooseOpponent(actionLabel) {
+  const others = factions.filter(f => f.name !== player.faction.name);
+  if (!others.length) {
+    logEvent(`No factions available to ${actionLabel}.`);
+    return null;
+  }
+  const promptMsg = `Select a faction to ${actionLabel}:\n${others
+    .map((f, i) => `${i + 1}. ${f.emoji} ${f.name}`)
+    .join("\n")}`;
+  const choice = prompt(promptMsg);
+  if (!choice) {
+    logEvent("Selection cancelled.");
+    return null;
+  }
+  const index = parseInt(choice, 10) - 1;
+  const selectedFaction = others[index];
+  if (!selectedFaction) {
+    logEvent("❌ Invalid faction choice.");
+    return null;
+  }
+  return selectedFaction;
+}
+
+function grantBattleSpoils(targetFaction, atWar) {
+  if (!battleSpoils || !battleSpoils.length) return;
+  const spoils = battleSpoils[Math.floor(Math.random() * battleSpoils.length)];
+  const multiplier = atWar ? 2 : 1;
+  const gains = [];
+  const goldGain = (spoils.price || 0) * multiplier;
+  if (goldGain) {
+    player.gold += goldGain;
+    gains.push(`${goldGain} gold`);
+  }
+  const boosts = spoils.statBoosts || {};
+  Object.keys(boosts).forEach(stat => {
+    const value = boosts[stat] * multiplier;
+    if (!value || typeof player[stat] !== "number") return;
+    player[stat] += value;
+    gains.push(`${value} ${stat}`);
+  });
+  const warNote = atWar ? " (war spoils doubled!)" : "";
+  const rewardText = gains.length ? gains.join(", ") : "No tangible gains";
+  logEvent(`🏴‍☠️ Claimed ${spoils.name}${warNote} against ${targetFaction.name}. ${rewardText}.`);
+}
+
 // 🎮 Handle action logic
 function handleAction(action) {
   switch (action) {
