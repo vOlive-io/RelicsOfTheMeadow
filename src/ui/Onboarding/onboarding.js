@@ -24,9 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <p class="faction-overview">${faction.overview}</p>
       <div class="faction-traits">
-        <p>⚔️ <strong>Prowess:</strong> ${faction.defaultTraits?.prowessEmoji ?? "?"}</p>
-        <p>🍃 <strong>Resilience:</strong> ${faction.defaultTraits?.resilienceEmoji ?? "?"}</p>
-        <p>💰 <strong>Economy:</strong> ${faction.defaultTraits?.economyEmoji ?? "?"}</p>
+        <p>⚔️ <strong>Prowess:</strong> ${faction.defaultEmojis?.prowess ?? "?"}</p>
+        <p>🍃 <strong>Resilience:</strong> ${faction.defaultEmojis?.resilience ?? "?"}</p>
+        <p>💰 <strong>Economy:</strong> ${faction.defaultEmojis?.economy ?? "?"}</p>
       </div>
       <button class="select-btn">Pledge to ${faction.name}</button>
     `;

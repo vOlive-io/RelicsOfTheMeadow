@@ -48,6 +48,8 @@ export const factions = [
     ],
     startingRelic: "🩸 Horn of Fury",
     defaultTraits: { prowess: "9/10", resilience: "2/10", economy: "4/10" },
+    defaultEmojis: { prowess: "9/10", resilience: "2/10", economy: "4/10" },
+
     relationships: {
       "Devoured Faith": "neutral",
       "Silken Dominion": "neutral",
