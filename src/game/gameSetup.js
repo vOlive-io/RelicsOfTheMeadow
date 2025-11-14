@@ -63,8 +63,8 @@ export function setupActionButtons(handleAction) {
 
 function applyStartingStats(player, faction) {
   player.faction = faction;
-  player.gold = parseTraitValue(faction?.defaultTraits?.economy) * 250;
-  player.troops = parseTraitValue(faction?.defaultTraits?.prowess) * 10;
+  player.gold = parseTraitValue(faction?.defaultTraits?.economy) * 10;
+  player.troops = parseTraitValue(faction?.defaultTraits?.prowess) * 5;
   player.happiness = 1;
   player.protection = 1;
   player.imports = Math.floor(Math.random() * 5) + 1;
