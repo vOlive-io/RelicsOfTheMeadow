@@ -322,6 +322,7 @@ export const factions = [
     ],
     startingRelic: "🍄 Crown of Spores",
     defaultTraits: { prowess: "5/10", resilience: "8/10", economy: "3/10" },
+    defaultEmojis: { prowess: "🔥🔥", resilience: "🌱🌱🌱🌱🌱", economy: "💰💰" },   
     relationships: {
       "Devoured Faith": "neutral",
       "Silken Dominion": "neutral",
