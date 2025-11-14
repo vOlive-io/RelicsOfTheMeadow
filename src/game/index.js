@@ -85,6 +85,9 @@ function grantBattleSpoils(targetFaction, atWar) {
   logEvent(`🏴‍☠️ Claimed ${spoils.name}${warNote} against ${targetFaction.name}. ${rewardText}.`);
 }
 
+/////////////////////////////////////
+///// DIPLOMACY MENU LOGIC /////
+/////////////////////////////////////
 let diplomacyModal = null;
 let diplomacyList = null;
 
@@ -214,6 +217,9 @@ function offerPeace(faction) {
   }
 }
 
+/////////////////////////////////////
+///// ACTION ROUTER /////
+/////////////////////////////////////
 // 🎮 Handle action logic
 function handleAction(action) {
   switch (action) {
@@ -302,6 +308,9 @@ function handleAction(action) {
   renderHUD();
 }
 
+/////////////////////////////////////
+///// ECONOMY & LOG HELPERS /////
+/////////////////////////////////////
 // 🧱 Show build menu
 function buildMenu() {
   const available = buildings.filter(b => {
@@ -378,9 +387,9 @@ function endTurn() {
   renderHUD();
 }
 
-////////////////////////////////
-///      INITIALIZATION      ///
-////////////////////////////////
+/////////////////////////////////////
+///// PLAYER STATE & INIT /////
+/////////////////////////////////////
 let player = {
   faction: null,
   energy: 0,
