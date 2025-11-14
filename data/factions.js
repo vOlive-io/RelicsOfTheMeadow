@@ -282,9 +282,33 @@ export const factions = [
     fullLore:
       "The Mycelial Monarchy thrives in darkness, spreading unseen through decay and ruin. Born from the fusion of fungus and flesh, their society sees death not as an end, but as fertile ground for renewal. Their rulers, the Sporelords, guide the growth of vast fungal networks that reclaim the fallen world—digesting what once was to fuel what will be.\n\nIn gameplay, they expand relentlessly, spreading spore fields that bolster their resilience and spawn new forces. Where they spread, others falter; poison and rebirth go hand in hand. The Monarchy grows through attrition, favoring endurance and inevitability over direct conquest.",
     abilities: [
-      { name: "Spread", desc: "At the start of each turn, spread one new spore field to an adjacent clearing.", cost: 0 },
-      { name: "Bloom", desc: "Gain +1 resilience per spore field connected to your capital.", cost: 0 },
-      { name: "Rebirth", desc: "If an enemy unit was defeated in a spore field last turn, spawn a Sporeling there.", cost: 0 },
+      {
+        name: "Spread",
+        desc: "Extend the spore network.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.protection += 1;
+          logEvent("🍄 Spores spread, thickening natural defenses.");
+        },
+      },
+      {
+        name: "Bloom",
+        desc: "Harvest strength from connected spores.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.resilience = Math.min(10, player.resilience + 2);
+          logEvent("🍄 Bloom nourishes your resilience.");
+        },
+      },
+      {
+        name: "Rebirth",
+        desc: "Raise fungal warriors where foes once fell.",
+        cost: { energy: 2, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.troops += 6;
+          logEvent("🍄 Fallen ground erupts with reborn Sporelings.");
+        },
+      },
     ],
     startingRelic: "🍄 Crown of Spores",
     defaultTraits: { prowess: "5/10", resilience: "8/10", economy: "3/10" },
