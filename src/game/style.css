@@ -8,11 +8,12 @@ body {
   font-family: 'Cinzel', serif;
   background-color: #c0a282;
   color: #000;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  animation: fadeBackground 6s ease-in-out infinite alternate;
 }
 
 /* 🌞 HEADER */
@@ -55,12 +56,36 @@ main {
   border-radius: 16px;
   padding: 1.2em;
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 3 columns */
-  grid-template-rows: repeat(1, auto);   /* 1 rows */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8em 1em;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  font-size: 1.1em;
+  font-size: 1em;
+  animation: floatPanel 5s ease-in-out infinite alternate;
 }
 
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 0.45em 0.6em;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+  animation: fadeSlide 0.5s ease;
+}
+
+.stat-item strong {
+  display: block;
+  font-size: 0.95em;
+  color: #4b3927;
+}
+
+.stat-item span {
+  font-size: 0.9em;
+}
 
 /* 🎮 BUTTONS */
 button {
@@ -82,7 +107,7 @@ button:hover {
 }
 
 .ability-box {
-  background: #fff7eb;
+  background: #f9f5ef;
   border: 3px solid #8c6b47;
   border-radius: 16px;
   padding: 1em;
@@ -92,14 +117,25 @@ button:hover {
   justify-content: center;
   gap: 0.4em;
 }
+
 .ability-box h3 {
   width: 100%;
   text-align: center;
   margin: 0 0 0.5em;
 }
+
 .ability-box button {
   font-size: 0.7em;
+  min-width: 140px;
 }
+
+.ability-box button small {
+  display: block;
+  font-size: 0.6em;
+  color: rgba(255,255,255,0.85);
+  margin-top: 0.15em;
+}
+
 .action-buttons,
 .faction-abilities {
   display: flex;
@@ -108,8 +144,40 @@ button:hover {
   gap: 0.4em;
   width: 100%;
 }
+
 .action-buttons {
   margin-bottom: 0.6em;
+}
+
+.status-ally {
+  color: #1c6c2d;
+}
+
+.status-war {
+  color: #8c1c1c;
+}
+
+.status-neutral {
+  color: #4b3927;
+}
+
+.diplomacy-faction.status-ally {
+  border-color: #4ba34d;
+  background: #e7ffe7;
+}
+
+.diplomacy-faction.status-war {
+  border-color: #d16a6a;
+  background: #ffe9e9;
+}
+
+.diplomacy-faction.status-neutral {
+  border-color: #c49a6c;
+  background: #fff3e2;
+}
+
+.log-entry {
+  animation: fadeSlide 0.4s ease;
 }
 
 /* 🌙 END TURN BUTTON */
@@ -146,6 +214,7 @@ footer button:hover {
   margin-bottom: 1em;
   font-size: 0.85em;
 }
+
 #event-log p {
   padding: 0.15vw;
   margin: 0vw;
@@ -155,13 +224,14 @@ footer button:hover {
 #event-log::-webkit-scrollbar {
   width: 0.5em;
 }
+
 #event-log::-webkit-scrollbar-thumb {
   background: #8c6b47;
   border-radius: 2em;
 }
+
 #event-log::-webkit-scrollbar-track {
   background: #ffedd7;
-  display: none;
 }
 
 /* 🕊️ DIPLOMACY MODAL */
@@ -174,9 +244,11 @@ footer button:hover {
   justify-content: center;
   z-index: 1000;
 }
+
 .diplomacy-modal.open {
   display: flex;
 }
+
 .diplomacy-content {
   background: #ffedd7;
   border: 3px solid #8c6b47;
@@ -187,7 +259,9 @@ footer button:hover {
   overflow-y: auto;
   padding: 1.5em;
   box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  animation: fadeSlide 0.4s ease;
 }
+
 .close-modal-btn {
   float: right;
   background: transparent;
@@ -195,12 +269,14 @@ footer button:hover {
   font-size: 1.2em;
   padding: 0.2em 0.4em;
 }
+
 .diplomacy-list {
   display: flex;
   flex-direction: column;
   gap: 1em;
   margin-top: 1em;
 }
+
 .diplomacy-faction {
   border: 2px solid #c49a6c;
   border-radius: 12px;
@@ -209,14 +285,41 @@ footer button:hover {
   flex-direction: column;
   gap: 0.5em;
   background: #fff3e2;
+  transition: transform 0.2s ease;
 }
+
+.diplomacy-faction:hover {
+  transform: translateY(-4px);
+}
+
 .diplomacy-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4em;
 }
+
 .diplomacy-actions button {
   font-size: 0.8em;
   margin: 0.2em;
-  
+}
+
+@keyframes fadeBackground {
+  0% { background-color: #c0a282; }
+  100% { background-color: #b8936e; }
+}
+
+@keyframes floatPanel {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

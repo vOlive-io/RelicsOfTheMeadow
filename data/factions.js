@@ -70,12 +70,15 @@ export const factions = [
     abilities: [
       {
         name: "Delve",
-        desc: "Channel relics to summon fresh devotees.",
-        cost: { energy: 1, gold: 0 },
-        logic: ({ player, logEvent }) => {
-          const recruits = Math.max(1, player.relics.length * 2);
-          player.troops += recruits;
-          logEvent(`🕯️ The faithful emerge from the crypts: +${recruits} troops.`);
+        desc: "Spend vast energy and coin to unearth forbidden relics.",
+        cost: { energy: 4, gold: 120 },
+        logic: ({ acquireRelic, logEvent }) => {
+          const relic = acquireRelic?.({ reason: "Devoured Faith Delve" });
+          if (relic) {
+            logEvent(`🕯️ Delve recovered ${relic} from the ashes!`);
+          } else {
+            logEvent("🕯️ The catacombs held only dust this time.");
+          }
         },
       },
       {

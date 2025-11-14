@@ -1,44 +1,38 @@
-function clampTen(value) {
-  return Math.max(0, Math.min(10, value));
+const RELIC_ENERGY_COST = 2;
+
+function clampFloor(value) {
+  return Math.max(0, Math.floor(value));
 }
 
-function applyChanges(player, changes) {
-  Object.entries(changes).forEach(([stat, delta]) => {
-    if (typeof delta !== "number") return;
-    switch (stat) {
-      case "gold":
-        player.gold += delta;
-        break;
-      case "energy":
-        player.energy = Math.max(0, player.energy + delta);
-        break;
-      case "troops":
-        player.troops = Math.max(0, player.troops + delta);
-        break;
-      case "happiness":
-        player.happiness = Math.max(0, player.happiness + delta);
-        break;
-      case "protection":
-        player.protection = Math.max(0, player.protection + delta);
-        break;
-      case "resilience":
-        player.resilience = clampTen(player.resilience + delta);
-        break;
-      case "prowess":
-        player.prowess = clampTen(player.prowess + delta);
-        break;
-      default:
-        player[stat] = (player[stat] || 0) + delta;
-    }
-  });
+function gainPercentOfGold(player, percent) {
+  const base = Math.max(0, player.gold);
+  const gain = Math.max(1, Math.floor(base * percent));
+  player.gold += gain;
+  return gain;
 }
 
-const makeLogic = (changes, message) => ({ player, logEvent }) => {
-  applyChanges(player, changes);
-  if (logEvent) {
-    logEvent(message);
-  }
-};
+function gainPercentOfTrade(player, percent) {
+  const base = Math.max(0, player.tradePostIncome || 0);
+  const gain = Math.max(1, Math.floor(base * percent));
+  player.gold += gain;
+  return gain;
+}
+
+function boostTroops(player, amount) {
+  player.troops = Math.max(0, player.troops + amount);
+}
+
+function boostProtection(player, amount) {
+  player.protection = Math.max(0, player.protection + amount);
+}
+
+function boostHappiness(player, amount) {
+  player.happiness = Math.max(0, player.happiness + amount);
+}
+
+function rechargeEnergy(player, amount) {
+  player.energy = Math.max(0, player.energy + amount);
+}
 
 export const relics = [
   // 🌿 Bane & Friend Relics
@@ -46,109 +40,129 @@ export const relics = [
     name: "🩸 Bane of the Crimson Horde",
     type: "Bane & Friend",
     effect: "Vengeance bonuses are 25% weaker; lose 2 vengeance slots.",
-    logic: makeLogic(
-      { protection: 2 },
-      "🩸 The Horde’s fury is dampened; their blows glance from your shields."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 2);
+      boostHappiness(player, 1);
+      logEvent("🩸 The Horde’s wrath falters, strengthening your defenses.");
+    },
   },
   {
     name: "💀 Bane of the Devoured Faith",
     type: "Bane & Friend",
-    effect: "They can no longer steal from you or one chosen player you grant divine protection.",
-    logic: makeLogic(
-      { resilience: 1, happiness: 1 },
-      "💀 The Faith recoils, your people feel safe from their rituals."
-    ),
+    effect: "They can no longer steal from you or a chosen ally.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 1);
+      boostHappiness(player, 2);
+      logEvent("💀 Sacred wards shield your coffers from the Faith.");
+    },
   },
   {
     name: "🏯 Bane of the Jade Empire",
     type: "Bane & Friend",
     effect: "You gain 20% of their income; they cannot attack first.",
-    logic: makeLogic(
-      { gold: 35 },
-      "🏯 Trade tariffs siphon wealth from the Jade Empire into your coffers."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.2);
+      logEvent(`🏯 Imperial tariffs funnel ${gain} gold into your treasury.`);
+    },
   },
   {
     name: "🌾 Bane of the Meadowfolk Union",
     type: "Bane & Friend",
-    effect: "Revolts take 1 extra turn and +10% backfire chance.",
-    logic: makeLogic(
-      { protection: 1, resilience: 1 },
-      "🌾 Meadowfolk unrest falters, reinforcing your defensive patience."
-    ),
+    effect: "Revolts take longer and risk blowback.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 1);
+      boostTroops(player, 2);
+      logEvent("🌾 Meadowfolk unrest falters before your garrisons.");
+    },
   },
   {
     name: "🍄 Bane of the Mycelial Monarchy",
     type: "Bane & Friend",
-    effect: "Spore growth slows by 75%; cannot convert you.",
-    logic: makeLogic(
-      { energy: 2 },
-      "🍄 Fungal spores recede from your borders, freeing vital energy."
-    ),
+    effect: "Spore growth slows; you resist conversion.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      rechargeEnergy(player, 2);
+      boostProtection(player, 1);
+      logEvent("🍄 Sterile wards keep spores at bay and restore vitality.");
+    },
   },
   {
     name: "🕷️ Bane of the Silken Dominion",
     type: "Bane & Friend",
     effect: "Whenever they steal income, 15% of that total goes to you.",
-    logic: makeLogic(
-      { gold: 25 },
-      "🕷️ Stolen coin clings to your ledgers before the Dominion can pocket it."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.15);
+      logEvent(`🕷️ We intercepted webbed coin: +${gain} gold.`);
+    },
   },
   {
     name: "🩸 Friend of the Crimson Horde",
     type: "Bane & Friend",
-    effect: "Vengeance bonuses 25% stronger; +2 slots; shared defenders.",
-    logic: makeLogic(
-      { troops: 6, protection: 1 },
-      "🩸 Horde berserkers rally beside you, bolstering your ranks."
-    ),
+    effect: "Vengeance bonuses 25% stronger; shared defenders.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 6);
+      boostProtection(player, 1);
+      logEvent("🩸 Horde berserkers bolster your army.");
+    },
   },
   {
     name: "💀 Friend of the Devoured Faith",
     type: "Bane & Friend",
-    effect: "Both your and their units gain +15% Attack and +15% Morale near each other.",
-    logic: makeLogic(
-      { troops: 4, resilience: 1 },
-      "💀 The Faith’s hymns steady your soldiers’ resolve."
-    ),
+    effect: "Nearby armies gain fervor.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 4);
+      boostHappiness(player, 1);
+      logEvent("💀 Devotion surges as the Faith fights beside you.");
+    },
   },
   {
     name: "🏯 Friend of the Jade Empire",
     type: "Bane & Friend",
-    effect: "They gain +10% money and +10% cranes; you gain 10% of their profit.",
-    logic: makeLogic(
-      { gold: 50 },
-      "🏯 Imperial trade winds fill your vaults."
-    ),
+    effect: "They gain +10% money; you gain 10% of their profit.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.1);
+      logEvent(`🏯 Trade partners tithe ${gain} gold from their windfalls.`);
+    },
   },
   {
     name: "🌾 Friend of the Meadowfolk Union",
     type: "Bane & Friend",
-    effect: "Revolts have +15% success when supporting you.",
-    logic: makeLogic(
-      { happiness: 2, resilience: 1 },
-      "🌾 Meadowfolk goodwill blossoms in your domain."
-    ),
+    effect: "Revolts succeed more often when backing you.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostHappiness(player, 2);
+      boostProtection(player, 1);
+      logEvent("🌾 Meadowfolk support blossoms across your lands.");
+    },
   },
   {
     name: "🍄 Friend of the Mycelial Monarchy",
     type: "Bane & Friend",
-    effect: "They cannot convert you; their spores grow +50% faster.",
-    logic: makeLogic(
-      { resilience: 2 },
-      "🍄 Symbiotic spores reinforce your endurance."
-    ),
+    effect: "Their spores grow faster but cannot convert you.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 4);
+      boostProtection(player, 1);
+      logEvent("🍄 Symbiotic tendrils reinforce your warrior lines.");
+    },
   },
   {
     name: "🕷️ Friend of the Silken Dominion",
     type: "Bane & Friend",
     effect: "You gain 15% of their manipulation income.",
-    logic: makeLogic(
-      { gold: 30 },
-      "🕷️ Whispered debts and secrets turn into coin for you."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.15);
+      logEvent(`🕷️ Spider nobles share clandestine profits: +${gain} gold.`);
+    },
   },
 
   // 💰 Economy Relics
@@ -156,193 +170,238 @@ export const relics = [
     name: "🟨 Guildmaster’s Seal",
     type: "Economy",
     effect: "10% increase to all income sources.",
-    logic: makeLogic({ gold: 60 }, "🟨 Guild charters swell your income by 10%."),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const trade = Math.max(0, (player.tradePostIncome || 0) * 5);
+      const base = Math.max(0, player.gold) + trade;
+      const gain = Math.max(5, Math.floor(base * 0.1));
+      player.gold += gain;
+      logEvent(`🟨 Guild dues swell your income by ${gain} gold.`);
+    },
   },
   {
     name: "🟨 Golden Quill",
     type: "Economy",
     effect: "+15% trade efficiency.",
-    logic: makeLogic(
-      { gold: 40, energy: 1 },
-      "🟨 Signed contracts cut waste, netting gold and focus."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfTrade(player, 0.15);
+      logEvent(`🟨 Contracts tighten: +${gain} gold from efficient trade.`);
+    },
   },
   {
     name: "🟨 Merchant’s Scale",
     type: "Economy",
     effect: "Resource production increases by 10% across all goods.",
-    logic: makeLogic(
-      { gold: 35, protection: 1 },
-      "🟨 Fair weights yield steadier trade and sturdier caravans."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.1);
+      boostProtection(player, 1);
+      logEvent(`🟨 Fair weights yield ${gain} bonus gold and sturdier caravans.`);
+    },
   },
   {
     name: "🟨 Vault of Echoes",
     type: "Economy",
-    effect: "Store up to 20% of your gold income per turn - cannot be taxed.",
-    logic: makeLogic(
-      { gold: 50 },
-      "🟨 Hidden vaults preserve untouchable reserves."
-    ),
+    effect: "Store up to 20% of your gold income per turn—cannot be taxed.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.2);
+      logEvent(`🟨 Hidden vaults secure ${gain} untouchable gold.`);
+    },
   },
 
   // ⚔️ Prowess Relics
   {
     name: "🟥 Medallion of Valor",
     type: "Prowess",
-    effect: "Boosts Prowess by granting extra recruits/unit gain, increasing army size and replenishment rate.",
-    logic: makeLogic(
-      { troops: 10, prowess: 1 },
-      "🟥 Valor medallions inspire a rush of eager recruits."
-    ),
+    effect: "Boosts Prowess by granting extra recruits and replenishment.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 10);
+      logEvent("🟥 Valor medallions inspire a rush of eager recruits.");
+    },
   },
   {
     name: "🟥 Banner of Triumph",
     type: "Prowess",
     effect: "+10% battle hits.",
-    logic: makeLogic(
-      { troops: 5, happiness: 1 },
-      "🟥 The triumphant banner rallies warriors to strike true."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 5);
+      boostHappiness(player, 1);
+      logEvent("🟥 The triumphant banner rallies warriors to strike true.");
+    },
   },
   {
     name: "🟥 Shield of the Unbroken Line",
     type: "Prowess",
     effect: "+10% defense in battle.",
-    logic: makeLogic(
-      { protection: 3 },
-      "🟥 The unbroken line holds; defenses thicken."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 3);
+      logEvent("🟥 Shield walls tighten, absorbing the enemy’s charge.");
+    },
   },
   {
     name: "🟥 General’s Compass",
     type: "Prowess",
-    effect: "Once per turn, reposition a single battalion instantly within your controlled territory.",
-    logic: makeLogic(
-      { energy: 1, troops: 3 },
-      "🟥 Tactical insight lets you redeploy forces swiftly."
-    ),
+    effect: "Once per turn, reposition a battalion instantly within your territory.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 3);
+      rechargeEnergy(player, 1);
+      logEvent("🟥 Tactical insight lets you redeploy forces swiftly.");
+    },
   },
 
   // 🌿 Resilience Relics
   {
     name: "🟩 Stone of Endurance",
     type: "Resilience",
-    effect: "Boosts Resilience by improving public morale and tolerance for prolonged campaigns.",
-    logic: makeLogic(
-      { resilience: 2, happiness: 1 },
-      "🟩 The stone’s calm steadies the people."
-    ),
+    effect: "Boosts morale and tolerance for prolonged campaigns.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 1);
+      boostHappiness(player, 2);
+      logEvent("🟩 The stone’s calm steadies the people.");
+    },
   },
   {
     name: "🟩 Heart of the Masses",
     type: "Resilience",
     effect: "+10% restoration or environmental recovery speed.",
-    logic: makeLogic(
-      { resilience: 1, happiness: 2 },
-      "🟩 The hearts of the masses beat with renewed hope."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.1);
+      boostHappiness(player, 1);
+      logEvent(`🟩 The masses rally, funding ${gain} gold in recovery efforts.`);
+    },
   },
   {
     name: "🟩 Everroot Totem",
     type: "Resilience",
     effect: "Reduces post-battle damage penalties by 15%.",
-    logic: makeLogic(
-      { protection: 2 },
-      "🟩 Everroot sap seals wounds across your settlements."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostProtection(player, 2);
+      boostTroops(player, 2);
+      logEvent("🟩 Everroot sap seals the wounds of your army.");
+    },
   },
   {
     name: "🟩 Mirror of Calm Waters",
     type: "Resilience",
     effect: "Once per turn, cancel one negative effect targeting you.",
-    logic: makeLogic(
-      { energy: 1, happiness: 1 },
-      "🟩 The mirror reflects serenity, washing away ill omens."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      rechargeEnergy(player, 1);
+      boostHappiness(player, 1);
+      logEvent("🟩 The mirror reflects serenity, washing away ill omens.");
+    },
   },
 
   // 🏰 Faction-Specific Relics
   {
     name: "🪨 Ruins of Deception",
     type: "Devoured Faith",
-    effect: "Whenever you steal a relic, recruit 1 extra unit and place it anywhere on the map.",
-    logic: makeLogic(
-      { troops: 4 },
-      "🪨 Phantoms from the ruins swell your covert armies."
-    ),
+    effect: "Whenever you steal a relic, recruit 1 extra unit anywhere.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 4);
+      boostProtection(player, 1);
+      logEvent("🪨 Phantoms from the ruins swell your covert armies.");
+    },
   },
   {
     name: "🕸️ Spinner’s Veil",
     type: "Silken Dominion",
-    effect: "Reduces diplomacy backlash by 20%; secret pacts form 1 turn faster.",
-    logic: makeLogic(
-      { happiness: 1, gold: 20 },
-      "🕷️ Hidden veils smooth your intrigues and earnings."
-    ),
+    effect: "Reduces diplomacy backlash by 20%; secret pacts form faster.",
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostHappiness(player, 1);
+      const gain = gainPercentOfGold(player, 0.1);
+      logEvent(`🕸️ Veiled whispers smooth diplomacy, netting ${gain} gold.`);
+    },
   },
   {
     name: "🌾 Banner of Blooming Fields",
     type: "Meadowfolk Union",
     effect: "New settlements gain +5% population instantly.",
-    logic: makeLogic(
-      { happiness: 2, gold: 20 },
-      "🌾 Blooming fields burst with prosperity."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostHappiness(player, 2);
+      boostProtection(player, 1);
+      logEvent("🌾 Blooming fields burst with prosperity.");
+    },
   },
   {
     name: "🏯 Imperial Standard",
     type: "Jade Empire",
     effect: "Trade to neutral +10%, allies +25%.",
-    logic: makeLogic(
-      { gold: 60 },
-      "🏯 The imperial standard commands tribute from near and far."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const allyBonus = (player.alliances?.length || 0) * 0.25;
+      const tradePercent = Math.min(0.5, 0.1 + allyBonus);
+      const gain = gainPercentOfTrade(player, tradePercent);
+      logEvent(`🏯 Imperial honors deliver ${gain} gold from trade partners.`);
+    },
   },
   {
     name: "🍄 Crown of Spores",
     type: "Mycelial Monarchy",
     effect: "Spores grow 10% faster per colony.",
-    logic: makeLogic(
-      { resilience: 2, troops: 4 },
-      "🍄 The crown bursts with life, reinforcing fungi legions."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 4);
+      boostProtection(player, 1);
+      logEvent("🍄 The crown bursts with life, reinforcing fungi legions.");
+    },
   },
   {
     name: "🩸 Horn of Fury",
     type: "Crimson Horde",
     effect: "Once per advance, roll +2 attack.",
-    logic: makeLogic(
-      { troops: 6, energy: 1 },
-      "🩸 The horn’s blast rallies warriors into a frenzy."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 6);
+      rechargeEnergy(player, 1);
+      logEvent("🩸 The horn’s blast rallies warriors into a frenzy.");
+    },
   },
   {
     name: "🕯️ Chalice of Ash",
     type: "Devoured Faith",
     effect: "Drinking the ash restores zeal at a terrible cost.",
-    logic: makeLogic(
-      { troops: 3, happiness: -1, resilience: 1 },
-      "🕯️ The chalice burns but the faithful stand taller."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostTroops(player, 3);
+      boostHappiness(player, -1);
+      rechargeEnergy(player, 1);
+      logEvent("🕯️ The chalice burns but the faithful stand taller.");
+    },
   },
   {
     name: "🐉 Coin of Currents",
     type: "Jade Empire",
     effect: "Flows of trade bend toward the bearer.",
-    logic: makeLogic(
-      { gold: 45, energy: 1 },
-      "🐉 The coin redirects lucrative routes to you."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      const gain = gainPercentOfGold(player, 0.15);
+      rechargeEnergy(player, 1);
+      logEvent(`🐉 The coin redirects lucrative routes: +${gain} gold.`);
+    },
   },
   {
     name: "🌾 Heart of Spring",
     type: "Meadowfolk Union",
     effect: "Life erupts wherever the Heart beats.",
-    logic: makeLogic(
-      { happiness: 2, protection: 1 },
-      "🌾 Spring’s heartbeat heals the land."
-    ),
+    energyCost: RELIC_ENERGY_COST,
+    logic: ({ player, logEvent }) => {
+      boostHappiness(player, 2);
+      boostProtection(player, 1);
+      logEvent("🌾 Spring’s heartbeat heals the land.");
+    },
   },
 ];
 

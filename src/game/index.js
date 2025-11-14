@@ -11,6 +11,10 @@ import { startPlayerGame } from "./gameSetup.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
+const factionRelics = new Map();
+factions.forEach(f => {
+  factionRelics.set(f.name, f.startingRelic || null);
+});
 
 
 /////////////////////////////////////
@@ -25,17 +29,46 @@ function updateDerivedStats() {
 function renderHUD() {
   if (!player?.faction) return;
   const f = player.faction;
-  document.getElementById("factionDisplay").textContent = `${f.emoji} ${f.name}`;
+  const factionBanner = document.getElementById("factionDisplay");
+  factionBanner.textContent = `${f.emoji} ${f.name}`;
+  factionBanner.classList.remove("status-ally", "status-war", "status-neutral");
+  if (player.declaredWars.length) {
+    factionBanner.classList.add("status-war");
+  } else if (player.alliances.length) {
+    factionBanner.classList.add("status-ally");
+  } else {
+    factionBanner.classList.add("status-neutral");
+  }
   updateDerivedStats();
+  const leftStats = [
+    { label: "💖 Happiness", value: player.happiness },
+    { label: "🛡️ Protection", value: player.protection },
+    { label: "🪖 Troops", value: player.troops },
+    { label: "💰 Gold", value: player.gold },
+  ];
+  const rightStats = [
+    { label: "⚡ Energy", value: player.energy },
+    { label: "💪 Prowess", value: `${player.prowess}/10` },
+    { label: "🧱 Resilience", value: `${player.resilience}/10` },
+    { label: "📊 Economy", value: `${player.economy}/10` },
+  ];
+  const renderColumn = stats =>
+    stats
+      .map(
+        stat => `
+        <div class="stat-item">
+          <strong>${stat.label}</strong>
+          <span>${stat.value}</span>
+        </div>`
+      )
+      .join("");
   document.getElementById("factionList").innerHTML = `
-    <p>💖 Happiness: ${player.happiness}</p> <br>
-    <p>🛡️ Protection: ${player.protection}</p> <br>
-    <p>💰 Gold: ${player.gold}</p> <br>
-    <br>
-    <p>💪 Prowess: ${player.prowess}/10</p> <br>
-    <p>🧱 Resilience: ${player.resilience}/10</p> <br>
-    <p>📊 Economy: ${player.economy}/10</p> <br>
-    ⚡ Energy: ${player.energy}
+    <div class="stats-column">
+      ${renderColumn(leftStats)}
+    </div>
+    <div class="stats-column">
+      ${renderColumn(rightStats)}
+    </div>
   `;
   renderFactionAbilities();
 }
@@ -62,15 +95,20 @@ function renderFactionAbilities() {
   player.faction.abilities.forEach(ability => {
     const energyCost = ability?.cost?.energy ?? 0;
     const goldCost = ability?.cost?.gold ?? 0;
-    const parts = [];
-    if (energyCost) parts.push(`⚡${energyCost}`);
-    if (goldCost) parts.push(`💰${goldCost}`);
-    const label = parts.length ? `${ability.name} (${parts.join(" ")})` : ability.name;
-
     const btn = document.createElement("button");
-    btn.textContent = label;
     btn.title = ability.desc;
     btn.disabled = player.energy < energyCost || player.gold < goldCost;
+
+    const label = document.createElement("span");
+    label.textContent = ability.name;
+    const cost = document.createElement("small");
+    const costParts = [];
+    costParts.push(`⚡ ${energyCost}`);
+    costParts.push(`💰 ${goldCost}`);
+    cost.textContent = costParts.join(" • ");
+
+    btn.appendChild(label);
+    btn.appendChild(cost);
     btn.addEventListener("click", () => executeFactionAbility(ability));
     container.appendChild(btn);
   });
@@ -86,6 +124,8 @@ function executeFactionAbility(ability) {
         player,
         logEvent,
         updateDerivedStats,
+        acquireRelic: acquireRandomRelic,
+        acquireRelicFromFaction,
       });
     } else {
       logEvent(`${ability.name} crackles, but no power responds.`);
@@ -145,6 +185,54 @@ function showRelicMenu() {
   } else {
     logEvent(`${relicName} glows faintly, but nothing happens.`);
   }
+}
+
+function grantRelicToPlayer(relicName, sourceFactionName) {
+  if (!relicName) return false;
+  if (!player.relics) player.relics = [];
+  if (!player.relics.includes(relicName)) {
+    player.relics.push(relicName);
+  }
+  logEvent(`🔮 Acquired ${relicName} from ${sourceFactionName || "mysterious origins"}!`);
+  return true;
+}
+
+function acquireRelicFromFaction(faction, reason = "battle") {
+  if (!faction) return null;
+  const relicName = factionRelics.get(faction.name);
+  if (!relicName) return null;
+  factionRelics.set(faction.name, null);
+  grantRelicToPlayer(relicName, `${faction.name} (${reason})`);
+  return relicName;
+}
+
+function acquireRandomRelic(options = {}) {
+  const { reason = "delve", preferredFactions } = options;
+  let pool = [...factionRelics.entries()].filter(([, relic]) => Boolean(relic));
+  if (preferredFactions?.length) {
+    const preferred = pool.filter(([owner]) => preferredFactions.includes(owner));
+    if (preferred.length) pool = preferred;
+  }
+  if (!pool.length) return null;
+  const [ownerName, relicName] = pool[Math.floor(Math.random() * pool.length)];
+  factionRelics.set(ownerName, null);
+  grantRelicToPlayer(relicName, `${ownerName} (${reason})`);
+  return relicName;
+}
+
+function attemptRelicCapture(targetFaction) {
+  if (!targetFaction) return false;
+  if (Math.random() > 0.33) {
+    logEvent(`${targetFaction.name} protects their relic this time.`);
+    return false;
+  }
+  const relicName = factionRelics.get(targetFaction.name);
+  if (!relicName) {
+    logEvent(`${targetFaction.name} has no relic left to seize.`);
+    return false;
+  }
+  acquireRelicFromFaction(targetFaction, "battle victory");
+  return true;
 }
 
 /////////////////////////////////////
@@ -251,9 +339,10 @@ function renderDiplomacyMenu() {
     const relation = isAlly ? "🤝 Alliance" : atWar ? "⚔️ At War" : "😐 Neutral";
 
     const card = document.createElement("div");
-    card.className = "diplomacy-faction";
+    const relationClass = isAlly ? "status-ally" : atWar ? "status-war" : "status-neutral";
+    card.className = `diplomacy-faction ${relationClass}`;
     const header = document.createElement("div");
-    header.innerHTML = `<strong>${faction.emoji} ${faction.name}</strong> — ${relation}`;
+    header.innerHTML = `<strong class="${relationClass}">${faction.emoji} ${faction.name}</strong> — <span class="${relationClass}">${relation}</span>`;
     card.appendChild(header);
 
     const actions = document.createElement("div");
@@ -385,7 +474,10 @@ function handleAction(action) {
           player.troops += 10;
           player.protection = Math.max(0, player.protection + 1);
           player.happiness = Math.max(0, player.happiness - 1);
-          grantBattleSpoils(targetFaction, atWar);
+          const captured = attemptRelicCapture(targetFaction);
+          if (!captured) {
+            grantBattleSpoils(targetFaction, atWar);
+          }
         }
       );
       break;
@@ -506,6 +598,7 @@ function logEvent(msg) {
   const log = document.getElementById("event-log");
   const entry = document.createElement("p");
   entry.textContent = msg;
+  entry.classList.add("log-entry");
   log.appendChild(entry);
   log.scrollTop = log.scrollHeight;
 }
@@ -576,4 +669,5 @@ function startGame(faction) {
     handleAction,
     renderFactionAbilities,
   });
+  factionRelics.set(faction.name, null);
 }
