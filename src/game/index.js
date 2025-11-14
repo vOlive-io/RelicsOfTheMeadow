@@ -392,6 +392,7 @@ let player = {
   relics: [],
   buildings: [],
   declaredWars: [],
+  alliances: [],
 };
 // 🌅 Start game after DOM loads
 document.addEventListener("DOMContentLoaded", () => {
@@ -421,7 +422,7 @@ function setupActionButtons() {
   const actionArea = document.getElementById("actionButtons");
   actionArea.innerHTML = "";
   const actions = [
-    { id: "declare-war", label: "⚔️ Declare War" },
+    { id: "diplomacy", label: "🕊️ Diplomacy" },
     { id: "battle", label: "🛡️ Battle" },
     { id: "build", label: "🔨 Build" },
     { id: "trade", label: "📦 Trade" },
