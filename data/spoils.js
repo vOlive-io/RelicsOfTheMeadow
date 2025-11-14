@@ -11,6 +11,17 @@ export const battleSpoils = [
     price: 10,
     statBoosts: {},
   },
+  {
+    name: "Bag of jewels",
+    price: 25,
+    statBoosts: {},
+  },
+  {
+    name: "Chest of gold",
+    price: 50,
+    statBoosts: {},
+  },
+
 ];
 
 
