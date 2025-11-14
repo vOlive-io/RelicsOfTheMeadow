@@ -19,6 +19,7 @@ export function startPlayerGame({
   player.alliances = [];
   player.tradePostIncome = 0;
   player.economyBonus = 0;
+  player.relicsUsedThisTurn = new Set();
   updateDerivedStats();
   player.energy = calcStartingEnergy(player);
   renderHUD();
