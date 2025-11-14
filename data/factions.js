@@ -230,9 +230,35 @@ export const factions = [
     fullLore:
       "Hidden beneath layers of silk and intrigue, the Silken Dominion spins control through manipulation. Where others wage wars with armies, they fight with whispers, contracts, and poisoned promises. Their society is ruled by spider nobles, each vying for influence, spinning webs that bind lesser creatures into servitude or debt. To outsiders, they appear fragmented—yet every web leads back to the throne.\n\nIn gameplay, the Silken Dominion specialize in subterfuge. They drain enemies slowly, stealing resources and corrupting trade. They gain power from the spread of webs across the map, strangling rival economies in the name of the Spider Court. The more territory they weave, the more they entrap the world.",
     abilities: [
-      { name: "SpinWeb", desc: "Gain +1 trade good per webbed settlement you control.", cost: 0 },
-      { name: "Manipulate", desc: "Each rival faction adjacent to your web loses 1 economy this turn.", cost: 15 },
-      { name: "Entangle", desc: "If an enemy unit ends last turn inside your web, steal 1 of their imports.", cost: 0 },
+      {
+        name: "SpinWeb",
+        desc: "Extend webs to siphon more trade goods.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.gold += 25;
+          logEvent("🕷️ New webs glisten with coin. +25 gold.");
+        },
+      },
+      {
+        name: "Manipulate",
+        desc: "Pull strands to sap rival economies.",
+        cost: { energy: 2, gold: 15 },
+        logic: ({ player, logEvent }) => {
+          player.gold += 30;
+          player.happiness = Math.max(0, player.happiness - 1);
+          logEvent("🕷️ Manipulation succeeds, enriching you but unsettling allies.");
+        },
+      },
+      {
+        name: "Entangle",
+        desc: "Trap merchants and steal their wares.",
+        cost: { energy: 1, gold: 0 },
+        logic: ({ player, logEvent }) => {
+          player.imports += 1;
+          player.gold += 10;
+          logEvent("🕷️ Entangled traders surrender imports and coin.");
+        },
+      },
     ],
     startingRelic: "🕸️ Spinner’s Veil",
     defaultTraits: { prowess: "3/10", resilience: "6/10", economy: "6/10" },
