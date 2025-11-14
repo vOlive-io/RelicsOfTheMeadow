@@ -23,6 +23,7 @@ function updateDerivedStats() {
 }
 
 function renderHUD() {
+  if (!player?.faction) return;
   const f = player.faction;
   document.getElementById("factionDisplay").textContent = `${f.emoji} ${f.name}`;
   updateDerivedStats();
@@ -46,7 +47,13 @@ function renderFactionAbilities() {
   const container = document.getElementById("abilityButtons");
   if (!container) return;
   container.innerHTML = "<h3>Faction Abilities</h3>";
-  if (!player?.faction?.abilities?.length) {
+  if (!player?.faction) {
+    const notice = document.createElement("p");
+    notice.textContent = "Select a faction to unlock abilities.";
+    container.appendChild(notice);
+    return;
+  }
+  if (!player.faction.abilities?.length) {
     const notice = document.createElement("p");
     notice.textContent = "No special abilities unlocked.";
     container.appendChild(notice);

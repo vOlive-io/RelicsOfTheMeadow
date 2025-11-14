@@ -273,7 +273,7 @@ export const relics = [
     ),
   },
   {
-    name: "🕷️ Spinner’s Veil",
+    name: "🕸️ Spinner’s Veil",
     type: "Silken Dominion",
     effect: "Reduces diplomacy backlash by 20%; secret pacts form 1 turn faster.",
     logic: makeLogic(
