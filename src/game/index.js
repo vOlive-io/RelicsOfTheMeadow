@@ -337,6 +337,7 @@ function attemptRelicCapture(targetFaction) {
 }
 
 function attemptPlayerRelicTheft(attackerName, baseChance = 0.35) {
+  if (attackerName !== "The Devoured Faith") return false;
   const owned = (player.relics || []).filter(name => name && name !== "None");
   if (!owned.length) {
     logEvent(`${attackerName} found no relics worth stealing.`);
@@ -484,6 +485,7 @@ function initializeAIStates(playerFaction) {
     if (faction.name === playerFaction.name) return;
     aiStates.set(faction.name, createAIState(faction));
   });
+  seedAIRivals();
 }
 
 function createAIState(faction) {
@@ -502,7 +504,25 @@ function createAIState(faction) {
     resilience: parse(faction.defaultTraits?.resilience) + 5,
     aggression: aiAggressionTendencies[faction.name] ?? 0.3,
     diplomacy: aiDiplomacyTendencies[faction.name] ?? 0.3,
+    rivals: [],
   };
+}
+
+function seedAIRivals() {
+  const names = [...aiStates.keys()];
+  aiStates.forEach((state, name) => {
+    const others = names.filter(other => other !== name);
+    state.rivals = shuffleArray(others).slice(0, 2);
+  });
+}
+
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 function processAIFactionTurns() {
@@ -511,8 +531,13 @@ function processAIFactionTurns() {
 
 function executeAIFactionTurn(state) {
   const factionName = state.faction.name;
+  logEvent("------------");
   logEvent(`🤖 It is now ${state.faction.emoji} ${factionName}'s turn.`);
   resolvePendingPeaceFor(state);
+  if (state.faction.name === "The Meadowfolk Union") {
+    aiMeadowfolkTurn(state);
+    return;
+  }
   if (player.declaredWars.includes(factionName)) {
     aiWarSkirmish(state);
     return;
@@ -549,32 +574,78 @@ function resolvePendingPeaceFor(state) {
 }
 
 function aiWarSkirmish(state) {
-  const loss = Math.max(1, Math.round((state.troops || 30) / 12));
-  player.troops = Math.max(0, player.troops - loss);
-  const plunder = Math.min(player.gold, 10 + loss * 2);
-  player.gold -= plunder;
-  state.gold = (state.gold || 0) + plunder;
-  logEvent(
-    `${state.faction.emoji} ${state.faction.name} raids your lands, costing ${loss} troops and ${plunder} gold.`
-  );
-  if (Math.random() < 0.3) {
-    attemptPlayerRelicTheft(state.faction.name);
+  const name = state.faction.name;
+  switch (name) {
+    case "The Crimson Horde": {
+      const loss = Math.max(1, Math.round((state.troops || 30) / 12));
+      player.troops = Math.max(0, player.troops - loss);
+      const plunder = Math.min(player.gold, 10 + loss * 2);
+      player.gold -= plunder;
+      state.gold = (state.gold || 0) + plunder;
+      logEvent(
+        `${state.faction.emoji} ${name} raids your lands, costing ${loss} troops and ${plunder} gold.`
+      );
+      break;
+    }
+    case "The Devoured Faith":
+      player.happiness = Math.max(0, player.happiness - 1);
+      player.protection = Math.max(0, player.protection - 1);
+      attemptPlayerRelicTheft(name, 0.45);
+      logEvent(`${state.faction.emoji} ${name} spreads dread through your people.`);
+      break;
+    case "The Jade Empire":
+      if (player.gold > 0) {
+        const tithe = Math.min(player.gold, 25);
+        player.gold -= tithe;
+        state.gold = (state.gold || 0) + tithe;
+        logEvent(`🐉 ${name} levies a trade tithe, seizing ${tithe} gold.`);
+      }
+      break;
+    default:
+      player.protection = Math.max(0, player.protection - 1);
+      logEvent(`${state.faction.emoji} ${name} presses the war, wearing down your defenses.`);
+      break;
+  }
+  if (Math.random() < 0.2) {
+    queuePlayerPrompt({
+      type: "peace",
+      faction: name,
+      title: "Peace Negotiation",
+      message: `${state.faction.emoji} ${name} offers to end the war. Accept peace?`,
+      acceptLabel: "Accept Peace",
+      declineLabel: "Reject",
+      onAccept: () => {
+        player.declaredWars = player.declaredWars.filter(enemy => enemy !== name);
+        logEvent(`🕊️ ${name} agrees to a ceasefire.`);
+      },
+      onDecline: () => {
+        logEvent(`${name} vows to continue the fight.`);
+      },
+    });
   }
 }
 
 function aiRequestAlliance(state) {
   if (player.declaredWars.includes(state.faction.name)) return;
   logEvent(`${state.faction.emoji} ${state.faction.name} requests an alliance.`);
-  const acceptChance = 0.5 + (player.happiness > 5 ? 0.15 : 0);
-  if (Math.random() < acceptChance) {
-    if (!player.alliances.includes(state.faction.name)) {
-      player.alliances.push(state.faction.name);
-    }
-    player.declaredWars = player.declaredWars.filter(name => name !== state.faction.name);
-    logEvent(`🤝 You accept the alliance with ${state.faction.name}.`);
-  } else {
-    logEvent(`❌ You decline ${state.faction.name}'s offer, keeping them at arm's length.`);
-  }
+  queuePlayerPrompt({
+    type: "alliance",
+    faction: state.faction.name,
+    title: "Alliance Proposal",
+    message: `${state.faction.emoji} ${state.faction.name} extends an alliance. Do you accept?`,
+    acceptLabel: "Accept Alliance",
+    declineLabel: "Decline",
+    onAccept: () => {
+      if (!player.alliances.includes(state.faction.name)) {
+        player.alliances.push(state.faction.name);
+      }
+      player.declaredWars = player.declaredWars.filter(name => name !== state.faction.name);
+      logEvent(`🤝 You accept the alliance with ${state.faction.name}.`);
+    },
+    onDecline: () => {
+      logEvent(`❌ You decline ${state.faction.name}'s offer, keeping them at arm's length.`);
+    },
+  });
 }
 
 function aiDeclareWarOnPlayer(state) {
@@ -582,6 +653,32 @@ function aiDeclareWarOnPlayer(state) {
   player.alliances = player.alliances.filter(name => name !== state.faction.name);
   player.declaredWars.push(state.faction.name);
   logEvent(`⚔️ ${state.faction.name} declares war on you!`);
+}
+
+function aiMeadowfolkTurn(state) {
+  if (player.declaredWars.includes(state.faction.name)) {
+    queuePlayerPrompt({
+      type: "peace",
+      faction: state.faction.name,
+      title: "Peace Offering",
+      message: `${state.faction.emoji} ${state.faction.name} pleads for peace. Accept the truce?`,
+      acceptLabel: "Accept Peace",
+      declineLabel: "Continue War",
+      onAccept: () => {
+        player.declaredWars = player.declaredWars.filter(name => name !== state.faction.name);
+        logEvent(`🕊️ Peace restored with ${state.faction.name}.`);
+      },
+      onDecline: () => logEvent(`${state.faction.name} sadly withdraws their peace envoy.`),
+    });
+    return;
+  }
+  if (!player.alliances.includes(state.faction.name)) {
+    aiRequestAlliance(state);
+    return;
+  }
+  player.happiness += 1;
+  player.resilience += 1;
+  logEvent("🌾 Meadowfolk gifts bolster your morale and resilience.");
 }
 
 function aiUseAbility(state) {
@@ -608,6 +705,22 @@ function aiGatherResources(state) {
   state.gold = (state.gold || 0) + haul;
   state.troops = (state.troops || 0) + 2;
   logEvent(`${state.faction.emoji} ${state.faction.name} consolidates, earning ${haul} gold.`);
+  if (Math.random() < 0.35) {
+    aiAttackRival(state);
+  }
+}
+
+function aiAttackRival(state) {
+  if (!state.rivals || !state.rivals.length) return;
+  const opponentName = state.rivals[Math.floor(Math.random() * state.rivals.length)];
+  const opponentState = aiStates.get(opponentName);
+  if (!opponentState) return;
+  const swing = Math.max(2, Math.round((state.troops || 20) / 15));
+  opponentState.troops = Math.max(0, (opponentState.troops || 0) - swing);
+  state.troops = Math.max(0, (state.troops || 0) - Math.floor(swing / 2));
+  logEvent(
+    `${state.faction.emoji} ${state.faction.name} clashes with ${opponentState.faction.emoji} ${opponentState.faction.name} away from your borders.`
+  );
 }
 
 /////////////////////////////////////
@@ -1146,40 +1259,50 @@ function renderCommerceContent(container) {
   const exportsSection = document.createElement("section");
   exportsSection.className = "commerce-section";
   exportsSection.innerHTML = "<h3>Exports</h3>";
-  const goodsGrid = document.createElement("div");
-  goodsGrid.className = "inventory-goods";
-  const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
-  const tradeStrength = 1 + (player.tradePosts || 0) * 0.15;
-  getHarvestCatalog().forEach(good => {
-    const count = (player.harvestedGoods && player.harvestedGoods[good.key]) || 0;
-    const payout = Math.round(good.value * economyMultiplier * tradeStrength);
-    const card = document.createElement("div");
-    card.className = "inventory-good commerce-good";
-    card.innerHTML = `
-      <span>${good.emoji}</span>
-      <div>
-        <strong>${good.name}</strong>
-        <small>${count} crate(s)</small>
-        <small>≈ ${payout} gold</small>
-      </div>
-    `;
-    const button = document.createElement("button");
-    button.textContent = `Send Caravan (⚡${COMMERCE_TRADE_COST.energy})`;
-    const disabled =
-      player.tradePosts <= 0 ||
-      player.tradesRemaining <= 0 ||
-      count <= 0 ||
-      player.energy < COMMERCE_TRADE_COST.energy;
-    button.disabled = disabled;
-    button.addEventListener("click", () => performTrade(good.key, () => renderCommerceContent(container)));
-    card.appendChild(button);
-    goodsGrid.appendChild(card);
-  });
-  exportsSection.appendChild(goodsGrid);
+  const exportable = getHarvestCatalog().filter(
+    good => (player.harvestedGoods && player.harvestedGoods[good.key]) > 0
+  );
+  if (!exportable.length) {
+    const emptyNote = document.createElement("p");
+    emptyNote.className = "commerce-note";
+    emptyNote.textContent = "No goods are ready. Harvest fields to create stockpiles.";
+    exportsSection.appendChild(emptyNote);
+  } else {
+    const goodsGrid = document.createElement("div");
+    goodsGrid.className = "inventory-goods";
+    const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
+    const tradeStrength = 1 + (player.tradePosts || 0) * 0.15;
+    exportable.forEach(good => {
+      const count = (player.harvestedGoods && player.harvestedGoods[good.key]) || 0;
+      const payout = Math.round(good.value * economyMultiplier * tradeStrength);
+      const card = document.createElement("div");
+      card.className = "inventory-good commerce-good";
+      card.innerHTML = `
+        <span>${good.emoji}</span>
+        <div>
+          <strong>${good.name}</strong>
+          <small>${count} crate(s)</small>
+          <small>≈ ${payout} gold</small>
+        </div>
+      `;
+      const button = document.createElement("button");
+      button.textContent = `Send Caravan (⚡${COMMERCE_TRADE_COST.energy})`;
+      const disabled =
+        player.tradePosts <= 0 ||
+        player.tradesRemaining <= 0 ||
+        count <= 0 ||
+        player.energy < COMMERCE_TRADE_COST.energy;
+      button.disabled = disabled;
+      button.addEventListener("click", () => performTrade(good.key, () => renderCommerceContent(container)));
+      card.appendChild(button);
+      goodsGrid.appendChild(card);
+    });
+    exportsSection.appendChild(goodsGrid);
+  }
   if (player.tradePosts <= 0) {
     const note = document.createElement("p");
     note.className = "commerce-note";
-    note.textContent = "Build Trading Posts to unlock exports.";
+    note.textContent = "Build Trading Posts to unlock caravans.";
     exportsSection.appendChild(note);
   }
   container.appendChild(exportsSection);
@@ -1209,6 +1332,47 @@ function recalcHarvestedGoodsValue() {
 
 function getTotalHarvestedGoods() {
   return Object.values(player.harvestedGoods || {}).reduce((sum, count) => sum + count, 0);
+}
+
+function canPayActionCost(btn) {
+  const energyCost = Number(btn?.dataset?.costEnergy || 0);
+  const goldCost = Number(btn?.dataset?.costGold || 0);
+  if (energyCost && player.energy < energyCost) return false;
+  if (goldCost && player.gold < goldCost) return false;
+  return true;
+}
+
+function hasBuildableOptions() {
+  return buildings.some(b => {
+    const factionAllowed =
+      b.availableTo === "all" ||
+      (Array.isArray(b.availableTo) && b.availableTo.includes(player.faction.name));
+    if (!factionAllowed) return false;
+    const prereqMet = !b.preRec || b.preRec === "none" || player.buildings.includes(b.preRec);
+    if (!prereqMet) return false;
+    const builtCount = player.buildings.filter(item => item === b.name).length;
+    const cost = getScaledCost(b.cost, builtCount);
+    return player.energy >= cost.energy && player.gold >= cost.gold;
+  });
+}
+
+function canHarvestNow() {
+  const limit = player.harvestLimit || 0;
+  if (!limit || player.harvestsLeft <= 0) return false;
+  return getActiveHarvestGoods().length > 0;
+}
+
+function hasCommerceOpportunity() {
+  const hasImports = player.imports > 0;
+  const canTrade =
+    (player.tradePosts || 0) > 0 &&
+    (player.tradesRemaining || 0) > 0 &&
+    getTotalHarvestedGoods() > 0;
+  return hasImports || canTrade;
+}
+
+function hasBattleTargets() {
+  return player.troops > 0 && player.energy >= 3 && getBattleTargets().length > 0;
 }
 
 function canPayActionCost(btn) {
@@ -1279,7 +1443,7 @@ function updateActionIndicators() {
     const costText = `Cost: ${formatActionCost(btn)}`;
     const baseDetail = detailEl.dataset.defaultText || "";
     let detailText = baseDetail ? `${costText} • ${baseDetail}` : costText;
-    btn.disabled = false;
+    let canUse = canPayActionCost(btn);
 
     switch (actionId) {
       case "harvest":
@@ -1287,20 +1451,32 @@ function updateActionIndicators() {
           labelEl.textContent = `🌾 Harvest (${player.harvestsLeft}/${player.harvestLimit || 0})`;
         }
         detailText += ` • Goods stored: ${getTotalHarvestedGoods()}`;
-        if (player.harvestsLeft <= 0 || player.energy < HARVEST_ENERGY_COST) {
-          btn.disabled = true;
+        if (!canHarvestNow()) {
+          detailText += " • Build farms to unlock harvests.";
+          canUse = false;
         }
         break;
       case "battle":
         detailText += ` • Troops ready: ${player.troops}`;
+        if (!hasBattleTargets()) {
+          detailText += " • No eligible foes.";
+          canUse = false;
+        }
+        break;
+      case "build":
+        if (!hasBuildableOptions()) {
+          detailText += " • No affordable structures.";
+          canUse = false;
+        }
         break;
       case "commerce":
         if (labelEl) {
           labelEl.textContent = `🏛️ Commerce (${player.tradesRemaining}/${player.tradePosts || 0})`;
         }
         detailText += ` • Imports waiting: ${player.imports}`;
-        if (!player.tradePosts) {
-          detailText += " • Build a Trading Post to unlock exports.";
+        if (!hasCommerceOpportunity()) {
+          detailText += " • Nothing ready to trade or collect.";
+          canUse = false;
         }
         break;
       case "delve":
@@ -1308,8 +1484,8 @@ function updateActionIndicators() {
           labelEl.textContent = `🕳️ Delve (${availableDelveRelics.size} unclaimed)`;
         }
         if (!hasAvailableDelveRelics()) {
-          btn.disabled = true;
-          detailText += " • Vaults exhausted";
+          detailText += " • Vaults exhausted.";
+          canUse = false;
         }
         break;
       case "recruit":
@@ -1318,6 +1494,10 @@ function updateActionIndicators() {
       case "use-relic": {
         const ownedRelics = (player.relics || []).filter(name => name && name !== "None").length;
         detailText += ` • Relics owned: ${ownedRelics}`;
+        if (!ownedRelics) {
+          detailText += " • No relics available.";
+          canUse = false;
+        }
         break;
       }
       case "inventory":
@@ -1327,12 +1507,10 @@ function updateActionIndicators() {
         detailText = "Recover energy, refresh harvests and trade missions.";
         break;
       default:
-        if (labelEl?.dataset?.defaultText) {
-          labelEl.textContent = labelEl.dataset.defaultText;
-        }
         break;
     }
     detailEl.textContent = detailText;
+    btn.disabled = !canUse;
   });
 }
 
@@ -1492,6 +1670,52 @@ function logEvent(msg) {
   log.appendChild(entry);
   log.scrollTop = log.scrollHeight;
 }
+
+function queuePlayerPrompt(prompt) {
+  if (!Array.isArray(player.pendingPlayerPrompts)) {
+    player.pendingPlayerPrompts = [];
+  }
+  if (
+    prompt.type &&
+    prompt.faction &&
+    player.pendingPlayerPrompts.some(p => p.type === prompt.type && p.faction === prompt.faction)
+  ) {
+    return;
+  }
+  player.pendingPlayerPrompts.push(prompt);
+}
+
+function showNextPlayerPrompt() {
+  if (!Array.isArray(player.pendingPlayerPrompts) || !player.pendingPlayerPrompts.length) return;
+  const prompt = player.pendingPlayerPrompts[0];
+  openActionModal(prompt.title, body => {
+    const message = document.createElement("p");
+    message.textContent = prompt.message;
+    body.appendChild(message);
+    const controls = document.createElement("div");
+    controls.className = "commerce-section";
+    const acceptBtn = document.createElement("button");
+    acceptBtn.textContent = prompt.acceptLabel || "Accept";
+    acceptBtn.addEventListener("click", () => {
+      prompt.onAccept?.();
+      player.pendingPlayerPrompts.shift();
+      closeActionModal();
+      showNextPlayerPrompt();
+    });
+    const declineBtn = document.createElement("button");
+    declineBtn.textContent = prompt.declineLabel || "Decline";
+    declineBtn.addEventListener("click", () => {
+      prompt.onDecline?.();
+      player.pendingPlayerPrompts.shift();
+      closeActionModal();
+      showNextPlayerPrompt();
+    });
+    controls.appendChild(acceptBtn);
+    controls.appendChild(declineBtn);
+    body.appendChild(controls);
+  });
+}
+
 function endTurn() {
   const restored = calcStartingEnergy(player) + (player.energyBonus || 0);
   player.energy += restored;
@@ -1515,6 +1739,7 @@ function endTurn() {
   player.imports = Math.floor(Math.random() * 5) + 1;
   processAIFactionTurns();
   renderHUD();
+  showNextPlayerPrompt();
 }
 
 /////////////////////////////////////
@@ -1551,6 +1776,7 @@ let player = {
   battleBonus: 0,
   relicShield: 0,
   pendingPeaceOffers: [],
+  pendingPlayerPrompts: [],
   unlockedAbilityTags: new Set(),
 };
 document.addEventListener("DOMContentLoaded", () => {
@@ -1597,5 +1823,6 @@ function startGame(faction) {
   factionRelics.set(faction.name, null);
   player.pendingPeaceOffers = [];
   player.extraHarvestGoods = [];
+  player.pendingPlayerPrompts = [];
   initializeAIStates(faction);
 }
