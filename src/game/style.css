@@ -427,6 +427,35 @@ footer button:hover {
   font-size: 1.6em;
 }
 
+.commerce-info {
+  margin-bottom: 0.5em;
+}
+
+.commerce-section {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 0.8em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.commerce-good {
+  justify-content: space-between;
+}
+
+.commerce-good button {
+  margin-left: auto;
+  font-size: 0.75em;
+}
+
+.commerce-note {
+  font-size: 0.85em;
+  font-style: italic;
+  color: #555;
+}
+
 .cost-pill {
   display: block;
   font-size: 0.7em;

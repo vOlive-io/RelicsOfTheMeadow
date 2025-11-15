@@ -794,6 +794,79 @@ function showInventoryPanel() {
   });
 }
 
+function showCommerceModal() {
+  openActionModal("🏛️ Trade & Imports", body => {
+    renderCommerceContent(body);
+  });
+}
+
+function renderCommerceContent(container) {
+  container.innerHTML = "";
+  const summary = document.createElement("div");
+  summary.className = "inventory-info commerce-info";
+  summary.innerHTML = `
+    <div>🛒 Trade Posts: <strong>${player.tradePosts}</strong></div>
+    <div>🚚 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts}</strong></div>
+    <div>📦 Goods stored: <strong>${getTotalHarvestedGoods()}</strong></div>
+    <div>📥 Imports waiting: <strong>${player.imports}</strong></div>
+  `;
+  container.appendChild(summary);
+
+  const exportsSection = document.createElement("section");
+  exportsSection.className = "commerce-section";
+  exportsSection.innerHTML = "<h3>Exports</h3>";
+  const goodsGrid = document.createElement("div");
+  goodsGrid.className = "inventory-goods";
+  const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
+  const tradeStrength = 1 + player.tradePosts * 0.15;
+  harvestableGoods.forEach(good => {
+    const count = player.harvestedGoods[good.key] || 0;
+    const payout = Math.round(good.value * economyMultiplier * tradeStrength);
+    const card = document.createElement("div");
+    card.className = "inventory-good commerce-good";
+    card.innerHTML = `
+      <span>${good.emoji}</span>
+      <div>
+        <strong>${good.name}</strong>
+        <small>${count} crate(s)</small>
+        <small>≈ ${payout} gold</small>
+      </div>
+    `;
+    const button = document.createElement("button");
+    button.textContent = `Send Caravan (⚡${COMMERCE_TRADE_COST.energy})`;
+    const disabled =
+      player.tradePosts <= 0 ||
+      player.tradesRemaining <= 0 ||
+      count <= 0 ||
+      player.energy < COMMERCE_TRADE_COST.energy;
+    button.disabled = disabled;
+    button.addEventListener("click", () => performTrade(good.key, () => renderCommerceContent(container)));
+    card.appendChild(button);
+    goodsGrid.appendChild(card);
+  });
+  exportsSection.appendChild(goodsGrid);
+  if (player.tradePosts <= 0) {
+    const note = document.createElement("p");
+    note.className = "commerce-note";
+    note.textContent = "Build Trading Posts to unlock exports.";
+    exportsSection.appendChild(note);
+  }
+  container.appendChild(exportsSection);
+
+  const importSection = document.createElement("section");
+  importSection.className = "commerce-section";
+  importSection.innerHTML = "<h3>Imports</h3>";
+  const importInfo = document.createElement("p");
+  importInfo.textContent = "Collect shipments for gold and random bonuses.";
+  importSection.appendChild(importInfo);
+  const importBtn = document.createElement("button");
+  importBtn.textContent = player.imports > 0 ? `Collect Import (${player.imports} waiting)` : "No imports ready";
+  importBtn.disabled = player.imports <= 0;
+  importBtn.addEventListener("click", () => collectImportCrate(() => renderCommerceContent(container)));
+  importSection.appendChild(importBtn);
+  container.appendChild(importSection);
+}
+
 function recalcHarvestedGoodsValue() {
   const total = Object.entries(player.harvestedGoods || {}).reduce((sum, [key, count]) => {
     const good = harvestGoodsMap.get(key);
