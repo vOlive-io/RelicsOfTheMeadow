@@ -1371,47 +1371,6 @@ function hasCommerceOpportunity() {
   return hasImports || canTrade;
 }
 
-function hasBattleTargets() {
-  return player.troops > 0 && player.energy >= 3 && getBattleTargets().length > 0;
-}
-
-function canPayActionCost(btn) {
-  const energyCost = Number(btn?.dataset?.costEnergy || 0);
-  const goldCost = Number(btn?.dataset?.costGold || 0);
-  if (energyCost && player.energy < energyCost) return false;
-  if (goldCost && player.gold < goldCost) return false;
-  return true;
-}
-
-function hasBuildableOptions() {
-  return buildings.some(b => {
-    const factionAllowed =
-      b.availableTo === "all" ||
-      (Array.isArray(b.availableTo) && b.availableTo.includes(player.faction.name));
-    if (!factionAllowed) return false;
-    const prereqMet = !b.preRec || b.preRec === "none" || player.buildings.includes(b.preRec);
-    if (!prereqMet) return false;
-    const builtCount = player.buildings.filter(item => item === b.name).length;
-    const cost = getScaledCost(b.cost, builtCount);
-    return player.energy >= cost.energy && player.gold >= cost.gold;
-  });
-}
-
-function canHarvestNow() {
-  const limit = player.harvestLimit || 0;
-  if (!limit || player.harvestsLeft <= 0) return false;
-  return getActiveHarvestGoods().length > 0;
-}
-
-function hasCommerceOpportunity() {
-  const hasImports = player.imports > 0;
-  const canTrade =
-    (player.tradePosts || 0) > 0 &&
-    (player.tradesRemaining || 0) > 0 &&
-    getTotalHarvestedGoods() > 0;
-  return hasImports || canTrade;
-}
-
 function hasUsableRelic() {
   return (player.relics || []).some(name => name && name !== "None");
 }
