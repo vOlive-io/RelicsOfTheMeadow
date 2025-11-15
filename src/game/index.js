@@ -11,9 +11,11 @@ import { startPlayerGame } from "./gameSetup.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
+const availableDelveRelics = new Set(relicLibrary.map(relic => relic.name));
 const factionRelics = new Map();
 factions.forEach(f => {
   factionRelics.set(f.name, f.startingRelic || null);
+  markRelicClaimed(f.startingRelic);
 });
 
 const harvestableGoods = [
@@ -25,6 +27,8 @@ const harvestableGoods = [
 const harvestGoodsMap = new Map(harvestableGoods.map(g => [g.key, g]));
 const HARVEST_ENERGY_COST = 1;
 const RELIC_DELVE_COST = { energy: 5, gold: 250 };
+const RECRUIT_COST = { energy: 2, gold: 40 };
+const COMMERCE_TRADE_COST = { energy: 1, gold: 0 };
 const ALLIANCE_COST = { energy: 1, gold: 30 };
 const DECLARE_WAR_COST = { energy: 2, gold: 50 };
 const PEACE_COST_ENERGY = 2;
