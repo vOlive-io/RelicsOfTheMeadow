@@ -4,18 +4,26 @@ function clampFloor(value) {
   return Math.max(0, Math.floor(value));
 }
 
+function addGold(player, amount) {
+  if (!amount) return 0;
+  if (typeof player?.gainGold === "function") {
+    return player.gainGold(amount);
+  }
+  const next = Math.max(0, (player?.gold || 0) + amount);
+  player.gold = next;
+  return amount;
+}
+
 function gainPercentOfGold(player, percent) {
   const base = Math.max(0, player.gold);
   const gain = Math.max(1, Math.floor(base * percent));
-  player.gold += gain;
-  return gain;
+  return addGold(player, gain);
 }
 
 function gainPercentOfTrade(player, percent) {
   const base = Math.max(0, player.tradePostIncome || 0);
   const gain = Math.max(1, Math.floor(base * percent));
-  player.gold += gain;
-  return gain;
+  return addGold(player, gain);
 }
 
 function boostTroops(player, amount) {
@@ -175,8 +183,8 @@ export const relics = [
       const trade = Math.max(0, (player.tradePostIncome || 0) * 5);
       const base = Math.max(0, player.gold) + trade;
       const gain = Math.max(5, Math.floor(base * 0.1));
-      player.gold += gain;
-      logEvent(`🟨 Guild dues swell your income by ${gain} gold.`);
+      const added = addGold(player, gain);
+      logEvent(`🟨 Guild dues swell your income by ${added} gold.`);
     },
   },
   {

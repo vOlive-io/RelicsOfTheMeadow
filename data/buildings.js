@@ -95,19 +95,18 @@ const buildings = [
     name: "Vault",
     preRec: "none",
     type: "defense",
-    description: "Secure chambers to hide treasures and relics.",
+    description: "Secure vault that expands your gold stores by 250.",
     cost: { gold: 350, energy: 8 },
-    statBoosts: { protection: 2 },
+    goldStorageBonus: 250,
     availableTo: "all"
   },
   {
     name: "Super Vault",
     preRec: "Vault",
     type: "defense",
-    description: "A labyrinth of traps and steel for your prized relics.",
+    description: "Labyrinthine vault adds 1000 gold storage.",
     cost: { gold: 700, energy: 16 },
-    statBoosts: { protection: 4 },
-    relicShield: true,
+    goldStorageBonus: 1000,
     availableTo: "all"
   },
   {

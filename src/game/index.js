@@ -13,8 +13,10 @@ console.log("✅ Game JS loaded!");
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
 const availableDelveRelics = new Set(relicLibrary.map(relic => relic.name));
 const factionRelics = new Map();
+const factionLookup = new Map();
 factions.forEach(f => {
   factionRelics.set(f.name, f.startingRelic || null);
+  factionLookup.set(f.name, f);
 });
 
 const harvestableGoods = [
@@ -54,6 +56,37 @@ const ALLIANCE_COST = { energy: 1, gold: 30 };
 const DECLARE_WAR_COST = { energy: 2, gold: 50 };
 const PEACE_COST_ENERGY = 2;
 const aiStates = new Map();
+const BASE_GOLD_STORAGE = 500;
+const STARTING_VAULTS = 1;
+const CLEARING_COUNT = 25;
+const CLEARINGS_PER_FACTION = 4;
+const NEUTRAL_OWNER = "Wilderness";
+let mapClearings = [];
+const factionCapitals = new Map();
+
+function getGoldStorageCapacity(target = player) {
+  if (!target) return BASE_GOLD_STORAGE;
+  const base = Number.isFinite(target.goldStorageBase) ? target.goldStorageBase : BASE_GOLD_STORAGE;
+  const bonus = Number.isFinite(target.goldStorageBonus) ? target.goldStorageBonus : 0;
+  return base + bonus;
+}
+
+function enforceGoldCapacity(target = player) {
+  if (!target) return;
+  const cap = getGoldStorageCapacity(target);
+  if (target.gold > cap) {
+    target.gold = cap;
+  }
+}
+
+function grantGold(amount, target = player) {
+  if (!target || !amount) return 0;
+  const cap = getGoldStorageCapacity(target);
+  const previous = Math.max(0, target.gold || 0);
+  const next = Math.min(cap, previous + amount);
+  target.gold = next;
+  return next - previous;
+}
 
 function getActiveHarvestGoods() {
   const active = new Map();
@@ -94,6 +127,7 @@ function updateDerivedStats() {
 
 function renderHUD() {
   if (!player?.faction) return;
+  enforceGoldCapacity();
   const f = player.faction;
   const factionBanner = document.getElementById("factionDisplay");
   factionBanner.textContent = `${f.emoji} ${f.name}`;
@@ -106,11 +140,12 @@ function renderHUD() {
     factionBanner.classList.add("status-neutral");
   }
   updateDerivedStats();
+  const goldCap = getGoldStorageCapacity();
   const leftStats = [
     { label: "💖 Happiness", value: player.happiness },
     { label: "🛡️ Protection", value: player.protection },
     { label: "🪖 Troops", value: player.troops },
-    { label: "💰 Gold", value: player.gold },
+    { label: "💰 Gold", value: `${player.gold}/${goldCap}` },
     { label: "⚡ Energy", value: player.energy, extraClass: "stat-energy" },
   ];
   const rightStats = [
@@ -143,6 +178,103 @@ function renderHUD() {
   `;
   renderFactionAbilities();
   updateActionIndicators();
+  renderMap();
+}
+
+/////////////////////////////////////
+///        MAP & CLEARINGS        ///
+/////////////////////////////////////
+function initializeMapState(playerFaction) {
+  mapClearings = Array.from({ length: CLEARING_COUNT }, (_, idx) => ({
+    id: idx + 1,
+    owner: NEUTRAL_OWNER,
+    structures: [],
+    capitalOf: null,
+  }));
+  factionCapitals.clear();
+  const factionOrder = [playerFaction, ...factions.filter(f => f.name !== playerFaction.name)];
+  const positions = shuffleArray(
+    Array.from({ length: CLEARING_COUNT }, (_, idx) => idx)
+  );
+  factionOrder.forEach(faction => {
+    const assignments = positions.splice(0, CLEARINGS_PER_FACTION);
+    assignments.forEach((pos, index) => {
+      const clearing = mapClearings[pos];
+      clearing.owner = faction.name;
+      clearing.structures = [];
+      clearing.capitalOf = null;
+      if (index === 0) {
+        clearing.capitalOf = faction.name;
+        clearing.structures.push("Capital Seat");
+        factionCapitals.set(faction.name, clearing.id);
+      }
+    });
+  });
+  renderMap();
+}
+
+function getOwnerColor(ownerName) {
+  if (ownerName === player?.faction?.name) return "#5ba571";
+  if (ownerName === NEUTRAL_OWNER) return "#6b705c";
+  return factionLookup.get(ownerName)?.palette?.[0] || "#6b705c";
+}
+
+function formatOwnerLabel(ownerName) {
+  if (!ownerName) return "—";
+  if (ownerName === player?.faction?.name) return `${player.faction.emoji} You`;
+  if (ownerName === NEUTRAL_OWNER) return "🌲 Wilds";
+  const faction = factionLookup.get(ownerName);
+  return faction ? `${faction.emoji} ${faction.name}` : ownerName;
+}
+
+function renderMap() {
+  const grid = document.getElementById("clearingGrid");
+  if (!grid) return;
+  if (!mapClearings.length) {
+    grid.innerHTML = "<p class=\"clearing-empty\">No territories mapped yet.</p>";
+    return;
+  }
+  grid.innerHTML = "";
+  const ordered = [...mapClearings].sort((a, b) => a.id - b.id);
+  ordered.forEach(clearing => {
+    const tile = document.createElement("div");
+    const classes = ["clearing-tile"];
+    if (clearing.owner === player?.faction?.name) classes.push("clearing-player");
+    if (clearing.capitalOf) classes.push("clearing-capital");
+    tile.className = classes.join(" ");
+    tile.style.borderColor = getOwnerColor(clearing.owner);
+    const structures = clearing.structures || [];
+    let structureText = "—";
+    if (structures.length) {
+      const shown = structures.slice(-2);
+      structureText = shown.join(", ");
+      if (structures.length > shown.length) {
+        structureText += ` +${structures.length - shown.length}`;
+      }
+    }
+    tile.innerHTML = `
+      <div class="clearing-id">#${clearing.id}</div>
+      <div class="clearing-owner">${formatOwnerLabel(clearing.owner)}</div>
+      <div class="clearing-structures">${structureText}</div>
+    `;
+    grid.appendChild(tile);
+  });
+}
+
+function placeStructureOnMap(ownerName, structureName) {
+  if (!ownerName || !structureName || !mapClearings.length) return;
+  const owned = mapClearings.filter(c => c.owner === ownerName);
+  if (!owned.length) return;
+  owned.sort((a, b) => {
+    const aCap = a.capitalOf === ownerName ? 0 : 1;
+    const bCap = b.capitalOf === ownerName ? 0 : 1;
+    if (aCap !== bCap) return aCap - bCap;
+    return (a.structures?.length || 0) - (b.structures?.length || 0);
+  });
+  const target = owned[0];
+  if (!target.structures) target.structures = [];
+  target.structures.push(structureName);
+  renderMap();
 }
 
 /////////////////////////////////////
@@ -540,15 +672,19 @@ function createAIState(faction) {
     }
     return 3;
   };
+  const troopBase = parse(faction.defaultTraits?.prowess) * 10 + 40;
   return {
     faction,
     gold: parse(faction.defaultTraits?.economy) * 20 + 100,
-    troops: parse(faction.defaultTraits?.prowess) * 10 + 40,
+    troops: troopBase,
+    troopBase,
     resilience: parse(faction.defaultTraits?.resilience) + 5,
     aggression: aiAggressionTendencies[faction.name] ?? 0.3,
     diplomacy: aiDiplomacyTendencies[faction.name] ?? 0.3,
     rivals: [],
     energy: 6,
+    eliminated: false,
+    returnTimer: 0,
   };
 }
 
@@ -576,6 +712,15 @@ function processAIFactionTurns() {
 function executeAIFactionTurn(state) {
   const factionName = state.faction.name;
   logEvent(`⋘ ${state.faction.emoji} ${factionName} Turn ⋙`);
+  if (state.eliminated) {
+    state.returnTimer = Math.max(0, (state.returnTimer || 0) - 1);
+    if (state.returnTimer <= 0) {
+      respawnFaction(state);
+    } else {
+      logEvent(`${state.faction.emoji} ${factionName} regroups (${state.returnTimer} turns left).`);
+    }
+    return;
+  }
   resolvePendingPeaceFor(state);
   state.energy = Math.min(12, (state.energy || 0) + 4);
   if (state.faction.name === "The Meadowfolk Union") {
@@ -801,8 +946,10 @@ function grantBattleSpoils(targetFaction, atWar) {
   const gains = [];
   const goldGain = (spoils.price || 0) * multiplier;
   if (goldGain) {
-    player.gold += goldGain;
-    gains.push(`${goldGain} gold`);
+    const addedGold = grantGold(goldGain);
+    if (addedGold > 0) {
+      gains.push(`${addedGold} gold`);
+    }
   }
   const boosts = spoils.statBoosts || {};
   Object.keys(boosts).forEach(stat => {
@@ -816,10 +963,75 @@ function grantBattleSpoils(targetFaction, atWar) {
   logEvent(`🏴‍☠️ Claimed ${spoils.name}${warNote} against ${targetFaction.name}. ${rewardText}.`);
 }
 
-function getBattleTargets() {
-  return factions.filter(
-    f => f.name !== player.faction.name && !player.alliances.includes(f.name)
+function applyBattleDamageToFaction(targetFaction, atWar) {
+  const state = aiStates.get(targetFaction.name);
+  if (!state) return;
+  const prowess = Math.max(3, Math.floor(player.prowess || 0));
+  const bonus = (player.battleBonus || 0) + (atWar ? 5 : 2);
+  const damage = prowess + bonus;
+  state.troops = Math.max(0, (state.troops || 0) - damage);
+  logEvent(
+    `${targetFaction.emoji || ""} ${targetFaction.name} loses ${damage} warriors (${state.troops} remain).`
   );
+  if (state.troops <= 0 && !state.eliminated) {
+    eliminateFactionFromMap(state);
+  }
+}
+
+function eliminateFactionFromMap(state) {
+  state.eliminated = true;
+  state.returnTimer = 3;
+  const factionName = state.faction.name;
+  const captured = [];
+  mapClearings.forEach(clearing => {
+    if (clearing.owner === factionName) {
+      clearing.owner = player.faction.name;
+      clearing.capitalOf = null;
+      clearing.structures = ["Captured Holdfast"];
+      captured.push(clearing.id);
+    }
+  });
+  factionCapitals.delete(factionName);
+  renderMap();
+  logEvent(
+    `🏰 ${state.faction.emoji} ${factionName}'s capital falls! Their holdings become yours for now.`
+  );
+}
+
+function respawnFaction(state) {
+  const factionName = state.faction.name;
+  const playerCapitalId = factionCapitals.get(player.faction.name);
+  const playerTerritories = mapClearings.filter(
+    clearing => clearing.owner === player.faction.name && clearing.id !== playerCapitalId
+  );
+  let target =
+    playerTerritories.length > 0
+      ? playerTerritories[Math.floor(Math.random() * playerTerritories.length)]
+      : mapClearings.find(clearing => clearing.owner === NEUTRAL_OWNER);
+  if (!target) {
+    logEvent(`${factionName} seeks a new foothold but finds none this year.`);
+    state.returnTimer = 1;
+    return;
+  }
+  target.owner = factionName;
+  target.capitalOf = factionName;
+  target.structures = ["Hidden Capital"];
+  factionCapitals.set(factionName, target.id);
+  state.eliminated = false;
+  state.returnTimer = 0;
+  state.troops = Math.max(40, state.troopBase || 60);
+  logEvent(`${state.faction.emoji} ${factionName} resurfaces in clearing #${target.id}!`);
+  renderMap();
+}
+
+function getBattleTargets() {
+  return factions.filter(f => {
+    if (f.name === player.faction.name) return false;
+    if (player.alliances.includes(f.name)) return false;
+    const state = aiStates.get(f.name);
+    if (state?.eliminated) return false;
+    return true;
+  });
 }
 
 function showBattleModal() {
@@ -880,6 +1092,7 @@ function executeBattle(targetFaction) {
       if (!captured) {
         grantBattleSpoils(targetFaction, atWar);
       }
+      applyBattleDamageToFaction(targetFaction, atWar);
     }
   );
 }
@@ -1144,6 +1357,9 @@ function handleAction(action) {
     case "commerce":
       showCommerceModal();
       break;
+    case "collect-import":
+      collectImportCrate();
+      break;
     case "recruit":
       recruitTroops();
       break;
@@ -1233,9 +1449,10 @@ function performTrade(selectedKey, onSuccess) {
       );
       player.tradesRemaining = Math.max(0, player.tradesRemaining - 1);
       recalcHarvestedGoodsValue();
-      player.gold += goldEarned;
+      const addedGold = grantGold(goldEarned);
+      const capNote = addedGold < goldEarned ? " (vaults full)" : "";
       logEvent(
-        `💹 Traders return with ${goldEarned} gold (Economy ×${economyMultiplier.toFixed(
+        `💹 Traders return with ${addedGold} gold${capNote} (Economy ×${economyMultiplier.toFixed(
           2
         )}, Posts ×${tradeStrength.toFixed(2)}).`
       );
@@ -1261,14 +1478,15 @@ function collectImportCrate(onSuccess) {
   spendEnergyAndGold(
     0,
     0,
-    `📥 Collected imported ${importItem.name}! Gained ${importItem.price} gold${bonusMsg}!`,
+    `📥 Collected imported ${importItem.name}!`,
     () => {
       player.imports = Math.max(0, player.imports - 1);
       if (boosts.happiness) player.happiness += boosts.happiness;
       if (boosts.protection) player.protection += boosts.protection;
       if (boosts.troops) player.troops += boosts.troops;
       if (boosts.energy) player.energy += boosts.energy;
-      player.gold += importItem.price;
+      const addedGold = grantGold(importItem.price);
+      logEvent(`💰 Shipment yielded ${addedGold} gold${bonusMsg}.`);
       if (typeof onSuccess === "function") onSuccess();
       renderHUD();
     }
@@ -1317,6 +1535,7 @@ function showInventoryPanel() {
       <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
       <div>📦 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts || 0}</strong></div>
       <div>🛒 Trade Posts: <strong>${player.tradePosts || 0}</strong></div>
+      <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
     `;
     const goodsGrid = document.createElement("div");
     goodsGrid.className = "inventory-goods";
@@ -1352,6 +1571,10 @@ function renderCommerceContent(container) {
     <div>📥 Imports waiting: <strong>${player.imports}</strong></div>
   `;
   container.appendChild(summary);
+  const quickTip = document.createElement("p");
+  quickTip.className = "commerce-note";
+  quickTip.textContent = "Tip: use 📥 Collect Imports in the main action list for quick crates.";
+  container.appendChild(quickTip);
   if (player.faction && factionHarvestGoods[player.faction.name]) {
     const note = document.createElement("p");
     note.className = "commerce-note";
@@ -1556,6 +1779,13 @@ function updateActionIndicators() {
           canUse = false;
         }
         break;
+      case "collect-import":
+        detailText += ` • Imports waiting: ${player.imports}`;
+        if (player.imports <= 0) {
+          detailText += " • No shipments to open.";
+          canUse = false;
+        }
+        break;
       case "delve":
         if (labelEl) {
           labelEl.textContent = `🕳️ Delve (${availableDelveRelics.size} unclaimed)`;
@@ -1592,9 +1822,11 @@ function updateActionIndicators() {
 }
 
 const BUILD_COST_STEP = 0.2;
+const BUILD_COST_ACCELERATION = 0.3;
 
 function getScaledCost(cost, builtCount) {
-  const multiplier = 1 + builtCount * BUILD_COST_STEP;
+  const ramp = Math.max(0, builtCount - 1);
+  const multiplier = 1 + builtCount * BUILD_COST_STEP + ramp * BUILD_COST_ACCELERATION;
   return {
     gold: Math.round(cost.gold * multiplier),
     energy: cost.energy,
@@ -1660,6 +1892,90 @@ function buildMenu() {
   });
 }
 
+function applyBuildingEffects(selected, { announce = true } = {}) {
+  if (!selected) return;
+  const boosts = selected.statBoosts || {};
+  if (boosts.happiness) player.happiness += boosts.happiness;
+  if (boosts.protection) player.protection += boosts.protection;
+  if (boosts.gold) grantGold(boosts.gold);
+  if (selected.tradeIncome) {
+    player.tradePostIncome = (player.tradePostIncome || 0) + selected.tradeIncome;
+    if (announce) {
+      logEvent(`📦 Trading Posts now yield +${selected.tradeIncome} gold per turn.`);
+    }
+  }
+  if (selected.economyBonus) {
+    player.economyBonus = (player.economyBonus || 0) + selected.economyBonus;
+    if (announce) {
+      logEvent("💹 Your economy strengthens thanks to the new trade hub.");
+    }
+  }
+  if (selected.tradeBoost) {
+    player.tradePosts = (player.tradePosts || 0) + 1;
+    player.tradesRemaining = Math.min(player.tradePosts, (player.tradesRemaining || 0) + 1);
+    if (announce) {
+      logEvent(`🛒 Trade missions per turn increased to ${player.tradePosts}.`);
+    }
+  }
+  if (selected.harvestBonus) {
+    player.harvestLimit = (player.harvestLimit || 0) + selected.harvestBonus;
+    player.harvestsLeft = Math.min(player.harvestLimit, (player.harvestsLeft || 0) + selected.harvestBonus);
+    if (announce) {
+      logEvent(`🌾 Harvest opportunities increased to ${player.harvestLimit} per turn.`);
+    }
+  }
+  if (selected.energyBonus) {
+    player.energyBonus = (player.energyBonus || 0) + selected.energyBonus;
+    if (announce) {
+      logEvent("⚡ Spiritual engines hum louder. Energy recovery improves.");
+    }
+  }
+  if (selected.recruitBonus) {
+    player.recruitBonus = (player.recruitBonus || 0) + selected.recruitBonus;
+  }
+  if (selected.battleBonus) {
+    player.battleBonus = (player.battleBonus || 0) + selected.battleBonus;
+  }
+  if (selected.extraGoods?.length) {
+    registerHarvestGoods(selected.extraGoods);
+    if (!player.extraHarvestGoods) player.extraHarvestGoods = [];
+    player.extraHarvestGoods.push(...selected.extraGoods);
+    if (announce) {
+      logEvent("🧺 New specialty goods can now be harvested.");
+    }
+  }
+  if (selected.unlocksAbilityTag) {
+    if (!player.unlockedAbilityTags) player.unlockedAbilityTags = new Set();
+    player.unlockedAbilityTags.add(selected.unlocksAbilityTag);
+  }
+  if (selected.relicShield) {
+    player.relicShield = (player.relicShield || 0) + 1;
+  }
+  if (selected.goldStorageBonus) {
+    player.goldStorageBonus = (player.goldStorageBonus || 0) + selected.goldStorageBonus;
+    enforceGoldCapacity();
+    if (announce) {
+      logEvent(`🏦 Gold storage expands by ${selected.goldStorageBonus}.`);
+    }
+  }
+}
+
+function seedStartingVault() {
+  if (!player) return;
+  if (!Array.isArray(player.buildings)) player.buildings = [];
+  const vaultBlueprint = buildings.find(b => b.name === "Vault");
+  if (!vaultBlueprint) return;
+  const existing = player.buildings.filter(name => name === vaultBlueprint.name).length;
+  if (existing >= STARTING_VAULTS) return;
+  const needed = STARTING_VAULTS - existing;
+  for (let i = 0; i < needed; i += 1) {
+    player.buildings.push(vaultBlueprint.name);
+    applyBuildingEffects(vaultBlueprint, { announce: false });
+    placeStructureOnMap(player.faction?.name, vaultBlueprint.name);
+  }
+  logEvent("🏦 Your treasury begins with a fortified Vault (+250 storage).");
+}
+
 function purchaseBuilding(selected, scaledCost) {
   const builtCount = player.buildings.filter(item => item === selected.name).length;
   const cost = scaledCost || getScaledCost(selected.cost, builtCount);
@@ -1669,53 +1985,8 @@ function purchaseBuilding(selected, scaledCost) {
     `🏗️ Built ${selected.name}!`,
     () => {
       player.buildings.push(selected.name);
-      if (selected.statBoosts?.happiness) player.happiness += selected.statBoosts.happiness;
-      if (selected.statBoosts?.protection) player.protection += selected.statBoosts.protection;
-      if (selected.statBoosts?.gold) player.gold += selected.statBoosts.gold;
-      if (selected.tradeIncome) {
-        player.tradePostIncome = (player.tradePostIncome || 0) + selected.tradeIncome;
-        logEvent(`📦 Trading Posts now yield +${selected.tradeIncome} gold per turn.`);
-      }
-      if (selected.economyBonus) {
-        player.economyBonus = (player.economyBonus || 0) + selected.economyBonus;
-        logEvent("💹 Your economy strengthens thanks to the new trade hub.");
-      }
-      if (selected.tradeBoost) {
-        player.tradePosts = (player.tradePosts || 0) + 1;
-        player.tradesRemaining = Math.min(
-          player.tradePosts,
-          (player.tradesRemaining || 0) + 1
-        );
-        logEvent(`🛒 Trade missions per turn increased to ${player.tradePosts}.`);
-      }
-      if (selected.harvestBonus) {
-        player.harvestLimit = (player.harvestLimit || 0) + selected.harvestBonus;
-        player.harvestsLeft = Math.min(player.harvestLimit, (player.harvestsLeft || 0) + selected.harvestBonus);
-        logEvent(`🌾 Harvest opportunities increased to ${player.harvestLimit} per turn.`);
-      }
-      if (selected.energyBonus) {
-        player.energyBonus = (player.energyBonus || 0) + selected.energyBonus;
-        logEvent("⚡ Spiritual engines hum louder. Energy recovery improves.");
-      }
-      if (selected.recruitBonus) {
-        player.recruitBonus = (player.recruitBonus || 0) + selected.recruitBonus;
-      }
-      if (selected.battleBonus) {
-        player.battleBonus = (player.battleBonus || 0) + selected.battleBonus;
-      }
-      if (selected.extraGoods?.length) {
-        registerHarvestGoods(selected.extraGoods);
-        if (!player.extraHarvestGoods) player.extraHarvestGoods = [];
-        player.extraHarvestGoods.push(...selected.extraGoods);
-        logEvent("🧺 New specialty goods can now be harvested.");
-      }
-      if (selected.unlocksAbilityTag) {
-        if (!player.unlockedAbilityTags) player.unlockedAbilityTags = new Set();
-        player.unlockedAbilityTags.add(selected.unlocksAbilityTag);
-      }
-      if (selected.relicShield) {
-        player.relicShield = (player.relicShield || 0) + 1;
-      }
+      applyBuildingEffects(selected);
+      placeStructureOnMap(player.faction?.name, selected.name);
       renderHUD();
     }
   );
@@ -1798,8 +2069,9 @@ function endTurn() {
   player.energy += restored;
   logEvent(`🌙 Turn ended. Recovered ${restored} energy (total ${player.energy}).`);
   if (player.tradePostIncome) {
-    player.gold += player.tradePostIncome;
-    logEvent(`📦 Trading Posts delivered ${player.tradePostIncome} gold.`);
+    const income = grantGold(player.tradePostIncome);
+    const overflowNote = income < player.tradePostIncome ? " Your vaults overflow." : "";
+    logEvent(`📦 Trading Posts delivered ${income} gold.${overflowNote}`);
   }
   if (player.relicsUsedThisTurn?.clear) {
     player.relicsUsedThisTurn.clear();
@@ -1826,6 +2098,8 @@ let player = {
   faction: null,
   energy: 0,
   gold: 0,
+  goldStorageBase: BASE_GOLD_STORAGE,
+  goldStorageBonus: 0,
   troops: 0,
   happiness: 0,
   protection: 0,
@@ -1855,6 +2129,9 @@ let player = {
   pendingPeaceOffers: [],
   pendingPlayerPrompts: [],
   unlockedAbilityTags: new Set(),
+  gainGold(amount) {
+    return grantGold(amount, this);
+  },
 };
 document.addEventListener("DOMContentLoaded", () => {
   diplomacyModal = document.getElementById("diplomacyModal");
@@ -1896,6 +2173,12 @@ function startGame(faction) {
     handleAction,
     renderFactionAbilities,
   });
+  initializeMapState(faction);
+  player.goldStorageBase = BASE_GOLD_STORAGE;
+  player.goldStorageBonus = 0;
+  enforceGoldCapacity();
+  seedStartingVault();
+  renderHUD();
   markRelicClaimed(faction.startingRelic);
   factionRelics.set(faction.name, null);
   player.pendingPeaceOffers = [];

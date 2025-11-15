@@ -51,6 +51,7 @@ export function setupActionButtons(handleAction) {
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
     { id: "commerce", label: "🏛️ Commerce", detail: "Trade goods and collect imports.", costLabel: "Trades cost ⚡1 each" },
+    { id: "collect-import", label: "📥 Collect Imports", detail: "Open one shipment instantly.", cost: { energy: 0, gold: 0 } },
     { id: "recruit", label: "🪖 Recruit", detail: "Call fresh troops.", cost: { energy: 2, gold: 40 } },
     { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic.", cost: { energy: 5, gold: 250 } },
     { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic.", costLabel: "Varies per relic" },

@@ -76,6 +76,61 @@ main {
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.clearing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75em;
+}
+
+.clearing-tile {
+  border: 2px solid var(--earth-brown);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.5em;
+  min-height: 90px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.clearing-player {
+  border-color: var(--moss-green);
+  background: rgba(137, 201, 127, 0.2);
+}
+
+.clearing-capital {
+  box-shadow: 0 0 0 2px rgba(201, 127, 127, 0.25), inset 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+.clearing-id {
+  font-weight: bold;
+  font-size: 0.85em;
+  color: #4b3927;
+}
+
+.clearing-owner {
+  font-size: 0.85em;
+}
+
+.clearing-structures {
+  font-size: 0.75em;
+  color: #5f4f3f;
+}
+
+.clearing-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-style: italic;
+  color: #5f4f3f;
+}
+
 /* 🧿 FACTION + STATS INFO */
 #factionList {
   display: grid;

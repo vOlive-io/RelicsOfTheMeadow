@@ -1,5 +1,16 @@
 // Faction Data for Relics of the Meadow 🌿
 
+function gainGold(player, amount) {
+  if (!amount) return 0;
+  if (typeof player?.gainGold === "function") {
+    return player.gainGold(amount);
+  }
+  const current = Math.max(0, player?.gold || 0);
+  const next = current + amount;
+  player.gold = next;
+  return amount;
+}
+
 export const factions = [
 // === The Crimson Horde ===
   {
@@ -15,8 +26,8 @@ export const factions = [
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
           const gain = Math.max(20, Math.floor(player.troops * 0.5));
-          player.gold += gain;
-          logEvent(`🐺 Horde forces loot ${gain} gold from the fallen.`);
+          const added = gainGold(player, gain);
+          logEvent(`🐺 Horde forces loot ${added} gold from the fallen.`);
         },
       },
       {
@@ -92,9 +103,9 @@ export const factions = [
         desc: "Burn offerings to empower your zealots.",
         cost: { energy: 1, gold: 25 },
         logic: ({ player, logEvent }) => {
-          player.gold += 40;
+          const tithe = gainGold(player, 40);
           player.happiness = Math.max(0, player.happiness - 1);
-          logEvent("🕯️ Sanctification complete. Wealth flows from fearful believers.");
+          logEvent(`🕯️ Sanctification complete. +${tithe} gold flows from fearful believers.`);
         },
       },
       {
@@ -147,8 +158,8 @@ export const factions = [
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
           const gain = 30 + player.alliances.length * 10;
-          player.gold += gain;
-          logEvent(`🐉 Imperial tax collectors return with ${gain} gold.`);
+          const tithe = gainGold(player, gain);
+          logEvent(`🐉 Imperial tax collectors return with ${tithe} gold.`);
         },
       },
       {
@@ -205,8 +216,8 @@ export const factions = [
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
           const gain = 35;
-          player.gold += gain;
-          logEvent(`🌾 Cooperation yields an extra ${gain} gold in shared economy.`);
+          const added = gainGold(player, gain);
+          logEvent(`🌾 Cooperation yields an extra ${added} gold in shared economy.`);
         },
       },
       {
@@ -245,31 +256,45 @@ export const factions = [
     abilities: [
       {
         name: "SpinWeb",
-        desc: "Extend webs to siphon more trade goods.",
+        desc: "Extend webs to skim markets and free up caravans.",
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
-          player.gold += 25;
-          logEvent("🕷️ New webs glisten with coin. +25 gold.");
+          const base = 20 + (player.tradePosts || 0) * 5;
+          const gain = gainGold(player, base);
+          if ((player.tradePosts || 0) > 0) {
+            player.tradesRemaining = Math.min(
+              player.tradePosts,
+              Math.max(0, (player.tradesRemaining || 0) + 1)
+            );
+          }
+          logEvent(`🕷️ New webs glisten with coin. +${gain} gold and a caravan untangles.`);
         },
       },
       {
-        name: "Manipulate",
-        desc: "Pull strands to sap rival economies.",
-        cost: { energy: 2, gold: 15 },
-        logic: ({ player, logEvent }) => {
-          player.gold += 30;
-          player.happiness = Math.max(0, player.happiness - 1);
-          logEvent("🕷️ Manipulation succeeds, enriching you but unsettling allies.");
+        name: "Relic Weave",
+        desc: "Call on Spinster halls to weave a relic of silk and secrets.",
+        cost: { energy: 3, gold: 60 },
+        logic: ({ player, logEvent, acquireRelic }) => {
+          if (!player.unlockedAbilityTags?.has?.("spinster")) {
+            logEvent("🕷️ You need a Spinster's Hut or Mansion to weave relics.");
+            return;
+          }
+          const relic = acquireRelic?.({ reason: "Silken Relic Weave" });
+          if (relic) {
+            logEvent(`🕷️ Spinner queens unveil the ${relic}!`);
+          } else {
+            logEvent("🕷️ The looms snap—no relic emerges this time.");
+          }
         },
       },
       {
         name: "Entangle",
-        desc: "Trap merchants and steal their wares.",
+        desc: "Trap merchants to steal their wares.",
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
           player.imports += 1;
-          player.gold += 10;
-          logEvent("🕷️ Entangled traders surrender imports and coin.");
+          const spoils = gainGold(player, 12);
+          logEvent(`🕷️ Entangled traders surrender an import crate and ${spoils} gold.`);
         },
       },
     ],
