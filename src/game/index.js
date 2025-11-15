@@ -752,6 +752,10 @@ function recruitTroops() {
 }
 
 function attemptRelicDelve() {
+  if (!hasAvailableDelveRelics()) {
+    logEvent("🕳️ There are no undiscovered relics left to delve.");
+    return;
+  }
   spendEnergyAndGold(
     RELIC_DELVE_COST.energy,
     RELIC_DELVE_COST.gold,
@@ -763,6 +767,7 @@ function attemptRelicDelve() {
       } else {
         logEvent("🥀 The expedition returned empty-handed.");
       }
+      renderHUD();
     }
   );
 }
@@ -774,8 +779,8 @@ function showInventoryPanel() {
     info.innerHTML = `
       <div>🚢 Imports waiting: <strong>${player.imports}</strong></div>
       <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 5}</strong></div>
-      <div>📦 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts}</strong></div>
-      <div>🛒 Trade Posts: <strong>${player.tradePosts}</strong></div>
+      <div>📦 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts || 0}</strong></div>
+      <div>🛒 Trade Posts: <strong>${player.tradePosts || 0}</strong></div>
     `;
     const goodsGrid = document.createElement("div");
     goodsGrid.className = "inventory-goods";
@@ -805,8 +810,8 @@ function renderCommerceContent(container) {
   const summary = document.createElement("div");
   summary.className = "inventory-info commerce-info";
   summary.innerHTML = `
-    <div>🛒 Trade Posts: <strong>${player.tradePosts}</strong></div>
-    <div>🚚 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts}</strong></div>
+    <div>🛒 Trade Posts: <strong>${player.tradePosts || 0}</strong></div>
+    <div>🚚 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts || 0}</strong></div>
     <div>📦 Goods stored: <strong>${getTotalHarvestedGoods()}</strong></div>
     <div>📥 Imports waiting: <strong>${player.imports}</strong></div>
   `;
