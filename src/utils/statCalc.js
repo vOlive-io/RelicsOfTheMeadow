@@ -1,27 +1,25 @@
 export function calculateResilience(player) {
-  const total = Math.floor((player.happiness + player.protection)/(player.prowess));
-  return Math.min(10, total);
+  const mood = Math.max(0, player.happiness);
+  const defenses = Math.max(0, player.protection);
+  const shelterBonus = (player.buildings?.length || 0) * 0.5;
+  const resilience = Math.floor((mood + defenses) / 2 + shelterBonus);
+  return Math.max(0, resilience);
 }
 
 export function calculateEconomy(player) {
   const tradeValue = (player.tradePostIncome || 0) * 5;
   const economyBonus = (player.economyBonus || 0) * 50;
-  let gold = player.gold + tradeValue + economyBonus;
-  if (gold < 25) return 1;
-  if (gold < 50) return 2;
-  if (gold < 100) return 3;
-  if (gold < 250) return 4;
-  if (gold < 500) return 5;
-  if (gold < 1000) return 6;
-  if (gold < 2500) return 7;
-  if (gold < 5000) return 8;
-  if (gold < 10000) return 9;
-  return 10;
+  const storedGoods = (player.harvestedGoodsValue || 0) * 10;
+  const totalWealth = Math.max(0, player.gold + tradeValue + economyBonus + storedGoods);
+  const exponentialBump = Math.pow(totalWealth / 200 + 1, 1.15);
+  return Math.max(1, Math.floor(exponentialBump));
 }
 
 export function calculateProwess(player) {
-  const rawProwess = Math.floor((player.troops / 20)+(player.protection / 20)); // sample formula
-  return Math.min(10, rawProwess);
+  const troopPower = Math.max(0, player.troops) / 8;
+  const armorPower = Math.max(0, player.protection) / 3;
+  const relicBoost = (player.relics?.length || 0) * 0.5;
+  return Math.max(1, Math.floor(troopPower + armorPower + relicBoost));
 }
 
 function resolveStat(subject, statName) {
@@ -49,6 +47,6 @@ export function calcStartingEnergy(subject) {
     (sum, stat) => sum + resolveStat(subject, stat),
     0
   );
-  const avg = total / 2;
+  const avg = total / 6;
   return Math.max(1, Math.ceil(avg));
 }
