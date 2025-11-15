@@ -25,6 +25,9 @@ const harvestableGoods = [
 const harvestGoodsMap = new Map(harvestableGoods.map(g => [g.key, g]));
 const HARVEST_ENERGY_COST = 1;
 const RELIC_DELVE_COST = { energy: 5, gold: 250 };
+const ALLIANCE_COST = { energy: 1, gold: 30 };
+const DECLARE_WAR_COST = { energy: 2, gold: 50 };
+const PEACE_COST_ENERGY = 2;
 
 
 /////////////////////////////////////
@@ -164,25 +167,41 @@ function showRelicMenu() {
     logEvent("No relics to activate.");
     return;
   }
-  const choice = prompt(
-    `Choose a relic to activate (cost varies per relic):\n${ownedRelics
-      .map((name, i) => {
-        const relic = relicCatalog.get(name);
-        const energyCost = relic?.energyCost ?? 1;
-        return `${i + 1}. ${name} — ⚡${energyCost}`;
-      })
-      .join("\n")}`
-  );
-  if (!choice) {
-    logEvent("Relic activation cancelled.");
-    return;
-  }
-  const index = parseInt(choice, 10) - 1;
-  const relicName = ownedRelics[index];
-  if (!relicName) {
-    logEvent("❌ Invalid relic choice.");
-    return;
-  }
+  openActionModal("🔮 Relic Vault", body => {
+    const grid = document.createElement("div");
+    grid.className = "relic-grid";
+    ownedRelics.forEach(name => {
+      const relic = relicCatalog.get(name);
+      if (!relic) return;
+      const energyCost = relic.energyCost ?? 1;
+      const used = player.relicsUsedThisTurn instanceof Set && player.relicsUsedThisTurn.has(name);
+      const canAfford = player.energy >= energyCost;
+      const card = document.createElement("button");
+      card.className = "relic-card";
+      if (used) card.classList.add("spent");
+      if (!canAfford) card.classList.add("locked");
+      card.disabled = used || !canAfford;
+      card.innerHTML = `
+        <strong>${name}</strong>
+        <p>${relic.effect || relic.type || "No effect listed."}</p>
+        <div class="relic-meta">
+          <span>${relic.type || "Relic"}</span>
+          <span>⚡ ${energyCost}</span>
+        </div>
+      `;
+      if (!card.disabled) {
+        card.addEventListener("click", () => {
+          closeActionModal();
+          activateRelicPower(name);
+        });
+      }
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  });
+}
+
+function activateRelicPower(relicName) {
   const relic = relicCatalog.get(relicName);
   if (!relic) {
     logEvent(`${relicName} has no defined power yet.`);
@@ -197,7 +216,7 @@ function showRelicMenu() {
   }
   const energyCost = relic.energyCost ?? 1;
   if (player.energy < energyCost) {
-    logEvent("❌ Not enough energy to awaken that relic.");
+    logEvent("⚡ Not enough energy to awaken that relic.");
     return;
   }
   player.energy -= energyCost;
@@ -379,7 +398,9 @@ function renderDiplomacyMenu() {
     actions.className = "diplomacy-actions";
 
     const allianceBtn = document.createElement("button");
-    allianceBtn.textContent = isAlly ? "Break Alliance" : "Offer Alliance";
+    allianceBtn.innerHTML = isAlly
+      ? "Break Alliance"
+      : `Offer Alliance <span class="cost-pill">⚡${ALLIANCE_COST.energy} • 💰${ALLIANCE_COST.gold}</span>`;
     allianceBtn.addEventListener("click", () => {
       if (isAlly) {
         breakAlliance(faction);
@@ -391,13 +412,13 @@ function renderDiplomacyMenu() {
 
     const warBtn = document.createElement("button");
     if (atWar) {
-      warBtn.textContent = "Offer Peace";
+      warBtn.innerHTML = `Offer Peace <span class="cost-pill">⚡${PEACE_COST_ENERGY}</span>`;
       warBtn.addEventListener("click", () => {
         offerPeace(faction);
         renderDiplomacyMenu();
       });
     } else {
-      warBtn.textContent = "Declare War";
+      warBtn.innerHTML = `Declare War <span class="cost-pill">⚡${DECLARE_WAR_COST.energy} • 💰${DECLARE_WAR_COST.gold}</span>`;
       warBtn.disabled = isAlly;
       warBtn.title = isAlly ? "Break the alliance first." : "";
       warBtn.addEventListener("click", () => {
@@ -406,9 +427,28 @@ function renderDiplomacyMenu() {
       });
     }
 
+    const loreBtn = document.createElement("button");
+    loreBtn.textContent = "Lore";
+
+    const loreBlock = document.createElement("div");
+    loreBlock.className = "faction-lore";
+    loreBlock.textContent = faction.fullLore || "No lore recorded yet.";
+    loreBlock.hidden = true;
+
+    loreBtn.addEventListener("click", () => {
+      const isHidden = loreBlock.hasAttribute("hidden");
+      if (isHidden) {
+        loreBlock.removeAttribute("hidden");
+      } else {
+        loreBlock.setAttribute("hidden", "hidden");
+      }
+    });
+
     actions.appendChild(allianceBtn);
     actions.appendChild(warBtn);
+    actions.appendChild(loreBtn);
     card.appendChild(actions);
+    card.appendChild(loreBlock);
     diplomacyList.appendChild(card);
   });
 }
@@ -446,13 +486,20 @@ function offerAlliance(faction) {
     logEvent(`Cannot ally with ${faction.name} while at war. Offer peace first.`);
     return;
   }
-  const accepted = Math.random() > 0.35;
-  if (accepted) {
-    player.alliances.push(faction.name);
-    logEvent(`🤝 ${faction.name} accepted your alliance offer!`);
-  } else {
-    logEvent(`${faction.name} declined your request for alliance.`);
-  }
+  spendEnergyAndGold(
+    ALLIANCE_COST.energy,
+    ALLIANCE_COST.gold,
+    `🤝 Petitioned ${faction.name} for alliance.`,
+    () => {
+      const accepted = Math.random() > 0.35;
+      if (accepted) {
+        player.alliances.push(faction.name);
+        logEvent(`🤝 ${faction.name} accepted your alliance offer!`);
+      } else {
+        logEvent(`${faction.name} declined your request for alliance.`);
+      }
+    }
+  );
 }
 function breakAlliance(faction) {
   if (!player.alliances.includes(faction.name)) {
@@ -472,9 +519,9 @@ function startWarWithFaction(faction) {
     return;
   }
   spendEnergyAndGold(
-    2,
-    50,
-    `Declared war on ${faction.name}! Troop count increased.`,
+    DECLARE_WAR_COST.energy,
+    DECLARE_WAR_COST.gold,
+    `⚔️ Declared war on ${faction.name}! Troops rally to your banner.`,
     () => {
       player.troops += 10;
       player.declaredWars.push(faction.name);
@@ -487,9 +534,9 @@ function offerPeace(faction) {
     return;
   }
   spendEnergyAndGold(
-    2,
+    PEACE_COST_ENERGY,
     0,
-    `Opened peace talks with ${faction.name}.`,
+    `🕊️ Opened peace talks with ${faction.name}.`,
     () => {
       const accepted = willFactionAcceptPeace(faction);
       if (accepted) {
@@ -692,14 +739,30 @@ function attemptRelicDelve() {
 }
 
 function showInventoryPanel() {
-  const goodsSummary = harvestableGoods
-    .map(g => `${g.emoji} ${g.name}: ${player.harvestedGoods[g.key] || 0}`)
-    .join(" | ");
-  const details = `📦 Inventory — Imports waiting: ${player.imports}. Harvests left: ${
-    player.harvestsLeft
-  }/${player.harvestLimit || 5}. Trades left: ${player.tradesRemaining}/${player.tradePosts}.
-Goods on hand: ${goodsSummary}.`;
-  logEvent(details);
+  openActionModal("📦 Inventory Ledger", body => {
+    const info = document.createElement("div");
+    info.className = "inventory-info";
+    info.innerHTML = `
+      <div>🚢 Imports waiting: <strong>${player.imports}</strong></div>
+      <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 5}</strong></div>
+      <div>📦 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts}</strong></div>
+      <div>🛒 Trade Posts: <strong>${player.tradePosts}</strong></div>
+    `;
+    const goodsGrid = document.createElement("div");
+    goodsGrid.className = "inventory-goods";
+    harvestableGoods.forEach(g => {
+      const item = document.createElement("div");
+      item.className = "inventory-good";
+      item.innerHTML = `<span>${g.emoji}</span>
+        <div>
+          <strong>${g.name}</strong>
+          <small>${player.harvestedGoods[g.key] || 0} crate(s)</small>
+        </div>`;
+      goodsGrid.appendChild(item);
+    });
+    body.appendChild(info);
+    body.appendChild(goodsGrid);
+  });
 }
 
 function recalcHarvestedGoodsValue() {
@@ -794,9 +857,7 @@ function buildMenu() {
     const factionAllowed =
       b.availableTo === "all" ||
       (Array.isArray(b.availableTo) && b.availableTo.includes(player.faction.name));
-    if (!factionAllowed) return false;
-    if (!b.preRec || b.preRec === "none") return true;
-    return player.buildings.includes(b.preRec);
+    return factionAllowed;
   });
 
   if (!available.length) {
@@ -804,28 +865,55 @@ function buildMenu() {
     return;
   }
 
-  const choice = prompt(
-    `Choose building:\n${available
-      .map(
-        (b, i) =>
-          `${i + 1}. ${b.name} —— 💰${b.cost.gold}, ⚡${b.cost.energy} —— ${
-            player.buildings.filter(item => item === b.name).length
-          } built`
-      )
-      .join("\n")}`
-  );
-  const index = parseInt(choice) - 1;
-  const selected = available[index];
-  if (!selected) return logEvent("❌ Invalid choice.");
+  openActionModal("🏗️ Construct a Building", body => {
+    const grid = document.createElement("div");
+    grid.className = "build-grid";
+    available.forEach(b => {
+      const builtCount = player.buildings.filter(item => item === b.name).length;
+      const prereqMet = !b.preRec || b.preRec === "none" || player.buildings.includes(b.preRec);
+      const hasResources = player.gold >= b.cost.gold && player.energy >= b.cost.energy;
+      const card = document.createElement("button");
+      card.className = "build-card";
+      if (!prereqMet) {
+        card.classList.add("locked");
+      } else if (!hasResources) {
+        card.classList.add("costly");
+      }
+      card.disabled = !prereqMet || !hasResources;
+      card.innerHTML = `
+        <strong>${b.name}</strong>
+        <p class="build-desc">${b.description}</p>
+        <div class="build-meta">
+          <span>💰 ${b.cost.gold}</span>
+          <span>⚡ ${b.cost.energy}</span>
+          <span>🏛️ ${builtCount}</span>
+        </div>
+        <div class="build-status">
+          ${!prereqMet ? `Requires ${b.preRec}` : hasResources ? "Ready to build" : "Need more resources"}
+        </div>
+      `;
+      if (prereqMet && hasResources) {
+        card.addEventListener("click", () => {
+          closeActionModal();
+          purchaseBuilding(b);
+        });
+      }
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  });
+}
+
+function purchaseBuilding(selected) {
   spendEnergyAndGold(
     selected.cost.energy,
     selected.cost.gold,
-    `Built ${selected.name}!`,
+    `🏗️ Built ${selected.name}!`,
     () => {
       player.buildings.push(selected.name);
-      if (selected.statBoosts.happiness) player.happiness += selected.statBoosts.happiness;
-      if (selected.statBoosts.protection) player.protection += selected.statBoosts.protection;
-      if (selected.statBoosts.gold) player.gold += selected.statBoosts.gold;
+      if (selected.statBoosts?.happiness) player.happiness += selected.statBoosts.happiness;
+      if (selected.statBoosts?.protection) player.protection += selected.statBoosts.protection;
+      if (selected.statBoosts?.gold) player.gold += selected.statBoosts.gold;
       if (selected.tradeIncome) {
         player.tradePostIncome = (player.tradePostIncome || 0) + selected.tradeIncome;
         logEvent(`📦 Trading Posts now yield +${selected.tradeIncome} gold per turn.`);
@@ -842,6 +930,7 @@ function buildMenu() {
         );
         logEvent(`🛒 Trade missions per turn increased to ${player.tradePosts}.`);
       }
+      renderHUD();
     }
   );
 }

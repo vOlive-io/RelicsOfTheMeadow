@@ -13,14 +13,24 @@
   </header>
 
   <main>
-    <div id="factionList"></div>
+    <section class="top-panels">
+      <div id="factionList" class="stats-panel"></div>
+      <div id="event-log" class="log-box"></div>
+    </section>
     <div id="abilityPanel" class="ability-box">
       <h3>Actions & Abilities</h3>
       <div id="actionButtons" class="action-buttons"></div>
       <div id="abilityButtons" class="faction-abilities"></div>
     </div>
-    <div id="event-log" class="log-box"></div>
   </main>
+
+  <div id="actionModal" class="action-modal">
+    <div class="action-modal__content">
+      <button id="closeActionModal" class="close-modal-btn">✖</button>
+      <h2 id="actionModalTitle">Action</h2>
+      <div id="actionModalBody" class="action-modal__body"></div>
+    </div>
+  </div>
 
   <div id="diplomacyModal" class="diplomacy-modal">
     <div class="diplomacy-content">
