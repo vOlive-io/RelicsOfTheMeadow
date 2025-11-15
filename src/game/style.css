@@ -110,7 +110,7 @@ main {
 
 /* 🎮 BUTTONS */
 button {
-  background: #89c97f;
+  background: var(--sage-green);
   color: white;
   border: none;
   border-radius: 8px;
@@ -170,8 +170,8 @@ button:hover {
 }
 
 .ability-box {
-  background: #f9f5ef;
-  border: 3px solid #8c6b47;
+  background: var(--sky);
+  border: 3px solid var(--earth-brown);
   border-radius: 16px;
   padding: 1em;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
