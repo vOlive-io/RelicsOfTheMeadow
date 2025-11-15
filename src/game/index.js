@@ -709,6 +709,48 @@ function performTrade(selectedKey, onSuccess) {
   );
 }
 
+function collectImportCrate(onSuccess) {
+  if (player.imports <= 0) {
+    logEvent("📭 No imports to collect!");
+    return;
+  }
+  const importItem = importItems[Math.floor(Math.random() * importItems.length)];
+  const bonusNames = [];
+  const boosts = importItem.statBoosts || {};
+  if (boosts.happiness) bonusNames.push(`${boosts.happiness} happiness`);
+  if (boosts.protection) bonusNames.push(`${boosts.protection} protection`);
+  if (boosts.troops) bonusNames.push(`${boosts.troops} troops`);
+  if (boosts.energy) bonusNames.push(`${boosts.energy} energy`);
+  const bonusMsg = bonusNames.length ? ` and bonus ${bonusNames.join(", ")}` : "";
+  spendEnergyAndGold(
+    0,
+    0,
+    `📥 Collected imported ${importItem.name}! Gained ${importItem.price} gold${bonusMsg}!`,
+    () => {
+      player.imports = Math.max(0, player.imports - 1);
+      if (boosts.happiness) player.happiness += boosts.happiness;
+      if (boosts.protection) player.protection += boosts.protection;
+      if (boosts.troops) player.troops += boosts.troops;
+      if (boosts.energy) player.energy += boosts.energy;
+      player.gold += importItem.price;
+      if (typeof onSuccess === "function") onSuccess();
+      renderHUD();
+    }
+  );
+}
+
+function recruitTroops() {
+  const recruits = Math.max(1, player.prowess);
+  spendEnergyAndGold(
+    RECRUIT_COST.energy,
+    RECRUIT_COST.gold,
+    `🪖 Recruited ${recruits} fresh troops.`,
+    () => {
+      player.troops += recruits;
+    }
+  );
+}
+
 function attemptRelicDelve() {
   spendEnergyAndGold(
     RELIC_DELVE_COST.energy,
