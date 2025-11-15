@@ -316,6 +316,126 @@ footer button:hover {
   margin-top: 0.5em;
 }
 
+.build-grid,
+.relic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8em;
+}
+
+.build-card,
+.relic-card {
+  border: 2px solid var(--earth-brown);
+  border-radius: 12px;
+  padding: 0.8em;
+  background: var(--sky);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.build-card:hover,
+.relic-card:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+.build-card.locked,
+.relic-card.locked,
+.relic-card.spent {
+  background: #d9d9d9;
+  color: #666;
+  border-color: #b7b7b7;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.build-card.costly {
+  border-color: #d99f4c;
+  box-shadow: 0 0 0 2px rgba(217, 159, 76, 0.25) inset;
+}
+
+.build-card strong,
+.relic-card strong {
+  font-size: 1.05em;
+}
+
+.build-desc {
+  font-size: 0.85em;
+  min-height: 45px;
+}
+
+.build-meta,
+.relic-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 0.8em;
+  font-size: 0.8em;
+  margin: 0.4em 0;
+}
+
+.build-status {
+  font-size: 0.75em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--moss-green);
+}
+
+.build-card.locked .build-status {
+  color: #777;
+}
+
+.inventory-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5em;
+  background: rgba(255,255,255,0.65);
+  border-radius: 12px;
+  padding: 0.8em;
+  font-size: 0.85em;
+}
+
+.inventory-goods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7em;
+}
+
+.inventory-good {
+  display: flex;
+  gap: 0.6em;
+  align-items: center;
+  padding: 0.6em 0.8em;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #fff;
+}
+
+.inventory-good span {
+  font-size: 1.6em;
+}
+
+.cost-pill {
+  display: block;
+  font-size: 0.7em;
+  color: #2f2f2f;
+}
+
+.faction-lore {
+  margin-top: 0.5em;
+  padding: 0.6em;
+  border-radius: 10px;
+  border: 1px dashed var(--earth-brown);
+  background: rgba(255,255,255,0.9);
+  font-size: 0.85em;
+  white-space: pre-line;
+}
+
+.faction-lore[hidden] {
+  display: none;
+}
+
 /* 🕊️ DIPLOMACY MODAL */
 .diplomacy-modal {
   position: fixed;
@@ -383,6 +503,11 @@ footer button:hover {
 .diplomacy-actions button {
   font-size: 0.8em;
   margin: 0.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  text-align: center;
 }
 
 @keyframes fadeBackground {
