@@ -61,15 +61,15 @@ function renderHUD() {
   ];
   const rightStats = [
     { label: "⚡ Energy", value: player.energy },
-    { label: "💪 Prowess", value: `${player.prowess}/10` },
-    { label: "🧱 Resilience", value: `${player.resilience}/10` },
-    { label: "📊 Economy", value: `${player.economy}/10` },
+    { label: "⚔️ Prowess Rank", value: player.prowess, pillar: true },
+    { label: "🧱 Resilience Tier", value: player.resilience, pillar: true },
+    { label: "📊 Economy Surge", value: player.economy, pillar: true },
   ];
   const renderColumn = stats =>
     stats
       .map(
         stat => `
-        <div class="stat-item">
+        <div class="stat-item${stat.pillar ? " pillar-stat" : ""}">
           <strong>${stat.label}</strong>
           <span>${stat.value}</span>
         </div>`

@@ -98,6 +98,11 @@ main {
   animation: fadeSlide 0.5s ease;
 }
 
+.stat-item.pillar-stat {
+  border-left: 4px solid var(--moss-green);
+  background: rgba(137, 201, 127, 0.18);
+}
+
 .stat-item strong {
   display: block;
   font-size: 0.95em;
