@@ -60,7 +60,7 @@ const buildings = [
     type: "harvest",
     description: "Basic tilled fields that finally let you reap the land.",
     cost: { gold: 180, energy: 5 },
-    harvestBonus: 2,
+    harvestBonus: 3,
     availableTo: "all"
   },
   {
@@ -69,8 +69,12 @@ const buildings = [
     type: "harvest",
     description: "Cultivated groves that provide reliable harvest cycles.",
     cost: { gold: 320, energy: 10 },
-    harvestBonus: 2,
+    harvestBonus: 4,
     energyBonus: 1,
+    extraGoods: [
+      { key: "orchard_ambrosia", name: "Ambrosia Fruit", emoji: "🍎", value: 32 },
+      { key: "orchard_spice", name: "Amber Spice", emoji: "🧂", value: 30 }
+    ],
     availableTo: "all"
   },
   {
@@ -79,8 +83,12 @@ const buildings = [
     type: "harvest",
     description: "Mythic gardens tended by spirits, overflowing with bounty.",
     cost: { gold: 650, energy: 18 },
-    harvestBonus: 3,
+    harvestBonus: 5,
     energyBonus: 1,
+    extraGoods: [
+      { key: "celestial_blossom", name: "Celestial Blossom", emoji: "🌸", value: 40 },
+      { key: "nectar_of_legends", name: "Nectar of Legends", emoji: "🏺", value: 46 }
+    ],
     availableTo: "all"
   },
   {
