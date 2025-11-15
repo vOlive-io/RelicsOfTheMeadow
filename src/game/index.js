@@ -346,6 +346,9 @@ function willFactionAcceptPeace(faction) {
 /////////////////////////////////////
 let diplomacyModal = null;
 let diplomacyList = null;
+let actionModal = null;
+let actionModalTitle = null;
+let actionModalBody = null;
 function showDiplomacyMenu() {
   if (!diplomacyModal || !diplomacyList) return;
   renderDiplomacyMenu();
@@ -409,6 +412,31 @@ function renderDiplomacyMenu() {
     diplomacyList.appendChild(card);
   });
 }
+
+/////////////////////////////////////
+///        ACTION MODAL UI        ///
+/////////////////////////////////////
+function openActionModal(title, builder) {
+  if (!actionModal || !actionModalBody) return;
+  actionModal.classList.add("open");
+  if (actionModalTitle) {
+    actionModalTitle.textContent = title;
+  }
+  actionModalBody.innerHTML = "";
+  if (typeof builder === "function") {
+    builder(actionModalBody);
+  }
+}
+
+function closeActionModal() {
+  if (actionModal) {
+    actionModal.classList.remove("open");
+  }
+  if (actionModalBody) {
+    actionModalBody.innerHTML = "";
+  }
+}
+
 function offerAlliance(faction) {
   if (player.alliances.includes(faction.name)) {
     logEvent(`Already allied with ${faction.name}.`);
@@ -907,6 +935,20 @@ document.addEventListener("DOMContentLoaded", () => {
   if (diplomacyModal) {
     diplomacyModal.addEventListener("click", event => {
       if (event.target === diplomacyModal) hideDiplomacyMenu();
+    });
+  }
+  actionModal = document.getElementById("actionModal");
+  actionModalTitle = document.getElementById("actionModalTitle");
+  actionModalBody = document.getElementById("actionModalBody");
+  const closeActionBtn = document.getElementById("closeActionModal");
+  if (closeActionBtn) {
+    closeActionBtn.addEventListener("click", closeActionModal);
+  }
+  if (actionModal) {
+    actionModal.addEventListener("click", event => {
+      if (event.target === actionModal) {
+        closeActionModal();
+      }
     });
   }
   const chosen = localStorage.getItem("chosenFaction") || factions[0].name;
