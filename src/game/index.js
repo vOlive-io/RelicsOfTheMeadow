@@ -660,7 +660,7 @@ function harvestCrops() {
   });
 }
 
-function performTrade() {
+function performTrade(selectedKey, onSuccess) {
   if (player.tradePosts <= 0) {
     logEvent("🏚️ You need a Trading Post before you can export goods.");
     return;
@@ -669,27 +669,13 @@ function performTrade() {
     logEvent("🚫 All trade missions have been used this turn.");
     return;
   }
-  const goodsEntries = Object.entries(player.harvestedGoods || {}).filter(([, count]) => count > 0);
-  if (!goodsEntries.length) {
-    logEvent("🌾 No harvested goods ready for export.");
-    return;
-  }
-  const choice = prompt(
-    `Choose goods to export:\n${goodsEntries
-      .map(([key, count], idx) => {
-        const good = harvestGoodsMap.get(key);
-        return `${idx + 1}. ${good?.emoji || "📦"} ${good?.name || key} — ${count} crate(s)`;
-      })
-      .join("\n")}`
-  );
-  if (!choice) {
-    logEvent("Trade caravan was recalled.");
-    return;
-  }
-  const index = parseInt(choice, 10) - 1;
-  const [selectedKey] = goodsEntries[index] || [];
   if (!selectedKey) {
-    logEvent("❌ Invalid goods selection.");
+    logEvent("❌ Choose goods to export first.");
+    return;
+  }
+  const available = player.harvestedGoods[selectedKey] || 0;
+  if (available <= 0) {
+    logEvent("🌾 No harvested goods ready for export.");
     return;
   }
   const good = harvestGoodsMap.get(selectedKey);
@@ -700,20 +686,27 @@ function performTrade() {
   const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
   const tradeStrength = 1 + player.tradePosts * 0.15;
   const goldEarned = Math.round(good.value * economyMultiplier * tradeStrength);
-  spendEnergyAndGold(1, 0, `🚚 Exported ${good.emoji} ${good.name}.`, () => {
-    player.harvestedGoods[selectedKey] = Math.max(
-      0,
-      (player.harvestedGoods[selectedKey] || 0) - 1
-    );
-    player.tradesRemaining = Math.max(0, player.tradesRemaining - 1);
-    recalcHarvestedGoodsValue();
-    player.gold += goldEarned;
-    logEvent(
-      `💹 Traders return with ${goldEarned} gold (Economy ×${economyMultiplier.toFixed(
-        2
-      )}, Posts ×${tradeStrength.toFixed(2)}).`
-    );
-  });
+  spendEnergyAndGold(
+    COMMERCE_TRADE_COST.energy,
+    COMMERCE_TRADE_COST.gold,
+    `🚚 Exported ${good.emoji} ${good.name}.`,
+    () => {
+      player.harvestedGoods[selectedKey] = Math.max(
+        0,
+        (player.harvestedGoods[selectedKey] || 0) - 1
+      );
+      player.tradesRemaining = Math.max(0, player.tradesRemaining - 1);
+      recalcHarvestedGoodsValue();
+      player.gold += goldEarned;
+      logEvent(
+        `💹 Traders return with ${goldEarned} gold (Economy ×${economyMultiplier.toFixed(
+          2
+        )}, Posts ×${tradeStrength.toFixed(2)}).`
+      );
+      if (typeof onSuccess === "function") onSuccess();
+      renderHUD();
+    }
+  );
 }
 
 function attemptRelicDelve() {
