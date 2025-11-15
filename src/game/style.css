@@ -236,25 +236,6 @@ button:hover {
 }
 
 /* 🌙 END TURN BUTTON */
-footer {
-  width: 100%;
-  text-align: center;
-  background: var(--meadow-cream);
-  padding: 1em;
-  border-top: 3px solid var(--earth-brown);
-  box-shadow: 0 -4px 8px rgba(0,0,0,0.15);
-}
-
-footer button {
-  font-weight: bold;
-  font-size: 1.2em;
-  background: var(--rose);
-}
-
-footer button:hover {
-  background: #b36363;
-}
-
 /* 🪶 EVENT LOG */
 .log-box {
   height: auto;

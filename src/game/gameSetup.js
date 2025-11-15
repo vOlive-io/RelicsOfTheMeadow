@@ -39,15 +39,16 @@ export function setupActionButtons(handleAction) {
   if (!actionArea) return;
   actionArea.innerHTML = "";
   const actions = [
-    { id: "diplomacy", label: "🕊️ Diplomacy", detail: "Manage alliances and rivalries." },
-    { id: "battle", label: "🛡️ Battle", detail: "March troops into combat." },
-    { id: "build", label: "🔨 Build", detail: "Raise new structures." },
-    { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies." },
-    { id: "trade", label: "📦 Trade", detail: "Exchange goods for bonuses." },
-    { id: "collect", label: "💰 Collect Imports", detail: "Gather income from imports." },
-    { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic." },
-    { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic." },
-    { id: "inventory", label: "📚 Inventory", detail: "Review goods & logistics." },
+    { id: "diplomacy", label: "🕊️ Diplomacy", detail: "Manage alliances and rivalries.", costLabel: "Varies by action" },
+    { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 3, gold: 0 } },
+    { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
+    { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
+    { id: "commerce", label: "🏛️ Commerce", detail: "Trade goods and collect imports.", costLabel: "Trades cost ⚡1 each" },
+    { id: "recruit", label: "🪖 Recruit", detail: "Call fresh troops.", cost: { energy: 2, gold: 40 } },
+    { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic.", cost: { energy: 5, gold: 250 } },
+    { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic.", costLabel: "Varies per relic" },
+    { id: "inventory", label: "📚 Inventory", detail: "Review goods & logistics.", cost: { energy: 0, gold: 0 } },
+    { id: "end-turn", label: "🌅 End Turn", detail: "Recover energy & income.", cost: { energy: 0, gold: 0 } },
   ];
   actions.forEach(a => {
     const btn = document.createElement("button");
@@ -61,13 +62,12 @@ export function setupActionButtons(handleAction) {
     btn.appendChild(label);
     btn.appendChild(detail);
     btn.dataset.action = a.id;
+    btn.dataset.costEnergy = a.cost?.energy ?? "";
+    btn.dataset.costGold = a.cost?.gold ?? "";
+    btn.dataset.costCustom = a.costLabel ?? "";
     btn.addEventListener("click", () => handleAction(a.id));
     actionArea.appendChild(btn);
   });
-  const endTurnBtn = document.getElementById("endTurnBtn");
-  if (endTurnBtn) {
-    endTurnBtn.addEventListener("click", () => handleAction("end-turn"));
-  }
 }
 
 function applyStartingStats(player, faction) {
