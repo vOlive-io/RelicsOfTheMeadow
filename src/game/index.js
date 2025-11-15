@@ -428,7 +428,7 @@ function renderDiplomacyMenu() {
     }
 
     const loreBtn = document.createElement("button");
-    loreBtn.textContent = "Lore";
+    loreBtn.textContent = "📜 Lore";
 
     const loreBlock = document.createElement("div");
     loreBlock.className = "faction-lore";
