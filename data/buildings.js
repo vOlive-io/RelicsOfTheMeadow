@@ -36,6 +36,15 @@ const buildings = [
     availableTo: "all"
   },
   {
+    name: "Barracks",
+    preRec: "none",
+    type: "military",
+    description: "Train warriors and unlock recruiting within that clearing.",
+    cost: { gold: 280, energy: 8 },
+    recruitBonus: 1,
+    availableTo: "all"
+  },
+  {
     name: "Citadel",
     type: "faction",
     description: "Massive fortress unique to The Devoured Faith.",

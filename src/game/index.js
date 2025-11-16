@@ -63,6 +63,7 @@ const CLEARINGS_PER_FACTION = 4;
 const NEUTRAL_OWNER = "Wilderness";
 let mapClearings = [];
 const factionCapitals = new Map();
+let selectedClearingId = null;
 
 function getGoldStorageCapacity(target = player) {
   if (!target) return BASE_GOLD_STORAGE;
@@ -179,6 +180,7 @@ function renderHUD() {
   renderFactionAbilities();
   updateActionIndicators();
   renderMap();
+  renderClearingActions();
 }
 
 /////////////////////////////////////
@@ -210,7 +212,10 @@ function initializeMapState(playerFaction) {
       }
     });
   });
+  selectedClearingId = factionCapitals.get(playerFaction.name) || (mapClearings[0]?.id ?? null);
+  player.currentClearingId = selectedClearingId;
   renderMap();
+  renderClearingActions();
 }
 
 function getOwnerColor(ownerName) {
@@ -235,12 +240,14 @@ function renderMap() {
     return;
   }
   grid.innerHTML = "";
+  ensureClearingSelection();
   const ordered = [...mapClearings].sort((a, b) => a.id - b.id);
   ordered.forEach(clearing => {
     const tile = document.createElement("div");
     const classes = ["clearing-tile"];
     if (clearing.owner === player?.faction?.name) classes.push("clearing-player");
     if (clearing.capitalOf) classes.push("clearing-capital");
+    if (clearing.id === selectedClearingId) classes.push("clearing-selected");
     tile.className = classes.join(" ");
     tile.style.borderColor = getOwnerColor(clearing.owner);
     const structures = clearing.structures || [];
@@ -257,24 +264,282 @@ function renderMap() {
       <div class="clearing-owner">${formatOwnerLabel(clearing.owner)}</div>
       <div class="clearing-structures">${structureText}</div>
     `;
+    if (player?.currentClearingId === clearing.id) {
+      const army = document.createElement("div");
+      army.className = "clearing-army";
+      army.textContent = "🪖 Troops present";
+      tile.appendChild(army);
+    }
+    tile.tabIndex = 0;
+    tile.setAttribute("role", "button");
+    tile.addEventListener("click", () => selectClearing(clearing.id));
     grid.appendChild(tile);
   });
 }
 
-function placeStructureOnMap(ownerName, structureName) {
-  if (!ownerName || !structureName || !mapClearings.length) return;
-  const owned = mapClearings.filter(c => c.owner === ownerName);
-  if (!owned.length) return;
-  owned.sort((a, b) => {
-    const aCap = a.capitalOf === ownerName ? 0 : 1;
-    const bCap = b.capitalOf === ownerName ? 0 : 1;
-    if (aCap !== bCap) return aCap - bCap;
-    return (a.structures?.length || 0) - (b.structures?.length || 0);
+function ensureClearingSelection() {
+  if (selectedClearingId && mapClearings.some(c => c.id === selectedClearingId)) return;
+  selectedClearingId = factionCapitals.get(player?.faction?.name) || (mapClearings[0]?.id ?? null);
+}
+
+function getClearingById(id) {
+  return mapClearings.find(c => c.id === id);
+}
+
+function selectClearing(clearingId) {
+  if (!clearingId || selectedClearingId === clearingId) return;
+  selectedClearingId = clearingId;
+  renderMap();
+  renderClearingActions();
+}
+
+function getSelectedClearing() {
+  return selectedClearingId ? getClearingById(selectedClearingId) : null;
+}
+
+function renderClearingActions() {
+  const container = document.getElementById("clearingActions");
+  if (!container) return;
+  const clearing = getSelectedClearing();
+  if (!clearing) {
+    container.innerHTML = "<p>Select a clearing to command.</p>";
+    return;
+  }
+  const ownerLabel = formatOwnerLabel(clearing.owner);
+  const isHere = player.currentClearingId === clearing.id;
+  const statusText = isHere
+    ? "🪖 Troops are present here."
+    : player.currentClearingId
+    ? `🚶 Troops currently stationed at #${player.currentClearingId}.`
+    : "🚶 Troops have not been deployed yet.";
+  container.innerHTML = `
+    <h4>Clearing #${clearing.id} — ${ownerLabel}</h4>
+    <p>${statusText}</p>
+    <p>Structures: ${(clearing.structures && clearing.structures.length) ? clearing.structures.join(", ") : "None"}</p>
+    <div class="action-row" id="clearingActionRow"></div>
+  `;
+  const actionRow = document.getElementById("clearingActionRow");
+  const actions = getClearingActionOptions(clearing);
+  if (!actions.length) {
+    actionRow.innerHTML = "<span>No actions available here.</span>";
+    return;
+  }
+  actions.forEach(action => {
+    const btn = document.createElement("button");
+    btn.textContent = action.label;
+    if (action.title) btn.title = action.title;
+    btn.disabled = action.disabled;
+    btn.addEventListener("click", action.onClick);
+    actionRow.appendChild(btn);
   });
-  const target = owned[0];
+}
+
+function playerControlsClearing(clearing) {
+  return player?.faction && clearing?.owner === player.faction.name;
+}
+
+function clearingHasStructure(clearing, structureName) {
+  return Array.isArray(clearing?.structures) && clearing.structures.includes(structureName);
+}
+
+function getClearingActionOptions(clearing) {
+  const options = [];
+  const here = player.currentClearingId === clearing.id;
+  const neighbors = getAdjacentClearings(clearing.id);
+  if (here && neighbors.length) {
+    options.push({
+      id: "advance",
+      label: "Advance",
+      title: "Move troops to an adjacent clearing (⚡1).",
+      disabled: player.energy < 1,
+      onClick: () => openAdvanceModal(clearing),
+    });
+  }
+  if (here && !playerControlsClearing(clearing)) {
+    options.push({
+      id: "battle",
+      label: "Battle",
+      title: `Engage ${clearing.owner}. (⚡3)`,
+      disabled: player.troops <= 0 || player.energy < 3,
+      onClick: () => battleAtClearing(clearing),
+    });
+  }
+  if (here && playerControlsClearing(clearing)) {
+    options.push({
+      id: "build",
+      label: "Build",
+      title: "Raise new structures here.",
+      disabled: !hasBuildableOptions(),
+      onClick: () => openBuildMenuForClearing(clearing),
+    });
+    if (clearingHasStructure(clearing, "Barracks")) {
+      const canRecruit = player.energy >= RECRUIT_COST.energy && player.gold >= RECRUIT_COST.gold;
+      options.push({
+        id: "recruit",
+        label: "Recruit",
+        title: "Train troops from this Barracks.",
+        disabled: !canRecruit,
+        onClick: () => recruitTroopsAtClearing(clearing),
+      });
+    }
+  }
+  return options;
+}
+
+function getAdjacentClearings(clearingId) {
+  const neighbors = [];
+  const width = 5;
+  const idx = clearingId - 1;
+  if (idx < 0) return neighbors;
+  const row = Math.floor(idx / width);
+  const col = idx % width;
+  if (row > 0) {
+    neighbors.push(getClearingById(clearingId - width));
+  }
+  if (row < width - 1) {
+    neighbors.push(getClearingById(clearingId + width));
+  }
+  if (col > 0) {
+    neighbors.push(getClearingById(clearingId - 1));
+  }
+  if (col < width - 1) {
+    neighbors.push(getClearingById(clearingId + 1));
+  }
+  return neighbors.filter(Boolean);
+}
+
+function openAdvanceModal(originClearing) {
+  const neighbors = getAdjacentClearings(originClearing.id);
+  if (!neighbors.length) {
+    logEvent("No adjacent clearings to advance toward.");
+    return;
+  }
+  openActionModal(`Advance from #${originClearing.id}`, body => {
+    const grid = document.createElement("div");
+    grid.className = "build-grid battle-grid";
+    neighbors.forEach(neighbor => {
+      const card = document.createElement("button");
+      card.className = "build-card battle-card";
+      card.innerHTML = `
+        <strong>#${neighbor.id} — ${formatOwnerLabel(neighbor.owner)}</strong>
+        <p class="battle-summary">${(neighbor.structures && neighbor.structures.slice(-1)[0]) || "Few notable structures."}</p>
+      `;
+      card.disabled = player.energy < 1;
+      card.addEventListener("click", () => {
+        closeActionModal();
+        moveArmyToClearing(originClearing, neighbor);
+      });
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  });
+}
+
+function moveArmyToClearing(fromClearing, targetClearing) {
+  spendEnergyAndGold(1, 0, `🚶 Advanced to clearing #${targetClearing.id}.`, () => {
+    player.currentClearingId = targetClearing.id;
+    selectClearing(targetClearing.id);
+  });
+}
+
+function battleAtClearing(clearing) {
+  if (!player.currentClearingId || player.currentClearingId !== clearing.id) {
+    logEvent("Your troops must be at that clearing to battle.");
+    return;
+  }
+  if (player.troops <= 0) {
+    logEvent("🪖 You lack troops to launch an attack.");
+    return;
+  }
+  if (playerControlsClearing(clearing)) {
+    logEvent("This clearing already flies your banner.");
+    return;
+  }
+  if (clearing.owner === NEUTRAL_OWNER) {
+    spendEnergyAndGold(2, 0, `⚔️ You secure clearing #${clearing.id} from the wilds.`, () => {
+      captureClearing(clearing, player.faction.name);
+    });
+    return;
+  }
+  const targetFaction = factionLookup.get(clearing.owner);
+  if (!targetFaction) {
+    logEvent("No known faction holds this clearing.");
+    return;
+  }
+  executeBattle(targetFaction, { clearing });
+}
+
+function captureClearing(clearing, newOwnerName) {
+  if (!clearing || !newOwnerName) return;
+  const previousOwner = clearing.owner;
+  if (previousOwner === newOwnerName) return;
+  clearing.owner = newOwnerName;
+  if (clearing.capitalOf) {
+    factionCapitals.delete(clearing.capitalOf);
+    clearing.capitalOf = null;
+  }
+  clearing.structures = clearing.structures || [];
+  if (!clearing.structures.includes("Captured Holdfast")) {
+    clearing.structures.push("Captured Holdfast");
+  }
+  renderMap();
+  renderClearingActions();
+  logEvent(`🏴 Cleared #${clearing.id} now belongs to ${player.faction.name}.`);
+}
+
+function openBuildMenuForClearing(clearing) {
+  if (!playerControlsClearing(clearing)) {
+    logEvent("You can only build in clearings you control.");
+    return;
+  }
+  player.currentClearingId = player.currentClearingId || clearing.id;
+  buildMenu(clearing);
+}
+
+function recruitTroopsAtClearing(clearing) {
+  if (!playerControlsClearing(clearing)) {
+    logEvent("Only controlled clearings can recruit troops.");
+    return;
+  }
+  if (!clearingHasStructure(clearing, "Barracks")) {
+    logEvent("A Barracks is required to recruit here.");
+    return;
+  }
+  const recruits = Math.max(1, player.prowess + (player.recruitBonus || 0));
+  spendEnergyAndGold(
+    RECRUIT_COST.energy,
+    RECRUIT_COST.gold,
+    `🪖 Recruited ${recruits} troops at clearing #${clearing.id}.`,
+    () => {
+      player.troops += recruits;
+    }
+  );
+}
+
+function placeStructureOnMap(ownerName, structureName, preferredClearingId = null) {
+  if (!ownerName || !structureName || !mapClearings.length) return;
+  let target = null;
+  if (preferredClearingId) {
+    const preferred = getClearingById(preferredClearingId);
+    if (preferred && preferred.owner === ownerName) {
+      target = preferred;
+    }
+  }
+  if (!target) {
+    const owned = mapClearings.filter(c => c.owner === ownerName);
+    if (!owned.length) return;
+    owned.sort((a, b) => {
+      const aCap = a.capitalOf === ownerName ? 0 : 1;
+      const bCap = b.capitalOf === ownerName ? 0 : 1;
+      if (aCap !== bCap) return aCap - bCap;
+      return (a.structures?.length || 0) - (b.structures?.length || 0);
+    });
+    target = owned[0];
+  }
   if (!target.structures) target.structures = [];
   target.structures.push(structureName);
   renderMap();
+  renderClearingActions();
 }
 
 /////////////////////////////////////
@@ -993,6 +1258,7 @@ function eliminateFactionFromMap(state) {
   });
   factionCapitals.delete(factionName);
   renderMap();
+  renderClearingActions();
   logEvent(
     `🏰 ${state.faction.emoji} ${factionName}'s capital falls! Their holdings become yours for now.`
   );
@@ -1022,6 +1288,7 @@ function respawnFaction(state) {
   state.troops = Math.max(40, state.troopBase || 60);
   logEvent(`${state.faction.emoji} ${factionName} resurfaces in clearing #${target.id}!`);
   renderMap();
+  renderClearingActions();
 }
 
 function getBattleTargets() {
@@ -1075,7 +1342,7 @@ function showBattleModal() {
   });
 }
 
-function executeBattle(targetFaction) {
+function executeBattle(targetFaction, battleOptions = {}) {
   const atWar = player.declaredWars.includes(targetFaction.name);
   const projectedLoss = Math.max(3, Math.floor(player.troops * 0.15));
   const troopLoss = Math.min(player.troops, projectedLoss);
@@ -1093,6 +1360,9 @@ function executeBattle(targetFaction) {
         grantBattleSpoils(targetFaction, atWar);
       }
       applyBattleDamageToFaction(targetFaction, atWar);
+      if (battleOptions.clearing) {
+        captureClearing(battleOptions.clearing, player.faction.name);
+      }
     }
   );
 }
@@ -1345,12 +1615,6 @@ function handleAction(action) {
     case "diplomacy":
       showDiplomacyMenu();
       break;
-    case "battle":
-      showBattleModal();
-      break;
-    case "build":
-      buildMenu();
-      break;
     case "harvest":
       harvestCrops();
       break;
@@ -1359,9 +1623,6 @@ function handleAction(action) {
       break;
     case "collect-import":
       collectImportCrate();
-      break;
-    case "recruit":
-      recruitTroops();
       break;
     case "delve":
       attemptRelicDelve();
@@ -1716,10 +1977,6 @@ function hasUsableRelic() {
   return (player.relics || []).some(name => name && name !== "None");
 }
 
-function hasBattleTargets() {
-  return player.troops > 0 && getBattleTargets().length > 0;
-}
-
 function formatActionCost(btn) {
   const custom = btn?.dataset?.costCustom;
   if (custom) return custom;
@@ -1756,19 +2013,6 @@ function updateActionIndicators() {
           canUse = false;
         }
         break;
-      case "battle":
-        detailText += ` • Troops ready: ${player.troops}`;
-        if (!hasBattleTargets()) {
-          detailText += " • No eligible foes.";
-          canUse = false;
-        }
-        break;
-      case "build":
-        if (!hasBuildableOptions()) {
-          detailText += " • No affordable structures.";
-          canUse = false;
-        }
-        break;
       case "commerce":
         if (labelEl) {
           labelEl.textContent = `🏛️ Commerce (${player.tradesRemaining}/${player.tradePosts || 0})`;
@@ -1794,9 +2038,6 @@ function updateActionIndicators() {
           detailText += " • Vaults exhausted.";
           canUse = false;
         }
-        break;
-      case "recruit":
-        detailText += ` • Gain ${Math.max(1, player.prowess + (player.recruitBonus || 0))} troops`;
         break;
       case "use-relic": {
         const ownedRelics = (player.relics || []).filter(name => name && name !== "None").length;
@@ -1833,7 +2074,11 @@ function getScaledCost(cost, builtCount) {
   };
 }
 
-function buildMenu() {
+function buildMenu(clearingContext = null) {
+  if (clearingContext && !playerControlsClearing(clearingContext)) {
+    logEvent("You do not control that clearing.");
+    return;
+  }
   const available = buildings.filter(b => {
     const factionAllowed =
       b.availableTo === "all" ||
@@ -1846,7 +2091,17 @@ function buildMenu() {
     return;
   }
 
-  openActionModal("🏗️ Construct a Building", body => {
+  const title = clearingContext
+    ? `🏗️ Build in Clearing #${clearingContext.id}`
+    : "🏗️ Construct a Building";
+  openActionModal(title, body => {
+    if (clearingContext) {
+      const note = document.createElement("p");
+      note.textContent = `Owner: ${clearingContext.owner}. Structures here: ${
+        clearingContext.structures?.join(", ") || "None"
+      }.`;
+      body.appendChild(note);
+    }
     const grid = document.createElement("div");
     grid.className = "build-grid";
     available.forEach(b => {
@@ -1883,7 +2138,7 @@ function buildMenu() {
       if (prereqMet && hasResources) {
         card.addEventListener("click", () => {
           closeActionModal();
-          purchaseBuilding(b, scaledCost);
+          purchaseBuilding(b, scaledCost, { clearingId: clearingContext?.id });
         });
       }
       grid.appendChild(card);
@@ -1968,17 +2223,19 @@ function seedStartingVault() {
   const existing = player.buildings.filter(name => name === vaultBlueprint.name).length;
   if (existing >= STARTING_VAULTS) return;
   const needed = STARTING_VAULTS - existing;
+  const homeClearing = player.currentClearingId || factionCapitals.get(player.faction?.name);
   for (let i = 0; i < needed; i += 1) {
     player.buildings.push(vaultBlueprint.name);
     applyBuildingEffects(vaultBlueprint, { announce: false });
-    placeStructureOnMap(player.faction?.name, vaultBlueprint.name);
+    placeStructureOnMap(player.faction?.name, vaultBlueprint.name, homeClearing);
   }
   logEvent("🏦 Your treasury begins with a fortified Vault (+250 storage).");
 }
 
-function purchaseBuilding(selected, scaledCost) {
+function purchaseBuilding(selected, scaledCost, options = {}) {
   const builtCount = player.buildings.filter(item => item === selected.name).length;
   const cost = scaledCost || getScaledCost(selected.cost, builtCount);
+  const { clearingId = null } = options;
   spendEnergyAndGold(
     cost.energy,
     cost.gold,
@@ -1986,7 +2243,7 @@ function purchaseBuilding(selected, scaledCost) {
     () => {
       player.buildings.push(selected.name);
       applyBuildingEffects(selected);
-      placeStructureOnMap(player.faction?.name, selected.name);
+      placeStructureOnMap(player.faction?.name, selected.name, clearingId || player.currentClearingId);
       renderHUD();
     }
   );
@@ -2129,6 +2386,7 @@ let player = {
   pendingPeaceOffers: [],
   pendingPlayerPrompts: [],
   unlockedAbilityTags: new Set(),
+  currentClearingId: null,
   gainGold(amount) {
     return grantGold(amount, this);
   },
