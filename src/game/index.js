@@ -92,6 +92,102 @@ function grantGold(amount, target = player) {
   return next - previous;
 }
 
+function ensureClearingTroopField(clearing) {
+  if (!clearing) return;
+  if (typeof clearing.playerTroops !== "number" || Number.isNaN(clearing.playerTroops)) {
+    clearing.playerTroops = 0;
+  }
+}
+
+function getPlayerTroopsInClearing(clearingId) {
+  const clearing = getClearingById(clearingId);
+  if (!clearing) return 0;
+  ensureClearingTroopField(clearing);
+  return clearing.playerTroops || 0;
+}
+
+function setPlayerTroopsInClearing(clearingId, amount) {
+  const clearing = getClearingById(clearingId);
+  if (!clearing) return;
+  ensureClearingTroopField(clearing);
+  clearing.playerTroops = Math.max(0, Math.round(amount));
+}
+
+function addTroopsToClearing(clearingId, amount) {
+  if (!amount) return;
+  const clearing = getClearingById(clearingId);
+  if (!clearing) return;
+  ensureClearingTroopField(clearing);
+  clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) + amount);
+}
+
+function removeTroopsFromClearing(clearingId, amount) {
+  if (!amount) return 0;
+  const clearing = getClearingById(clearingId);
+  if (!clearing) return 0;
+  ensureClearingTroopField(clearing);
+  const removed = Math.min(clearing.playerTroops || 0, amount);
+  clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) - removed);
+  return removed;
+}
+
+function getDefaultTroopClearingId() {
+  return (
+    player.currentClearingId ||
+    selectedClearingId ||
+    factionCapitals.get(player.faction?.name) ||
+    (mapClearings[0] ? mapClearings[0].id : null)
+  );
+}
+
+function applyGlobalTroopLoss(amount, { syncOnly = false } = {}) {
+  if (!amount) return;
+  if (!syncOnly) {
+    player.troops = Math.max(0, player.troops - amount);
+  }
+  let remaining = amount;
+  const sources = mapClearings
+    .filter(c => (c.playerTroops || 0) > 0)
+    .sort((a, b) => (b.playerTroops || 0) - (a.playerTroops || 0));
+  for (const clearing of sources) {
+    if (remaining <= 0) break;
+    ensureClearingTroopField(clearing);
+    const removed = Math.min(clearing.playerTroops, remaining);
+    clearing.playerTroops -= removed;
+    remaining -= removed;
+  }
+  renderMap();
+  renderClearingSummary();
+}
+
+function applyGlobalTroopGain(amount, preferredClearingId = getDefaultTroopClearingId(), { syncOnly = false } = {}) {
+  if (!amount) return;
+  if (!syncOnly) {
+    player.troops += amount;
+  }
+  const target = preferredClearingId || getDefaultTroopClearingId();
+  if (target) {
+    addTroopsToClearing(target, amount);
+  }
+  renderMap();
+  renderClearingSummary();
+}
+
+function syncTroopsWithGarrisons() {
+  if (!mapClearings.length) return;
+  const totalGarrisoned = mapClearings.reduce(
+    (sum, clearing) => sum + (clearing.playerTroops || 0),
+    0
+  );
+  const diff = Math.round(player.troops - totalGarrisoned);
+  if (diff === 0) return;
+  if (diff > 0) {
+    addTroopsToClearing(getDefaultTroopClearingId(), diff);
+  } else {
+    applyGlobalTroopLoss(Math.abs(diff), { syncOnly: true });
+  }
+}
+
 function savePlayerStateToCookie() {
   if (typeof document === "undefined") return;
   if (!player?.faction || !mapClearings?.length) return;
@@ -210,6 +306,7 @@ function applySnapshot(snapshot) {
       structures: Array.isArray(clearing.structures) ? [...clearing.structures] : [],
     }));
     mapClearings.forEach(clearing => {
+      ensureClearingTroopField(clearing);
       if (
         clearing.owner &&
         clearing.owner !== NEUTRAL_OWNER &&
@@ -247,7 +344,7 @@ function applySnapshot(snapshot) {
     });
   }
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
   recalcHarvestedGoodsValue();
   renderHUD();
 }
@@ -352,6 +449,7 @@ function updateDerivedStats() {
 function renderHUD() {
   if (!player?.faction) return;
   enforceGoldCapacity();
+  syncTroopsWithGarrisons();
   const f = player.faction;
   const factionBanner = document.getElementById("factionDisplay");
   factionBanner.textContent = `${f.emoji} ${f.name}`;
@@ -403,7 +501,7 @@ function renderHUD() {
   renderFactionAbilities();
   updateActionIndicators();
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
   savePlayerStateToCookie();
 }
 
@@ -416,6 +514,7 @@ function initializeMapState(playerFaction) {
     owner: NEUTRAL_OWNER,
     structures: [],
     capitalOf: null,
+    playerTroops: 0,
   }));
   factionCapitals.clear();
   const factionOrder = [playerFaction, ...factions.filter(f => f.name !== playerFaction.name)];
@@ -439,7 +538,23 @@ function initializeMapState(playerFaction) {
   selectedClearingId = factionCapitals.get(playerFaction.name) || (mapClearings[0]?.id ?? null);
   player.currentClearingId = selectedClearingId;
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
+}
+
+function seedPlayerTroops(faction) {
+  if (!faction) return;
+  const home = factionCapitals.get(faction.name) || selectedClearingId;
+  mapClearings.forEach(clearing => {
+    ensureClearingTroopField(clearing);
+    clearing.playerTroops = 0;
+  });
+  if (home) {
+    setPlayerTroopsInClearing(home, player.troops);
+    player.currentClearingId = home;
+    selectedClearingId = home;
+  }
+  renderMap();
+  renderClearingSummary();
 }
 
 function getOwnerColor(ownerName) {
@@ -483,20 +598,18 @@ function renderMap() {
         structureText += ` +${structures.length - shown.length}`;
       }
     }
+    const troopCount = getPlayerTroopsInClearing(clearing.id);
+    const troopLine =
+      troopCount > 0 ? `<div class="clearing-troops">🪖 ${troopCount} stationed</div>` : "";
     tile.innerHTML = `
       <div class="clearing-id">#${clearing.id}</div>
       <div class="clearing-owner">${formatOwnerLabel(clearing.owner)}</div>
       <div class="clearing-structures">${structureText}</div>
+      ${troopLine}
     `;
-    if (player?.currentClearingId === clearing.id) {
-      const army = document.createElement("div");
-      army.className = "clearing-army";
-      army.textContent = "🪖 Troops present";
-      tile.appendChild(army);
-    }
     tile.tabIndex = 0;
     tile.setAttribute("role", "button");
-    tile.addEventListener("click", () => selectClearing(clearing.id));
+    tile.addEventListener("click", () => selectClearing(clearing.id, { openMenu: true }));
     grid.appendChild(tile);
   });
 }
@@ -506,55 +619,81 @@ function ensureClearingSelection() {
   selectedClearingId = factionCapitals.get(player?.faction?.name) || (mapClearings[0]?.id ?? null);
 }
 
-function getClearingById(id) {
-  return mapClearings.find(c => c.id === id);
-}
-
-function selectClearing(clearingId) {
-  if (!clearingId || selectedClearingId === clearingId) return;
+function selectClearing(clearingId, { openMenu = false } = {}) {
+  if (!clearingId) return;
   selectedClearingId = clearingId;
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
+  if (openMenu) {
+    const clearing = getClearingById(clearingId);
+    openClearingActionModal(clearing);
+  }
 }
 
 function getSelectedClearing() {
   return selectedClearingId ? getClearingById(selectedClearingId) : null;
 }
 
-function renderClearingActions() {
+function renderClearingSummary() {
   const container = document.getElementById("clearingActions");
   if (!container) return;
   const clearing = getSelectedClearing();
   if (!clearing) {
-    container.innerHTML = "<p>Select a clearing to command.</p>";
+    container.innerHTML = "<p>Select a clearing to inspect.</p>";
     return;
   }
   const ownerLabel = formatOwnerLabel(clearing.owner);
-  const isHere = player.currentClearingId === clearing.id;
-  const statusText = isHere
-    ? "🪖 Troops are present here."
-    : player.currentClearingId
-    ? `🚶 Troops currently stationed at #${player.currentClearingId}.`
-    : "🚶 Troops have not been deployed yet.";
+  const troopsHere = getPlayerTroopsInClearing(clearing.id);
+  const statusText =
+    troopsHere > 0
+      ? "🪖 Troops are stationed here."
+      : player.currentClearingId
+      ? `🚶 Primary column is currently focused on #${player.currentClearingId}.`
+      : "🚶 Troops begin consolidating at your capital.";
   container.innerHTML = `
     <h4>Clearing #${clearing.id} — ${ownerLabel}</h4>
     <p>${statusText}</p>
+    <p>Troops stationed: <strong>${troopsHere}</strong></p>
     <p>Structures: ${(clearing.structures && clearing.structures.length) ? clearing.structures.join(", ") : "None"}</p>
-    <div class="action-row" id="clearingActionRow"></div>
+    <button id="openClearingActions">Open Actions</button>
   `;
-  const actionRow = document.getElementById("clearingActionRow");
-  const actions = getClearingActionOptions(clearing);
-  if (!actions.length) {
-    actionRow.innerHTML = "<span>No actions available here.</span>";
-    return;
+  const openBtn = document.getElementById("openClearingActions");
+  if (openBtn) {
+    openBtn.addEventListener("click", () => openClearingActionModal(clearing));
   }
-  actions.forEach(action => {
-    const btn = document.createElement("button");
-    btn.textContent = action.label;
-    if (action.title) btn.title = action.title;
-    btn.disabled = action.disabled;
-    btn.addEventListener("click", action.onClick);
-    actionRow.appendChild(btn);
+}
+
+function openClearingActionModal(clearing) {
+  if (!clearing) return;
+  const ownerLabel = formatOwnerLabel(clearing.owner);
+  const troopsHere = getPlayerTroopsInClearing(clearing.id);
+  const actions = getClearingActionOptions(clearing);
+  openActionModal(`Clearing #${clearing.id}`, body => {
+    body.innerHTML = `
+      <p>${ownerLabel}</p>
+      <p>Troops stationed: <strong>${troopsHere}</strong></p>
+      <p>Structures: ${(clearing.structures && clearing.structures.length) ? clearing.structures.join(", ") : "None"}</p>
+    `;
+    const actionRow = document.createElement("div");
+    actionRow.className = "action-row";
+    if (!actions.length) {
+      const span = document.createElement("span");
+      span.textContent = "No actions available here.";
+      actionRow.appendChild(span);
+    } else {
+      actions.forEach(action => {
+        const btn = document.createElement("button");
+        btn.textContent = action.label;
+        if (action.title) btn.title = action.title;
+        btn.disabled = action.disabled;
+        btn.addEventListener("click", () => {
+          closeActionModal();
+          action.onClick?.();
+        });
+        actionRow.appendChild(btn);
+      });
+    }
+    body.appendChild(actionRow);
   });
 }
 
@@ -568,28 +707,28 @@ function clearingHasStructure(clearing, structureName) {
 
 function getClearingActionOptions(clearing) {
   const options = [];
-  const here = player.currentClearingId === clearing.id;
+  if (!clearing) return options;
   const neighbors = getAdjacentClearings(clearing.id);
-  const hasTroops = player.troops > 0;
-  if (here && neighbors.length) {
+  const troopsHere = getPlayerTroopsInClearing(clearing.id);
+  if (troopsHere > 0 && neighbors.length) {
     options.push({
       id: "advance",
       label: "Advance",
       title: "Move troops to an adjacent clearing (⚡1).",
-      disabled: player.energy < 1 || !hasTroops,
+      disabled: player.energy < 1,
       onClick: () => openAdvanceModal(clearing),
     });
   }
-  if (here && !playerControlsClearing(clearing)) {
+  if (troopsHere > 0 && !playerControlsClearing(clearing)) {
     options.push({
       id: "battle",
       label: "Battle",
-      title: `Engage ${clearing.owner}. (⚡3)`,
-      disabled: !hasTroops || player.energy < 3,
+      title: `Engage ${clearing.owner === NEUTRAL_OWNER ? "the wilds" : clearing.owner}. (⚡3)`,
+      disabled: player.energy < 3,
       onClick: () => battleAtClearing(clearing),
     });
   }
-  if (here && playerControlsClearing(clearing)) {
+  if (playerControlsClearing(clearing)) {
     options.push({
       id: "build",
       label: "Build",
@@ -639,6 +778,11 @@ function openAdvanceModal(originClearing) {
     logEvent("No adjacent clearings to advance toward.");
     return;
   }
+  const available = getPlayerTroopsInClearing(originClearing.id);
+  if (available <= 0) {
+    logEvent("No troops are stationed there to advance.");
+    return;
+  }
   openActionModal(`Advance from #${originClearing.id}`, body => {
     const grid = document.createElement("div");
     grid.className = "build-grid battle-grid";
@@ -661,18 +805,35 @@ function openAdvanceModal(originClearing) {
 }
 
 function moveArmyToClearing(fromClearing, targetClearing) {
-  spendEnergyAndGold(1, 0, `🚶 Advanced to clearing #${targetClearing.id}.`, () => {
+  const available = getPlayerTroopsInClearing(fromClearing.id);
+  if (available <= 0) {
+    logEvent("No troops are stationed there to advance.");
+    return;
+  }
+  const amountInput =
+    typeof window !== "undefined"
+      ? window.prompt(
+          `How many troops will march from #${fromClearing.id}? (Available: ${available})`,
+          String(available)
+        )
+      : String(available);
+  const amount = Math.max(0, Math.min(available, parseInt(amountInput, 10) || 0));
+  if (amount <= 0) {
+    logEvent("The troops remain in place.");
+    return;
+  }
+  spendEnergyAndGold(1, 0, `🚶 Advanced ${amount} troops to clearing #${targetClearing.id}.`, () => {
+    removeTroopsFromClearing(fromClearing.id, amount);
+    addTroopsToClearing(targetClearing.id, amount);
     player.currentClearingId = targetClearing.id;
     selectClearing(targetClearing.id);
+    renderHUD();
   });
 }
 
 function battleAtClearing(clearing) {
-  if (!player.currentClearingId || player.currentClearingId !== clearing.id) {
-    logEvent("Your troops must be at that clearing to battle.");
-    return;
-  }
-  if (player.troops <= 0) {
+  const troopsHere = getPlayerTroopsInClearing(clearing.id);
+  if (troopsHere <= 0) {
     logEvent("🪖 You lack troops to launch an attack.");
     return;
   }
@@ -687,6 +848,7 @@ function battleAtClearing(clearing) {
   if (clearing.owner === NEUTRAL_OWNER) {
     spendEnergyAndGold(3, 0, `⚔️ You secure clearing #${clearing.id} from the wilds.`, () => {
       captureClearing(clearing, player.faction.name);
+      renderHUD();
     });
     return;
   }
@@ -704,6 +866,7 @@ function battleAtClearing(clearing) {
 
 function captureClearing(clearing, newOwnerName) {
   if (!clearing || !newOwnerName) return;
+  ensureClearingTroopField(clearing);
   const previousOwner = clearing.owner;
   if (previousOwner === newOwnerName) return;
   clearing.owner = newOwnerName;
@@ -716,7 +879,7 @@ function captureClearing(clearing, newOwnerName) {
     clearing.structures.push("Captured Holdfast");
   }
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
   logEvent(`🏴 Clearing #${clearing.id} now belongs to ${player.faction.name}.`);
 }
 
@@ -744,7 +907,8 @@ function recruitTroopsAtClearing(clearing) {
     RECRUIT_COST.gold,
     `🪖 Recruited ${recruits} troops at clearing #${clearing.id}.`,
     () => {
-      player.troops += recruits;
+      applyGlobalTroopGain(recruits, clearing.id);
+      renderHUD();
     }
   );
 }
@@ -772,7 +936,7 @@ function placeStructureOnMap(ownerName, structureName, preferredClearingId = nul
   if (!target.structures) target.structures = [];
   target.structures.push(structureName);
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
 }
 
 /////////////////////////////////////
@@ -834,6 +998,7 @@ function executeFactionAbility(ability) {
 
   const triggerAbility = selectedFaction => {
     spendEnergyAndGold(energyCost, goldCost, null, () => {
+      const prevTroops = player.troops;
       if (typeof ability.logic === "function") {
         ability.logic({
           player,
@@ -845,6 +1010,12 @@ function executeFactionAbility(ability) {
           selectedClearing: getSelectedClearing(),
           selectedClearingId,
         });
+        const troopDelta = player.troops - prevTroops;
+        if (troopDelta > 0) {
+          applyGlobalTroopGain(troopDelta, getSelectedClearing()?.id, { syncOnly: true });
+        } else if (troopDelta < 0) {
+          applyGlobalTroopLoss(Math.abs(troopDelta), { syncOnly: true });
+        }
       } else {
         logEvent(`${ability.name} crackles, but no power responds.`);
       }
@@ -1077,7 +1248,7 @@ const aiAbilityEffects = {
   },
   Raid: () => {
     const loss = Math.min(player.troops, 5 + Math.round(player.protection / 2));
-    player.troops = Math.max(0, player.troops - loss);
+    applyGlobalTroopLoss(loss);
     player.happiness = Math.max(0, player.happiness - 1);
     logEvent(`🐺 Horde raiders cut down ${loss} of your troops and demoralize the people.`);
   },
@@ -1293,7 +1464,7 @@ function aiWarSkirmish(state) {
   switch (name) {
     case "The Crimson Horde": {
       const loss = Math.max(1, Math.round((state.troops || 30) / 12));
-      player.troops = Math.max(0, player.troops - loss);
+      applyGlobalTroopLoss(loss);
       const plunder = Math.min(player.gold, 10 + loss * 2);
       player.gold -= plunder;
       state.gold = (state.gold || 0) + plunder;
@@ -1439,7 +1610,7 @@ function aiAttackRival(state) {
 /////////////////////////////////////
 ///  TARGETING & SPOILS HELPERS   ///
 /////////////////////////////////////
-function grantBattleSpoils(targetFaction, atWar) {
+function grantBattleSpoils(targetFaction, atWar, context = {}) {
   if (!battleSpoils || !battleSpoils.length) return;
   const spoils = battleSpoils[Math.floor(Math.random() * battleSpoils.length)];
   const multiplier = atWar ? 2 : 1;
@@ -1456,6 +1627,9 @@ function grantBattleSpoils(targetFaction, atWar) {
     const value = boosts[stat] * multiplier;
     if (!value || typeof player[stat] !== "number") return;
     player[stat] += value;
+    if (stat === "troops") {
+      applyGlobalTroopGain(value, context.clearing?.id, { syncOnly: true });
+    }
     gains.push(`${value} ${stat}`);
   });
   const warNote = atWar ? " (war spoils doubled!)" : "";
@@ -1493,7 +1667,7 @@ function eliminateFactionFromMap(state) {
   });
   factionCapitals.delete(factionName);
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
   logEvent(
     `🏰 ${state.faction.emoji} ${factionName}'s capital falls! Their holdings become yours for now.`
   );
@@ -1523,7 +1697,7 @@ function respawnFaction(state) {
   state.troops = Math.max(40, state.troopBase || 60);
   logEvent(`${state.faction.emoji} ${factionName} resurfaces in clearing #${target.id}!`);
   renderMap();
-  renderClearingActions();
+  renderClearingSummary();
 }
 
 function getBattleTargets() {
@@ -1587,17 +1761,24 @@ function executeBattle(targetFaction, battleOptions = {}) {
     `⚔️ Clashed with ${targetFaction.name}. Lost ${troopLoss} troops but gained grit.`,
     () => {
       const mitigation = player.battleBonus || 0;
-      player.troops = Math.max(0, player.troops - Math.max(0, troopLoss - mitigation));
+      const lossAfterMitigation = Math.max(0, troopLoss - mitigation);
+      if (battleOptions.clearing) {
+        const removed = removeTroopsFromClearing(battleOptions.clearing.id, lossAfterMitigation);
+        player.troops = Math.max(0, player.troops - removed);
+      } else {
+        applyGlobalTroopLoss(lossAfterMitigation);
+      }
       player.protection = Math.max(0, player.protection + 1);
       player.happiness = Math.max(0, player.happiness - 1);
       const captured = attemptRelicCapture(targetFaction);
       if (!captured) {
-        grantBattleSpoils(targetFaction, atWar);
+        grantBattleSpoils(targetFaction, atWar, battleOptions);
       }
       applyBattleDamageToFaction(targetFaction, atWar);
       if (battleOptions.clearing) {
         captureClearing(battleOptions.clearing, player.faction.name);
       }
+      renderHUD();
     }
   );
 }
@@ -1820,7 +2001,7 @@ function startWarWithFaction(faction) {
     DECLARE_WAR_COST.gold,
     `⚔️ Declared war on ${faction.name}! Troops rally to your banner.`,
     () => {
-      player.troops += 10;
+      applyGlobalTroopGain(10);
       player.declaredWars.push(faction.name);
     }
   );
@@ -1979,7 +2160,11 @@ function collectImportCrate(onSuccess) {
       player.imports = Math.max(0, player.imports - 1);
       if (boosts.happiness) player.happiness += boosts.happiness;
       if (boosts.protection) player.protection += boosts.protection;
-      if (boosts.troops) player.troops += boosts.troops;
+      if (boosts.troops) {
+        const targetClearing =
+          playerControlsClearing(getSelectedClearing()) ? selectedClearingId : undefined;
+        applyGlobalTroopGain(boosts.troops, targetClearing);
+      }
       if (boosts.energy) player.energy += boosts.energy;
       const addedGold = grantGold(importItem.price);
       logEvent(`💰 Shipment yielded ${addedGold} gold${bonusMsg}.`);
@@ -2664,6 +2849,7 @@ function startGame(faction) {
   player.goldStorageBonus = 0;
   enforceGoldCapacity();
   seedStartingVault();
+  seedPlayerTroops(faction);
   renderHUD();
   markRelicClaimed(faction.startingRelic);
   factionRelics.set(faction.name, null);

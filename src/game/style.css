@@ -140,6 +140,12 @@ main {
   color: #5f4f3f;
 }
 
+.clearing-troops {
+  font-size: 0.75em;
+  font-weight: bold;
+  color: var(--rose);
+}
+
 .clearing-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -161,16 +167,14 @@ main {
   font-size: 1em;
 }
 
-.clearing-actions .action-row {
+.action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4em;
 }
 
-.clearing-army {
-  font-size: 0.7em;
-  font-weight: bold;
-  color: var(--rose);
+.clearing-actions .action-row {
+  margin-top: 0.4em;
 }
 
 /* 🧿 FACTION + STATS INFO */
