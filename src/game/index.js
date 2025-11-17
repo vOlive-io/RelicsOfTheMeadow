@@ -25,15 +25,15 @@ const harvestableGoods = [
   { key: "herbs", name: "Grove Herbs", emoji: "🌿", value: 20 },
   { key: "timber", name: "Lumber Bundles", emoji: "🪵", value: 24 },
   { key: "supplies", name: "Packed Supplies", emoji: "🎒", value: 22 },
-  { key: "ore", name: "Shimmer Ore", emoji: "⛏️", value: 26 },
+  { key: "ore", name: "Shimmer Ore", emoji: "⛏️", value: 30 },
 ];
 const factionHarvestGoods = {
-  "The Crimson Horde": [{ key: "war_spoils", name: "War Spoils", emoji: "🩸", value: 32 }],
-  "The Devoured Faith": [{ key: "relic_shard", name: "Relic Shard", emoji: "🕯️", value: 28 }],
+  "The Crimson Horde": [{ key: "war_spoils", name: "Leftover Loot", emoji: "🩸", value: 30 }],
+  "The Devoured Faith": [{ key: "relic_shard", name: "Relic Shard", emoji: "🕯️", value: 30 }],
   "The Jade Empire": [{ key: "trade_seal", name: "Trade Seal", emoji: "🐉", value: 30 }],
-  "The Meadowfolk Union": [{ key: "sun_petals", name: "Sun Petals", emoji: "🌻", value: 24 }],
-  "The Silken Dominion": [{ key: "silk_spool", name: "Silk Spool", emoji: "🧵", value: 27 }],
-  "The Mycelial Monarchy": [{ key: "spore_bloom", name: "Spore Bloom", emoji: "🍄", value: 29 }],
+  "The Meadowfolk Union": [{ key: "sun_petals", name: "Sun Petals", emoji: "🌻", value: 30 }],
+  "The Silken Dominion": [{ key: "silk_spool", name: "Silk Spool", emoji: "🧵", value: 30 }],
+  "The Mycelial Monarchy": [{ key: "spore_bloom", name: "Spore Bloom", emoji: "🍄", value: 30 }],
 };
 const harvestGoodsMap = new Map();
 function registerHarvestGoods(list) {
@@ -70,21 +70,26 @@ let selectedClearingId = null;
 let clearingTooltipEl = null;
 let mapPanelEl = null;
 const structureEmojiMap = {
-  Keep: "🏰",
+  //keep/capital
+  "Keep": "🏰",
   "Captured Holdfast": "🏴",
   "Hidden Capital": "🏯",
-  Townhouse: "🏠",
-  Villa: "🏡",
+  //town
+  "Townhouse": "🏠",
+  "Villa": "🏡",
   "Humble Mansion": "🏘️",
-  Manor: "🏛️",
-  Barracks: "🪖",
-  Farm: "🌾",
-  Orchard: "🍎",
+  "Manor": "🏛️",
+  "Barracks": "🪖",
+  //farms
+  "Farm": "🌾",
+  "Orchard": "🍎",
   "Garden of the Gods": "🌸",
+  //trade
   "Trading Post": "🏪",
-  Vault: "🗄️",
+  "Vault": "🗄️",
   "Super Vault": "💎",
-  Citadel: "⛪",
+  //faction
+  "Citadel": "⛪",
   "Spinster's Hut": "🕸️",
   "Spinster's Mansion": "🕷️",
   "Web Outposts": "🕸️",
@@ -92,8 +97,8 @@ const structureEmojiMap = {
   "Stronghold": "🛡️",
   "Base of Operations": "🏗️",
   "Spore Field": "🍄",
-  Nest: "🐣",
-  Hive: "🐝",
+  "Nest": "🐣",
+  "Hive": "🐝",
   "Mega Hive": "🧠",
 };
 
