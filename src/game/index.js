@@ -99,6 +99,10 @@ function ensureClearingTroopField(clearing) {
   }
 }
 
+function getClearingById(id) {
+  return mapClearings.find(c => c.id === id);
+}
+
 function getPlayerTroopsInClearing(clearingId) {
   const clearing = getClearingById(clearingId);
   if (!clearing) return 0;
