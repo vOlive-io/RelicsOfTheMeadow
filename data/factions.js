@@ -11,7 +11,7 @@ function gainGold(player, amount) {
   return amount;
 }
 
-export const factions = [
+const factionDefinitions = [
 // === The Crimson Horde ===
   {
     name: "The Crimson Horde",
@@ -364,5 +364,18 @@ export const factions = [
     palette: ["#3C1E1E", "#6A994E", "#C9CBA3"],
   },
 ];
+
+const orderedFactionNames = [
+  "The Crimson Horde",
+  "The Meadowfolk Union",
+  "The Jade Empire",
+  "The Devoured Faith",
+  "The Silken Dominion",
+  "The Mycelial Monarchy",
+];
+
+export const factions = orderedFactionNames
+  .map(name => factionDefinitions.find(f => f.name === name))
+  .filter(Boolean);
 
 console.log("✅ Factions loaded:", factions);

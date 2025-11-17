@@ -5,11 +5,11 @@ import { factions as allFactions } from "../../data/factions.js";
 // earlyAccess: true keeps it visible but unplayable for players/bots.
 export const factionSettings = {
   "The Crimson Horde": { enabled: true, earlyAccess: false },
-  "The Devoured Faith": { enabled: true, earlyAccess: false },
+  "The Meadowfolk Union": { enabled: true, earlyAccess: true },
   "The Jade Empire": { enabled: true, earlyAccess: false },
-  "The Meadowfolk Union": { enabled: true, earlyAccess: false },
-  "The Silken Dominion": { enabled: true, earlyAccess: false },
-  "The Mycelial Monarchy": { enabled: true, earlyAccess: false },
+  "The Devoured Faith": { enabled: true, earlyAccess: false },
+  "The Silken Dominion": { enabled: true, earlyAccess: true },
+  "The Mycelial Monarchy": { enabled: true, earlyAccess: true },
 };
 
 export function setFactionEnabled(name, enabled) {
