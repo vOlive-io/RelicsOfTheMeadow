@@ -600,6 +600,12 @@ function initializeMapState(playerFaction) {
         clearing.capitalOf = faction.name;
         clearing.structures.push("Keep");
         factionCapitals.set(faction.name, clearing.id);
+        const state = aiStates.get(faction.name);
+        if (state) {
+          state.capitalClearing = clearing.id;
+          state.troopsByClearing = new Map();
+          state.troopsByClearing.set(clearing.id, state.troops);
+        }
       }
     });
   });
@@ -1446,7 +1452,8 @@ function initializeAIStates(playerFaction) {
   aiStates.clear();
   factions.forEach(faction => {
     if (faction.name === playerFaction.name) return;
-    aiStates.set(faction.name, createAIState(faction));
+    const state = createAIState(faction);
+    aiStates.set(faction.name, state);
   });
   seedAIRivals();
 }
@@ -1460,19 +1467,29 @@ function createAIState(faction) {
     }
     return 3;
   };
-  const troopBase = parse(faction.defaultTraits?.prowess) * 10 + 40;
+  const cloneStats = {
+    faction,
+    gold: parse(faction.defaultTraits?.economy) * 10,
+    troops: parse(faction.defaultTraits?.prowess) * 5,
+    happiness: 1,
+    protection: 1,
+  };
   return {
     faction,
-    gold: parse(faction.defaultTraits?.economy) * 20 + 100,
-    troops: troopBase,
-    troopBase,
-    resilience: parse(faction.defaultTraits?.resilience) + 5,
+    gold: cloneStats.gold,
+    troops: cloneStats.troops,
+    troopBase: cloneStats.troops,
+    resilience: cloneStats.protection,
     aggression: aiAggressionTendencies[faction.name] ?? 0.3,
     diplomacy: aiDiplomacyTendencies[faction.name] ?? 0.3,
     rivals: [],
-    energy: 6,
+    energy: calcStartingEnergy(cloneStats),
     eliminated: false,
     returnTimer: 0,
+    energyBonus: 0,
+    harvestLimit: 0,
+    harvestsLeft: 0,
+    capitalClearing: null,
   };
 }
 
