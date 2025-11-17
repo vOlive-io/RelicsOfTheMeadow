@@ -67,6 +67,35 @@ const SAVE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 let mapClearings = [];
 const factionCapitals = new Map();
 let selectedClearingId = null;
+let clearingTooltipEl = null;
+let mapPanelEl = null;
+const structureEmojiMap = {
+  Keep: "🏰",
+  "Captured Holdfast": "🏴",
+  "Hidden Capital": "🏯",
+  Townhouse: "🏠",
+  Villa: "🏡",
+  "Humble Mansion": "🏘️",
+  Manor: "🏛️",
+  Barracks: "🪖",
+  Farm: "🌾",
+  Orchard: "🍎",
+  "Garden of the Gods": "🌸",
+  "Trading Post": "🏪",
+  Vault: "🗄️",
+  "Super Vault": "💎",
+  Citadel: "⛪",
+  "Spinster's Hut": "🕸️",
+  "Spinster's Mansion": "🕷️",
+  "Web Outposts": "🕸️",
+  "Web Stations": "🕸️",
+  "Stronghold": "🛡️",
+  "Base of Operations": "🏗️",
+  "Spore Field": "🍄",
+  Nest: "🐣",
+  Hive: "🐝",
+  "Mega Hive": "🧠",
+};
 
 function getGoldStorageCapacity(target = player) {
   if (!target) return BASE_GOLD_STORAGE;
@@ -101,6 +130,16 @@ function ensureClearingTroopField(clearing) {
 
 function getClearingById(id) {
   return mapClearings.find(c => c.id === id);
+}
+
+function getStructureEmoji(structureName) {
+  if (!structureName) return "🏗️";
+  return structureEmojiMap[structureName] || "🏗️";
+}
+
+function formatStructureName(structureName) {
+  if (!structureName) return "";
+  return `${getStructureEmoji(structureName)} ${structureName}`;
 }
 
 function getPlayerTroopsInClearing(clearingId) {
@@ -307,7 +346,12 @@ function applySnapshot(snapshot) {
   if (Array.isArray(snapshot.mapClearings) && snapshot.mapClearings.length) {
     mapClearings = snapshot.mapClearings.map(clearing => ({
       ...clearing,
-      structures: Array.isArray(clearing.structures) ? [...clearing.structures] : [],
+      structures: Array.isArray(clearing.structures)
+        ? clearing.structures.map(struct => {
+            if (struct === "Capital Seat" || struct === "Hidden Capital") return "Keep";
+            return struct;
+          })
+        : [],
     }));
     mapClearings.forEach(clearing => {
       ensureClearingTroopField(clearing);
@@ -534,7 +578,7 @@ function initializeMapState(playerFaction) {
       clearing.capitalOf = null;
       if (index === 0) {
         clearing.capitalOf = faction.name;
-        clearing.structures.push("Capital Seat");
+        clearing.structures.push("Keep");
         factionCapitals.set(faction.name, clearing.id);
       }
     });
@@ -594,14 +638,10 @@ function renderMap() {
     tile.className = classes.join(" ");
     tile.style.borderColor = getOwnerColor(clearing.owner);
     const structures = clearing.structures || [];
-    let structureText = "—";
-    if (structures.length) {
-      const shown = structures.slice(-2);
-      structureText = shown.join(", ");
-      if (structures.length > shown.length) {
-        structureText += ` +${structures.length - shown.length}`;
-      }
-    }
+    const shownStructures = structures.length ? structures.slice(-2) : [];
+    const structureText = shownStructures.length
+      ? shownStructures.map(struct => formatStructureName(struct)).join("<br>")
+      : "—";
     const troopCount = getPlayerTroopsInClearing(clearing.id);
     const troopLine =
       troopCount > 0 ? `<div class="clearing-troops">🪖 ${troopCount} stationed</div>` : "";
@@ -612,10 +652,15 @@ function renderMap() {
       ${troopLine}
     `;
     tile.tabIndex = 0;
+    tile.dataset.clearingId = clearing.id;
     tile.setAttribute("role", "button");
-    tile.addEventListener("click", () => selectClearing(clearing.id, { openMenu: true }));
+    tile.addEventListener("click", event => {
+      event.stopPropagation();
+      selectClearing(clearing.id, { openMenu: true, anchorEl: tile });
+    });
     grid.appendChild(tile);
   });
+  repositionClearingTooltip();
 }
 
 function ensureClearingSelection() {
@@ -623,17 +668,20 @@ function ensureClearingSelection() {
   selectedClearingId = factionCapitals.get(player?.faction?.name) || (mapClearings[0]?.id ?? null);
 }
 
-function selectClearing(clearingId, { openMenu = false } = {}) {
+function selectClearing(clearingId, { openMenu = false, anchorEl = null } = {}) {
   if (!clearingId) return;
   selectedClearingId = clearingId;
   renderMap();
   renderClearingSummary();
   if (openMenu) {
     const clearing = getClearingById(clearingId);
-    openClearingActionModal(clearing);
+    if (clearing) {
+      showClearingTooltip(clearing, anchorEl);
+    }
+  } else {
+    hideClearingTooltip();
   }
 }
-
 function getSelectedClearing() {
   return selectedClearingId ? getClearingById(selectedClearingId) : null;
 }
@@ -644,6 +692,7 @@ function renderClearingSummary() {
   const clearing = getSelectedClearing();
   if (!clearing) {
     container.innerHTML = "<p>Select a clearing to inspect.</p>";
+    hideClearingTooltip();
     return;
   }
   const ownerLabel = formatOwnerLabel(clearing.owner);
@@ -658,12 +707,19 @@ function renderClearingSummary() {
     <h4>Clearing #${clearing.id} — ${ownerLabel}</h4>
     <p>${statusText}</p>
     <p>Troops stationed: <strong>${troopsHere}</strong></p>
-    <p>Structures: ${(clearing.structures && clearing.structures.length) ? clearing.structures.join(", ") : "None"}</p>
+    <p>Structures: ${
+      clearing.structures?.length
+        ? clearing.structures.map(formatStructureName).join(", ")
+        : "None"
+    }</p>
     <button id="openClearingActions">Open Actions</button>
   `;
   const openBtn = document.getElementById("openClearingActions");
   if (openBtn) {
-    openBtn.addEventListener("click", () => openClearingActionModal(clearing));
+    openBtn.addEventListener("click", () => {
+      hideClearingTooltip();
+      openClearingActionModal(clearing);
+    });
   }
 }
 
@@ -676,7 +732,11 @@ function openClearingActionModal(clearing) {
     body.innerHTML = `
       <p>${ownerLabel}</p>
       <p>Troops stationed: <strong>${troopsHere}</strong></p>
-      <p>Structures: ${(clearing.structures && clearing.structures.length) ? clearing.structures.join(", ") : "None"}</p>
+      <p>Structures: ${
+        clearing.structures?.length
+          ? clearing.structures.map(formatStructureName).join(", ")
+          : "None"
+      }</p>
     `;
     const actionRow = document.createElement("div");
     actionRow.className = "action-row";
@@ -699,6 +759,74 @@ function openClearingActionModal(clearing) {
     }
     body.appendChild(actionRow);
   });
+}
+
+function showClearingTooltip(clearing, anchorEl) {
+  if (!clearingTooltipEl || !clearing) return;
+  const actions = getClearingActionOptions(clearing);
+  clearingTooltipEl.innerHTML = "";
+  if (!actions.length) {
+    const span = document.createElement("span");
+    span.textContent = "No quick actions";
+    clearingTooltipEl.appendChild(span);
+  } else {
+    actions.forEach(action => {
+      const btn = document.createElement("button");
+      btn.textContent = action.label;
+      btn.disabled = action.disabled;
+      btn.title = action.title || "";
+      btn.addEventListener("click", event => {
+        event.stopPropagation();
+        hideClearingTooltip();
+        action.onClick?.();
+      });
+      clearingTooltipEl.appendChild(btn);
+    });
+    const moreBtn = document.createElement("button");
+    moreBtn.textContent = "More";
+    moreBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      hideClearingTooltip();
+      openClearingActionModal(clearing);
+    });
+    clearingTooltipEl.appendChild(moreBtn);
+  }
+  clearingTooltipEl.dataset.clearingId = String(clearing.id);
+  clearingTooltipEl.classList.remove("hidden");
+  positionClearingTooltip(anchorEl);
+}
+
+function positionClearingTooltip(anchorEl) {
+  if (!clearingTooltipEl || clearingTooltipEl.classList.contains("hidden")) return;
+  const clearingId = Number(clearingTooltipEl.dataset.clearingId);
+  const tile =
+    anchorEl ||
+    document.querySelector(`.clearing-tile[data-clearing-id="${clearingId}"]`);
+  if (!tile || !mapPanelEl) return;
+  const tileRect = tile.getBoundingClientRect();
+  const panelRect = mapPanelEl.getBoundingClientRect();
+  clearingTooltipEl.style.left = "0px";
+  clearingTooltipEl.style.top = "0px";
+  const tooltipRect = clearingTooltipEl.getBoundingClientRect();
+  let left = tileRect.left - panelRect.left + tileRect.width / 2 - tooltipRect.width / 2;
+  left = Math.max(4, Math.min(left, panelRect.width - tooltipRect.width - 4));
+  let top = tileRect.top - panelRect.top - tooltipRect.height - 8;
+  if (top < 0) {
+    top = tileRect.bottom - panelRect.top + 8;
+  }
+  clearingTooltipEl.style.left = `${left}px`;
+  clearingTooltipEl.style.top = `${top}px`;
+}
+
+function hideClearingTooltip() {
+  if (!clearingTooltipEl) return;
+  clearingTooltipEl.classList.add("hidden");
+  clearingTooltipEl.dataset.clearingId = "";
+}
+
+function repositionClearingTooltip() {
+  if (!clearingTooltipEl || clearingTooltipEl.classList.contains("hidden")) return;
+  positionClearingTooltip();
 }
 
 function playerControlsClearing(clearing) {
@@ -1694,7 +1822,7 @@ function respawnFaction(state) {
   }
   target.owner = factionName;
   target.capitalOf = factionName;
-  target.structures = ["Hidden Capital"];
+  target.structures = ["Keep"];
   factionCapitals.set(factionName, target.id);
   state.eliminated = false;
   state.returnTimer = 0;
@@ -2829,6 +2957,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+  mapPanelEl = document.getElementById("mapPanel");
+  clearingTooltipEl = document.getElementById("clearingTooltip");
+  document.addEventListener("click", event => {
+    if (
+      !clearingTooltipEl ||
+      clearingTooltipEl.classList.contains("hidden")
+    ) {
+      return;
+    }
+    if (
+      clearingTooltipEl.contains(event.target) ||
+      event.target.closest(".clearing-tile")
+    ) {
+      return;
+    }
+    hideClearingTooltip();
+  });
   if (!factions.length) {
     console.error("No enabled factions remain. Use factionManager to re-enable at least one faction.");
     alert("No enabled factions available. Please re-enable a faction in the faction manager.");
