@@ -7,7 +7,7 @@ import { importItems } from "../../data/importItems.js";
 import { battleSpoils } from "../../data/spoils.js";
 import { relics as relicLibrary } from "../../data/relics.js";
 import { startPlayerGame } from "./gameSetup.js";
-import { getEnabledFactions } from "./factionManager.js";
+import { getEnabledFactions, isFactionEarlyAccess } from "./factionManager.js";
 console.log("✅ Game JS loaded!");
 
 const factions = getEnabledFactions();
@@ -2981,10 +2981,18 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("No enabled factions available. Please re-enable a faction in the faction manager.");
     return;
   }
-  const chosen = localStorage.getItem("chosenFaction") || factions[0].name;
-  const faction = factions.find(f => f.name === chosen) || factions[0];
+  const chosen = localStorage.getItem("chosenFaction");
+  const playableFactions = factions.filter(f => !isFactionEarlyAccess(f.name));
+  const fallback = playableFactions[0] || factions[0];
+  const factionCandidate =
+    factions.find(f => f.name === chosen && !isFactionEarlyAccess(f.name)) || fallback;
+  if (!factionCandidate) {
+    alert("No playable factions are available right now.");
+    return;
+  }
+  const faction = factionCandidate;
   startGame(faction);
-}); 
+});
 function startGame(faction) {
   startPlayerGame({
     player,
