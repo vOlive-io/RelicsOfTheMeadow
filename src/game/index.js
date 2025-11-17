@@ -154,6 +154,7 @@ function setPlayerTroopsInClearing(clearingId, amount) {
   if (!clearing) return;
   ensureClearingTroopField(clearing);
   clearing.playerTroops = Math.max(0, Math.round(amount));
+  updateClearingControlFromTroops(clearing);
 }
 
 function addTroopsToClearing(clearingId, amount) {
@@ -162,6 +163,7 @@ function addTroopsToClearing(clearingId, amount) {
   if (!clearing) return;
   ensureClearingTroopField(clearing);
   clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) + amount);
+  updateClearingControlFromTroops(clearing);
 }
 
 function removeTroopsFromClearing(clearingId, amount) {
@@ -171,6 +173,7 @@ function removeTroopsFromClearing(clearingId, amount) {
   ensureClearingTroopField(clearing);
   const removed = Math.min(clearing.playerTroops || 0, amount);
   clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) - removed);
+  updateClearingControlFromTroops(clearing);
   return removed;
 }
 
@@ -198,9 +201,26 @@ function applyGlobalTroopLoss(amount, { syncOnly = false } = {}) {
     const removed = Math.min(clearing.playerTroops, remaining);
     clearing.playerTroops -= removed;
     remaining -= removed;
+    updateClearingControlFromTroops(clearing);
   }
   renderMap();
   renderClearingSummary();
+}
+
+function updateClearingControlFromTroops(clearing) {
+  if (!clearing || !player?.faction) return;
+  const troopsHere = clearing.playerTroops || 0;
+  if (troopsHere > 0) {
+    if (clearing.owner !== player.faction.name) {
+      captureClearing(clearing, player.faction.name, { suppressRender: true });
+    }
+  } else if (
+    clearing.owner === player.faction.name &&
+    clearing.capitalOf !== player.faction.name
+  ) {
+    clearing.owner = NEUTRAL_OWNER;
+    logEvent(`🌲 Clearing #${clearing.id} returns to the wilds.`);
+  }
 }
 
 function applyGlobalTroopGain(amount, preferredClearingId = getDefaultTroopClearingId(), { syncOnly = false } = {}) {
@@ -611,9 +631,16 @@ function getOwnerColor(ownerName) {
   return factionLookup.get(ownerName)?.palette?.[0] || "#6b705c";
 }
 
-function formatOwnerLabel(ownerName) {
-  if (!ownerName) return "—";
-  if (ownerName === player?.faction?.name) return `${player.faction.emoji} You`;
+function getOwnerLabelForClearing(clearing) {
+  if (!clearing) return "—";
+  const ownerName = clearing.owner;
+  if (ownerName === player?.faction?.name) {
+    const troopsHere = getPlayerTroopsInClearing(clearing.id);
+    if (troopsHere <= 0) {
+      return "🌲 Wild clearing";
+    }
+    return `${player.faction.emoji} You`;
+  }
   if (ownerName === NEUTRAL_OWNER) return "🌲 Wilds";
   const faction = factionLookup.get(ownerName);
   return faction ? `${faction.emoji} ${faction.name}` : ownerName;
@@ -632,7 +659,9 @@ function renderMap() {
   ordered.forEach(clearing => {
     const tile = document.createElement("div");
     const classes = ["clearing-tile"];
-    if (clearing.owner === player?.faction?.name) classes.push("clearing-player");
+    const playerHasTroops =
+      clearing.owner === player?.faction?.name && getPlayerTroopsInClearing(clearing.id) > 0;
+    if (playerHasTroops) classes.push("clearing-player");
     if (clearing.capitalOf) classes.push("clearing-capital");
     if (clearing.id === selectedClearingId) classes.push("clearing-selected");
     tile.className = classes.join(" ");
@@ -647,7 +676,7 @@ function renderMap() {
       troopCount > 0 ? `<div class="clearing-troops">🪖 ${troopCount} stationed</div>` : "";
     tile.innerHTML = `
       <div class="clearing-id">#${clearing.id}</div>
-      <div class="clearing-owner">${formatOwnerLabel(clearing.owner)}</div>
+      <div class="clearing-owner">${getOwnerLabelForClearing(clearing)}</div>
       <div class="clearing-structures">${structureText}</div>
       ${troopLine}
     `;
@@ -695,7 +724,7 @@ function renderClearingSummary() {
     hideClearingTooltip();
     return;
   }
-  const ownerLabel = formatOwnerLabel(clearing.owner);
+  const ownerLabel = getOwnerLabelForClearing(clearing);
   const troopsHere = getPlayerTroopsInClearing(clearing.id);
   const statusText =
     troopsHere > 0
@@ -776,7 +805,9 @@ function repositionClearingTooltip() {
 }
 
 function playerControlsClearing(clearing) {
-  return player?.faction && clearing?.owner === player.faction.name;
+  if (!player?.faction || !clearing) return false;
+  if (clearing.owner !== player.faction.name) return false;
+  return getPlayerTroopsInClearing(clearing.id) > 0;
 }
 
 function clearingHasStructure(clearing, structureName) {
@@ -868,7 +899,7 @@ function openAdvanceModal(originClearing) {
       const card = document.createElement("button");
       card.className = "build-card battle-card";
       card.innerHTML = `
-        <strong>#${neighbor.id} — ${formatOwnerLabel(neighbor.owner)}</strong>
+        <strong>#${neighbor.id} — ${getOwnerLabelForClearing(neighbor)}</strong>
         <p class="battle-summary">${(neighbor.structures && neighbor.structures.slice(-1)[0]) || "Few notable structures."}</p>
       `;
       card.disabled = player.energy < 1;
@@ -925,7 +956,7 @@ function battleAtClearing(clearing) {
   }
   if (clearing.owner === NEUTRAL_OWNER) {
     spendEnergyAndGold(3, 0, `⚔️ You secure clearing #${clearing.id} from the wilds.`, () => {
-      captureClearing(clearing, player.faction.name);
+      captureClearing(clearing, player.faction.name, { suppressRender: true });
       renderHUD();
     });
     return;
@@ -942,7 +973,11 @@ function battleAtClearing(clearing) {
   executeBattle(targetFaction, { clearing });
 }
 
-function captureClearing(clearing, newOwnerName) {
+function captureClearing(
+  clearing,
+  newOwnerName,
+  { suppressLog = false, suppressRender = false } = {}
+) {
   if (!clearing || !newOwnerName) return;
   ensureClearingTroopField(clearing);
   const previousOwner = clearing.owner;
@@ -956,9 +991,13 @@ function captureClearing(clearing, newOwnerName) {
   if (!clearing.structures.includes("Captured Holdfast")) {
     clearing.structures.push("Captured Holdfast");
   }
-  renderMap();
-  renderClearingSummary();
-  logEvent(`🏴 Clearing #${clearing.id} now belongs to ${player.faction.name}.`);
+  if (!suppressRender) {
+    renderMap();
+    renderClearingSummary();
+  }
+  if (!suppressLog) {
+    logEvent(`🏴 Clearing #${clearing.id} now belongs to ${player.faction.name}.`);
+  }
 }
 
 function openBuildMenuForClearing(clearing) {
@@ -1854,7 +1893,7 @@ function executeBattle(targetFaction, battleOptions = {}) {
       }
       applyBattleDamageToFaction(targetFaction, atWar);
       if (battleOptions.clearing) {
-        captureClearing(battleOptions.clearing, player.faction.name);
+        captureClearing(battleOptions.clearing, player.faction.name, { suppressRender: true });
       }
       renderHUD();
     }

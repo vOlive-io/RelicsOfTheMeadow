@@ -80,3 +80,107 @@ button {
 button:hover {
   background: #6bb863;
 }
+
+.access-chip {
+  display: inline-block;
+  background: #f0ad4e;
+  color: #3a2f0b;
+  padding: 0.15em 0.6em;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-top: 0.5em;
+}
+
+.faction-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1em;
+}
+
+.faction-modal {
+  background: #fffaf2;
+  border-radius: 16px;
+  max-width: 640px;
+  width: min(640px, 95%);
+  max-height: 90vh;
+  padding: 1.5em;
+  position: relative;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.faction-modal-close {
+  position: absolute;
+  top: 0.75em;
+  right: 0.75em;
+  background: transparent;
+  color: #444;
+  font-size: 1.1em;
+}
+
+.modal-header {
+  display: flex;
+  gap: 1em;
+  align-items: center;
+}
+
+.modal-header .faction-emoji {
+  font-size: 2.5em;
+}
+
+.modal-overview {
+  margin: 0.2em 0 0;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.modal-badge {
+  margin: 0.5em 0;
+  color: #a94442;
+  font-weight: bold;
+}
+
+.modal-lore {
+  text-align: left;
+  max-height: 35vh;
+  overflow-y: auto;
+  padding-right: 0.5em;
+  margin: 1em 0;
+}
+
+.modal-lore h3 {
+  margin-top: 0;
+}
+
+.modal-traits {
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+  font-size: 0.95em;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75em;
+  margin-top: 1em;
+}
+
+.modal-actions button {
+  margin-top: 0;
+}
+
+.modal-actions button.secondary {
+  background: #ccc;
+  color: #333;
+}
+
+.modal-actions button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
