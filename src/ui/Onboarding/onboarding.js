@@ -1,12 +1,14 @@
 // src/onboarding/onboarding.js
-import { factions } from "../../../data/factions.js";
+import { getEnabledFactions } from "../../game/factionManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const factionList = document.getElementById("faction-list");
 
-  if (!factions || !Array.isArray(factions)) {
-    factionList.innerHTML = '<p style="color:red;">⚠️ No faction data found!</p>';
-    console.error("No faction data found. Make sure data/factions.js exports { factions }.");
+  const factions = getEnabledFactions();
+
+  if (!factions || !Array.isArray(factions) || !factions.length) {
+    factionList.innerHTML = '<p style="color:red;">⚠️ No factions are currently enabled. Use the faction manager to re-enable at least one faction.</p>';
+    console.error("No enabled factions available. Use factionManager to enable at least one.");
     return;
   }
 

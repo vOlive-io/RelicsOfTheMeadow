@@ -1,15 +1,16 @@
 /////////////////////////////////////
 ///        MODULE IMPORTS         ///
 /////////////////////////////////////
-import { factions } from "../../data/factions.js";
 import buildings from "../../data/buildings.js";
 import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEnergy } from "../utils/statCalc.js";
 import { importItems } from "../../data/importItems.js";
 import { battleSpoils } from "../../data/spoils.js";
 import { relics as relicLibrary } from "../../data/relics.js";
 import { startPlayerGame } from "./gameSetup.js";
+import { getEnabledFactions } from "./factionManager.js";
 console.log("✅ Game JS loaded!");
 
+const factions = getEnabledFactions();
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
 const availableDelveRelics = new Set(relicLibrary.map(relic => relic.name));
 const factionRelics = new Map();
@@ -61,6 +62,8 @@ const STARTING_VAULTS = 1;
 const CLEARING_COUNT = 25;
 const CLEARINGS_PER_FACTION = 4;
 const NEUTRAL_OWNER = "Wilderness";
+const SAVE_COOKIE_KEY = "meadow_save_state";
+const SAVE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 let mapClearings = [];
 const factionCapitals = new Map();
 let selectedClearingId = null;
@@ -87,6 +90,226 @@ function grantGold(amount, target = player) {
   const next = Math.min(cap, previous + amount);
   target.gold = next;
   return next - previous;
+}
+
+function savePlayerStateToCookie() {
+  if (typeof document === "undefined") return;
+  if (!player?.faction || !mapClearings?.length) return;
+  try {
+    const snapshot = createGameSnapshot();
+    const payload = encodeURIComponent(JSON.stringify(snapshot));
+    document.cookie = `${SAVE_COOKIE_KEY}=${payload}; path=/; max-age=${SAVE_COOKIE_MAX_AGE}`;
+  } catch (err) {
+    console.warn("Unable to save game snapshot:", err);
+  }
+}
+
+function loadPlayerStateFromCookie() {
+  if (typeof document === "undefined") return null;
+  const cookies = document.cookie ? document.cookie.split(";") : [];
+  const marker = `${SAVE_COOKIE_KEY}=`;
+  const entry = cookies.find(cookie => cookie.trim().startsWith(marker));
+  if (!entry) return null;
+  try {
+    const raw = entry.trim().substring(marker.length);
+    return JSON.parse(decodeURIComponent(raw));
+  } catch (err) {
+    console.warn("Unable to parse saved snapshot:", err);
+    return null;
+  }
+}
+
+function createGameSnapshot() {
+  return {
+    version: 1,
+    player: serializePlayerForSave(),
+    mapClearings: mapClearings.map(c => ({
+      ...c,
+      structures: Array.isArray(c.structures) ? [...c.structures] : [],
+    })),
+    selectedClearingId,
+    aiStates: serializeAIStatesForSave(),
+    timestamp: Date.now(),
+  };
+}
+
+function serializePlayerForSave() {
+  const serialized = {
+    factionName: player.faction?.name || null,
+    gold: player.gold,
+    energy: player.energy,
+    troops: player.troops,
+    happiness: player.happiness,
+    protection: player.protection,
+    prowess: player.prowess,
+    resilience: player.resilience,
+    economy: player.economy,
+    imports: player.imports,
+    relics: [...(player.relics || [])],
+    buildings: [...(player.buildings || [])],
+    declaredWars: [...(player.declaredWars || [])],
+    alliances: [...(player.alliances || [])],
+    tradePostIncome: player.tradePostIncome,
+    economyBonus: player.economyBonus,
+    harvestLimit: player.harvestLimit,
+    harvestsLeft: player.harvestsLeft,
+    harvestedGoods: { ...(player.harvestedGoods || {}) },
+    harvestedGoodsValue: player.harvestedGoodsValue,
+    tradePosts: player.tradePosts,
+    tradesRemaining: player.tradesRemaining,
+    extraHarvestGoods: player.extraHarvestGoods ? [...player.extraHarvestGoods] : [],
+    recruitBonus: player.recruitBonus,
+    energyBonus: player.energyBonus,
+    battleBonus: player.battleBonus,
+    relicShield: player.relicShield,
+    pendingPeaceOffers: player.pendingPeaceOffers ? [...player.pendingPeaceOffers] : [],
+    pendingPlayerPrompts: [],
+    unlockedAbilityTags: Array.from(player.unlockedAbilityTags || []),
+    abilitiesUsedThisTurn: Array.from(player.abilitiesUsedThisTurn?.entries() || []),
+    relicsUsedThisTurn: Array.from(player.relicsUsedThisTurn || []),
+    goldStorageBase: player.goldStorageBase,
+    goldStorageBonus: player.goldStorageBonus,
+    currentClearingId: player.currentClearingId || null,
+  };
+  return serialized;
+}
+
+function serializeAIStatesForSave() {
+  return [...aiStates.entries()].map(([name, state]) => ({
+    name,
+    gold: state.gold,
+    troops: state.troops,
+    troopBase: state.troopBase,
+    resilience: state.resilience,
+    aggression: state.aggression,
+    diplomacy: state.diplomacy,
+    rivals: state.rivals || [],
+    energy: state.energy,
+    eliminated: Boolean(state.eliminated),
+    returnTimer: state.returnTimer || 0,
+  }));
+}
+
+function restoreGameFromCookie() {
+  const snapshot = loadPlayerStateFromCookie();
+  if (!snapshot || snapshot.version !== 1) return false;
+  if (snapshot.player?.factionName && snapshot.player.factionName !== player.faction?.name) {
+    return false;
+  }
+  applySnapshot(snapshot);
+  logEvent("💾 A previous session has been restored.");
+  return true;
+}
+
+function applySnapshot(snapshot) {
+  if (!snapshot) return;
+  restorePlayerFromSnapshot(snapshot.player);
+  if (Array.isArray(snapshot.mapClearings) && snapshot.mapClearings.length) {
+    mapClearings = snapshot.mapClearings.map(clearing => ({
+      ...clearing,
+      structures: Array.isArray(clearing.structures) ? [...clearing.structures] : [],
+    }));
+    mapClearings.forEach(clearing => {
+      if (
+        clearing.owner &&
+        clearing.owner !== NEUTRAL_OWNER &&
+        clearing.owner !== player.faction?.name &&
+        !factions.some(f => f.name === clearing.owner)
+      ) {
+        clearing.owner = NEUTRAL_OWNER;
+        clearing.capitalOf = null;
+      }
+    });
+    factionCapitals.clear();
+    mapClearings.forEach(clearing => {
+      if (clearing.capitalOf) {
+        factionCapitals.set(clearing.capitalOf, clearing.id);
+      }
+    });
+  }
+  selectedClearingId = snapshot.selectedClearingId || selectedClearingId;
+  player.currentClearingId = snapshot.player?.currentClearingId || selectedClearingId;
+  ensureClearingSelection();
+  if (Array.isArray(snapshot.aiStates) && snapshot.aiStates.length) {
+    snapshot.aiStates.forEach(entry => {
+      const state = aiStates.get(entry.name);
+      if (!state) return;
+      state.gold = entry.gold ?? state.gold;
+      state.troops = entry.troops ?? state.troops;
+      state.troopBase = entry.troopBase ?? state.troopBase;
+      state.resilience = entry.resilience ?? state.resilience;
+      state.aggression = entry.aggression ?? state.aggression;
+      state.diplomacy = entry.diplomacy ?? state.diplomacy;
+      state.rivals = entry.rivals || state.rivals;
+      state.energy = entry.energy ?? state.energy;
+      state.eliminated = Boolean(entry.eliminated);
+      state.returnTimer = entry.returnTimer ?? state.returnTimer;
+    });
+  }
+  renderMap();
+  renderClearingActions();
+  recalcHarvestedGoodsValue();
+  renderHUD();
+}
+
+function restorePlayerFromSnapshot(data) {
+  if (!data) return;
+  if (data.factionName) {
+    const faction = factions.find(f => f.name === data.factionName);
+    if (faction) {
+      player.faction = faction;
+    }
+  }
+  const copyFields = [
+    "gold",
+    "energy",
+    "troops",
+    "happiness",
+    "protection",
+    "prowess",
+    "resilience",
+    "economy",
+    "imports",
+    "tradePostIncome",
+    "economyBonus",
+    "harvestLimit",
+    "harvestsLeft",
+    "harvestedGoodsValue",
+    "tradePosts",
+    "tradesRemaining",
+    "recruitBonus",
+    "energyBonus",
+    "battleBonus",
+    "relicShield",
+    "goldStorageBase",
+    "goldStorageBonus",
+  ];
+  copyFields.forEach(field => {
+    if (typeof data[field] !== "undefined") {
+      player[field] = data[field];
+    }
+  });
+  player.relics = Array.isArray(data.relics) ? [...data.relics] : [];
+  player.buildings = Array.isArray(data.buildings) ? [...data.buildings] : [];
+  player.declaredWars = Array.isArray(data.declaredWars) ? [...data.declaredWars] : [];
+  player.alliances = Array.isArray(data.alliances) ? [...data.alliances] : [];
+  player.harvestedGoods = { ...(data.harvestedGoods || {}) };
+  player.extraHarvestGoods = Array.isArray(data.extraHarvestGoods)
+    ? [...data.extraHarvestGoods]
+    : [];
+  if (player.extraHarvestGoods.length) {
+    player.extraHarvestGoods.forEach(goods => {
+      if (goods) registerHarvestGoods([goods]);
+    });
+  }
+  player.pendingPeaceOffers = Array.isArray(data.pendingPeaceOffers)
+    ? [...data.pendingPeaceOffers]
+    : [];
+  player.relicsUsedThisTurn = new Set(data.relicsUsedThisTurn || []);
+  player.abilitiesUsedThisTurn = new Map(data.abilitiesUsedThisTurn || []);
+  player.unlockedAbilityTags = new Set(data.unlockedAbilityTags || []);
+  player.currentClearingId = data.currentClearingId || player.currentClearingId;
+  recalcHarvestedGoodsValue();
 }
 
 function getActiveHarvestGoods() {
@@ -181,6 +404,7 @@ function renderHUD() {
   updateActionIndicators();
   renderMap();
   renderClearingActions();
+  savePlayerStateToCookie();
 }
 
 /////////////////////////////////////
@@ -346,12 +570,13 @@ function getClearingActionOptions(clearing) {
   const options = [];
   const here = player.currentClearingId === clearing.id;
   const neighbors = getAdjacentClearings(clearing.id);
+  const hasTroops = player.troops > 0;
   if (here && neighbors.length) {
     options.push({
       id: "advance",
       label: "Advance",
       title: "Move troops to an adjacent clearing (⚡1).",
-      disabled: player.energy < 1,
+      disabled: player.energy < 1 || !hasTroops,
       onClick: () => openAdvanceModal(clearing),
     });
   }
@@ -360,7 +585,7 @@ function getClearingActionOptions(clearing) {
       id: "battle",
       label: "Battle",
       title: `Engage ${clearing.owner}. (⚡3)`,
-      disabled: player.troops <= 0 || player.energy < 3,
+      disabled: !hasTroops || player.energy < 3,
       onClick: () => battleAtClearing(clearing),
     });
   }
@@ -455,8 +680,12 @@ function battleAtClearing(clearing) {
     logEvent("This clearing already flies your banner.");
     return;
   }
+  if (player.alliances.includes(clearing.owner)) {
+    logEvent("You cannot attack an allied clearing.");
+    return;
+  }
   if (clearing.owner === NEUTRAL_OWNER) {
-    spendEnergyAndGold(2, 0, `⚔️ You secure clearing #${clearing.id} from the wilds.`, () => {
+    spendEnergyAndGold(3, 0, `⚔️ You secure clearing #${clearing.id} from the wilds.`, () => {
       captureClearing(clearing, player.faction.name);
     });
     return;
@@ -465,6 +694,10 @@ function battleAtClearing(clearing) {
   if (!targetFaction) {
     logEvent("No known faction holds this clearing.");
     return;
+  }
+  if (!player.declaredWars.includes(targetFaction.name)) {
+    player.declaredWars.push(targetFaction.name);
+    logEvent(`⚔️ War ignites with ${targetFaction.name}!`);
   }
   executeBattle(targetFaction, { clearing });
 }
@@ -484,7 +717,7 @@ function captureClearing(clearing, newOwnerName) {
   }
   renderMap();
   renderClearingActions();
-  logEvent(`🏴 Cleared #${clearing.id} now belongs to ${player.faction.name}.`);
+  logEvent(`🏴 Clearing #${clearing.id} now belongs to ${player.faction.name}.`);
 }
 
 function openBuildMenuForClearing(clearing) {
@@ -492,7 +725,7 @@ function openBuildMenuForClearing(clearing) {
     logEvent("You can only build in clearings you control.");
     return;
   }
-  player.currentClearingId = player.currentClearingId || clearing.id;
+  player.currentClearingId = clearing.id;
   buildMenu(clearing);
 }
 
@@ -609,6 +842,8 @@ function executeFactionAbility(ability) {
           acquireRelic: acquireRandomRelic,
           acquireRelicFromFaction,
           targetFaction: selectedFaction,
+          selectedClearing: getSelectedClearing(),
+          selectedClearingId,
         });
       } else {
         logEvent(`${ability.name} crackles, but no power responds.`);
@@ -992,7 +1227,7 @@ function executeAIFactionTurn(state) {
     aiMeadowfolkTurn(state);
     return;
   }
-  const maxActions = 3;
+  const maxActions = 5;
   let actions = 0;
   while (actions < maxActions && state.energy > 0) {
     const acted = performAIAction(state);
@@ -1754,18 +1989,6 @@ function collectImportCrate(onSuccess) {
   );
 }
 
-function recruitTroops() {
-  const recruits = Math.max(1, player.prowess + (player.recruitBonus || 0));
-  spendEnergyAndGold(
-    RECRUIT_COST.energy,
-    RECRUIT_COST.gold,
-    `🪖 Recruited ${recruits} fresh troops.`,
-    () => {
-      player.troops += recruits;
-    }
-  );
-}
-
 function attemptRelicDelve() {
   if (!hasAvailableDelveRelics()) {
     logEvent("🕳️ There are no undiscovered relics left to delve.");
@@ -2417,6 +2640,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+  if (!factions.length) {
+    console.error("No enabled factions remain. Use factionManager to re-enable at least one faction.");
+    alert("No enabled factions available. Please re-enable a faction in the faction manager.");
+    return;
+  }
   const chosen = localStorage.getItem("chosenFaction") || factions[0].name;
   const faction = factions.find(f => f.name === chosen) || factions[0];
   startGame(faction);
@@ -2443,4 +2671,7 @@ function startGame(faction) {
   player.extraHarvestGoods = [];
   player.pendingPlayerPrompts = [];
   initializeAIStates(faction);
+  if (!restoreGameFromCookie()) {
+    savePlayerStateToCookie();
+  }
 }
