@@ -712,53 +712,7 @@ function renderClearingSummary() {
         ? clearing.structures.map(formatStructureName).join(", ")
         : "None"
     }</p>
-    <button id="openClearingActions">Open Actions</button>
   `;
-  const openBtn = document.getElementById("openClearingActions");
-  if (openBtn) {
-    openBtn.addEventListener("click", () => {
-      hideClearingTooltip();
-      openClearingActionModal(clearing);
-    });
-  }
-}
-
-function openClearingActionModal(clearing) {
-  if (!clearing) return;
-  const ownerLabel = formatOwnerLabel(clearing.owner);
-  const troopsHere = getPlayerTroopsInClearing(clearing.id);
-  const actions = getClearingActionOptions(clearing);
-  openActionModal(`Clearing #${clearing.id}`, body => {
-    body.innerHTML = `
-      <p>${ownerLabel}</p>
-      <p>Troops stationed: <strong>${troopsHere}</strong></p>
-      <p>Structures: ${
-        clearing.structures?.length
-          ? clearing.structures.map(formatStructureName).join(", ")
-          : "None"
-      }</p>
-    `;
-    const actionRow = document.createElement("div");
-    actionRow.className = "action-row";
-    if (!actions.length) {
-      const span = document.createElement("span");
-      span.textContent = "No actions available here.";
-      actionRow.appendChild(span);
-    } else {
-      actions.forEach(action => {
-        const btn = document.createElement("button");
-        btn.textContent = action.label;
-        if (action.title) btn.title = action.title;
-        btn.disabled = action.disabled;
-        btn.addEventListener("click", () => {
-          closeActionModal();
-          action.onClick?.();
-        });
-        actionRow.appendChild(btn);
-      });
-    }
-    body.appendChild(actionRow);
-  });
 }
 
 function showClearingTooltip(clearing, anchorEl) {
@@ -782,14 +736,6 @@ function showClearingTooltip(clearing, anchorEl) {
       });
       clearingTooltipEl.appendChild(btn);
     });
-    const moreBtn = document.createElement("button");
-    moreBtn.textContent = "More";
-    moreBtn.addEventListener("click", event => {
-      event.stopPropagation();
-      hideClearingTooltip();
-      openClearingActionModal(clearing);
-    });
-    clearingTooltipEl.appendChild(moreBtn);
   }
   clearingTooltipEl.dataset.clearingId = String(clearing.id);
   clearingTooltipEl.classList.remove("hidden");

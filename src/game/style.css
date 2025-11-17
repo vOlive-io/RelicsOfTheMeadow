@@ -79,7 +79,7 @@ main {
 .map-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.75em;
+  gap: 0.5em;
   max-height: 460px;
   overflow-y: auto;
   position: relative;
@@ -87,22 +87,22 @@ main {
 
 .clearing-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
-  gap: 0.5em;
+  grid-template-columns: repeat(5, minmax(60px, 1fr));
+  gap: 0.35em;
 }
 
 .clearing-tile {
   border: 2px solid var(--earth-brown);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.82);
-  padding: 0.4em;
-  min-height: 80px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.25em;
+  min-height: 45px;
   aspect-ratio: 1 / 1;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  gap: 0.2em;
-  font-size: 0.75em;
+  gap: 0.15em;
+  font-size: 0.6em;
   transition: transform 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
@@ -134,16 +134,16 @@ main {
 }
 
 .clearing-owner {
-  font-size: 0.8em;
+  font-size: 0.7em;
 }
 
 .clearing-structures {
-  font-size: 0.7em;
+  font-size: 0.6em;
   color: #5f4f3f;
 }
 
 .clearing-troops {
-  font-size: 0.75em;
+  font-size: 0.65em;
   font-weight: bold;
   color: var(--rose);
 }
