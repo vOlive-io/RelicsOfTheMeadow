@@ -102,7 +102,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.08em;
-  font-size: 0.45em;
+  font-size: 0.6em;
   transition: transform 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
@@ -155,28 +155,10 @@ main {
   color: #5f4f3f;
 }
 
-.clearing-actions {
-  border: 2px dashed rgba(91, 165, 113, 0.4);
-  border-radius: 10px;
-  padding: 0.6em;
-  min-height: 90px;
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 0.85em;
-}
-
-.clearing-actions h4 {
-  margin: 0 0 0.35em;
-  font-size: 1em;
-}
-
 .action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4em;
-}
-
-.clearing-actions .action-row {
-  margin-top: 0.4em;
 }
 
 .clearing-tooltip {

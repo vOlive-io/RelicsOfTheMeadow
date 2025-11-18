@@ -59,8 +59,8 @@ const PEACE_COST_ENERGY = 2;
 const aiStates = new Map();
 const BASE_GOLD_STORAGE = 500;
 const STARTING_VAULTS = 1;
-const CLEARING_COUNT = 25;
-const CLEARINGS_PER_FACTION = 4;
+const GRID_WIDTH = 5;
+const CLEARING_COUNT = GRID_WIDTH * GRID_WIDTH;
 const NEUTRAL_OWNER = "Wilderness";
 const SAVE_COOKIE_KEY = "meadow_save_state";
 const SAVE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -96,6 +96,36 @@ const structureEmojiMap = {
   Hive: "🐝",
   "Mega Hive": "🧠",
 };
+
+function positionToCoords(pos) {
+  const row = Math.floor(pos / GRID_WIDTH);
+  const col = pos % GRID_WIDTH;
+  return { row, col };
+}
+
+function arePositionsAdjacent(posA, posB) {
+  if (posA === undefined || posB === undefined) return false;
+  const { row: rowA, col: colA } = positionToCoords(posA);
+  const { row: rowB, col: colB } = positionToCoords(posB);
+  return Math.abs(rowA - rowB) + Math.abs(colA - colB) === 1;
+}
+
+function assignCapitalPositions(factionOrder) {
+  const available = shuffleArray([...Array(CLEARING_COUNT).keys()]);
+  const assignments = new Map();
+  const placed = [];
+  factionOrder.forEach(faction => {
+    if (!available.length) return;
+    let idx = available.findIndex(pos => placed.every(other => !arePositionsAdjacent(pos, other)));
+    if (idx === -1) idx = 0;
+    const [pos] = available.splice(idx, 1);
+    if (typeof pos === "number") {
+      assignments.set(faction.name, pos);
+      placed.push(pos);
+    }
+  });
+  return assignments;
+}
 
 function getGoldStorageCapacity(target = player) {
   if (!target) return BASE_GOLD_STORAGE;
@@ -149,31 +179,31 @@ function getPlayerTroopsInClearing(clearingId) {
   return clearing.playerTroops || 0;
 }
 
-function setPlayerTroopsInClearing(clearingId, amount) {
+function setPlayerTroopsInClearing(clearingId, amount, { silent = false } = {}) {
   const clearing = getClearingById(clearingId);
   if (!clearing) return;
   ensureClearingTroopField(clearing);
   clearing.playerTroops = Math.max(0, Math.round(amount));
-  updateClearingControlFromTroops(clearing);
+  updateClearingControlFromTroops(clearing, { silent });
 }
 
-function addTroopsToClearing(clearingId, amount) {
+function addTroopsToClearing(clearingId, amount, { silent = false } = {}) {
   if (!amount) return;
   const clearing = getClearingById(clearingId);
   if (!clearing) return;
   ensureClearingTroopField(clearing);
   clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) + amount);
-  updateClearingControlFromTroops(clearing);
+  updateClearingControlFromTroops(clearing, { silent });
 }
 
-function removeTroopsFromClearing(clearingId, amount) {
+function removeTroopsFromClearing(clearingId, amount, { silent = false } = {}) {
   if (!amount) return 0;
   const clearing = getClearingById(clearingId);
   if (!clearing) return 0;
   ensureClearingTroopField(clearing);
   const removed = Math.min(clearing.playerTroops || 0, amount);
   clearing.playerTroops = Math.max(0, (clearing.playerTroops || 0) - removed);
-  updateClearingControlFromTroops(clearing);
+  updateClearingControlFromTroops(clearing, { silent });
   return removed;
 }
 
@@ -197,40 +227,46 @@ function applyGlobalTroopLoss(amount, { syncOnly = false } = {}) {
     .sort((a, b) => (b.playerTroops || 0) - (a.playerTroops || 0));
   for (const clearing of sources) {
     if (remaining <= 0) break;
-    ensureClearingTroopField(clearing);
-    const removed = Math.min(clearing.playerTroops, remaining);
-    clearing.playerTroops -= removed;
+    const removed = removeTroopsFromClearing(clearing.id, remaining, { silent: syncOnly });
     remaining -= removed;
-    updateClearingControlFromTroops(clearing);
   }
   renderMap();
   renderClearingSummary();
 }
 
-function updateClearingControlFromTroops(clearing) {
+function updateClearingControlFromTroops(clearing, { silent = false } = {}) {
   if (!clearing || !player?.faction) return;
   const troopsHere = clearing.playerTroops || 0;
   if (troopsHere > 0) {
     if (clearing.owner !== player.faction.name) {
-      captureClearing(clearing, player.faction.name, { suppressRender: true });
+      captureClearing(clearing, player.faction.name, {
+        suppressRender: true,
+        suppressLog: silent,
+      });
     }
   } else if (
     clearing.owner === player.faction.name &&
     clearing.capitalOf !== player.faction.name
   ) {
     clearing.owner = NEUTRAL_OWNER;
-    logEvent(`🌲 Clearing #${clearing.id} returns to the wilds.`);
+    if (!silent) {
+      logEvent(`🌲 Clearing #${clearing.id} returns to the wilds.`);
+    }
   }
 }
 
-function applyGlobalTroopGain(amount, preferredClearingId = getDefaultTroopClearingId(), { syncOnly = false } = {}) {
+function applyGlobalTroopGain(
+  amount,
+  preferredClearingId = getDefaultTroopClearingId(),
+  { syncOnly = false } = {}
+) {
   if (!amount) return;
   if (!syncOnly) {
     player.troops += amount;
   }
   const target = preferredClearingId || getDefaultTroopClearingId();
   if (target) {
-    addTroopsToClearing(target, amount);
+    addTroopsToClearing(target, amount, { silent: syncOnly });
   }
   renderMap();
   renderClearingSummary();
@@ -245,7 +281,7 @@ function syncTroopsWithGarrisons() {
   const diff = Math.round(player.troops - totalGarrisoned);
   if (diff === 0) return;
   if (diff > 0) {
-    addTroopsToClearing(getDefaultTroopClearingId(), diff);
+    addTroopsToClearing(getDefaultTroopClearingId(), diff, { silent: true });
   } else {
     applyGlobalTroopLoss(Math.abs(diff), { syncOnly: true });
   }
@@ -586,33 +622,22 @@ function initializeMapState(playerFaction) {
   }));
   factionCapitals.clear();
   const factionOrder = [playerFaction, ...factions.filter(f => f.name !== playerFaction.name)];
-  const positions = shuffleArray(
-    Array.from({ length: CLEARING_COUNT }, (_, idx) => idx)
-  );
+  const capitalAssignments = assignCapitalPositions(factionOrder);
   factionOrder.forEach(faction => {
-    const assignments = positions.splice(0, CLEARINGS_PER_FACTION);
-    assignments.forEach((pos, index) => {
-      const clearing = mapClearings[pos];
-      clearing.owner = faction.name;
-      clearing.structures = [];
-      clearing.capitalOf = null;
-      if (index === 0) {
-        clearing.capitalOf = faction.name;
-        clearing.structures.push("Keep");
-        factionCapitals.set(faction.name, clearing.id);
-        const state = aiStates.get(faction.name);
-        if (state) {
-          state.capitalClearing = clearing.id;
-          state.troopsByClearing = new Map();
-          state.troopsByClearing.set(clearing.id, state.troops);
-        }
-      }
-    });
+    const pos = capitalAssignments.get(faction.name);
+    if (typeof pos !== "number") return;
+    const clearing = mapClearings[pos];
+    clearing.owner = faction.name;
+    clearing.capitalOf = faction.name;
+    clearing.structures = ["Keep"];
+    factionCapitals.set(faction.name, clearing.id);
   });
-  selectedClearingId = factionCapitals.get(playerFaction.name) || (mapClearings[0]?.id ?? null);
+  selectedClearingId =
+    capitalAssignments.get(playerFaction.name) || (mapClearings[0]?.id ?? null);
   player.currentClearingId = selectedClearingId;
   renderMap();
   renderClearingSummary();
+  return capitalAssignments;
 }
 
 function seedPlayerTroops(faction) {
@@ -623,7 +648,7 @@ function seedPlayerTroops(faction) {
     clearing.playerTroops = 0;
   });
   if (home) {
-    setPlayerTroopsInClearing(home, player.troops);
+    setPlayerTroopsInClearing(home, player.troops, { silent: true });
     player.currentClearingId = home;
     selectedClearingId = home;
   }
@@ -691,7 +716,7 @@ function renderMap() {
     tile.setAttribute("role", "button");
     tile.addEventListener("click", event => {
       event.stopPropagation();
-      selectClearing(clearing.id, { openMenu: true, anchorEl: tile });
+      selectClearing(clearing.id, { openMenu: true });
     });
     grid.appendChild(tile);
   });
@@ -703,7 +728,7 @@ function ensureClearingSelection() {
   selectedClearingId = factionCapitals.get(player?.faction?.name) || (mapClearings[0]?.id ?? null);
 }
 
-function selectClearing(clearingId, { openMenu = false, anchorEl = null } = {}) {
+function selectClearing(clearingId, { openMenu = false } = {}) {
   if (!clearingId) return;
   selectedClearingId = clearingId;
   renderMap();
@@ -711,7 +736,7 @@ function selectClearing(clearingId, { openMenu = false, anchorEl = null } = {}) 
   if (openMenu) {
     const clearing = getClearingById(clearingId);
     if (clearing) {
-      showClearingTooltip(clearing, anchorEl);
+      showClearingTooltip(clearing);
     }
   } else {
     hideClearingTooltip();
@@ -721,36 +746,9 @@ function getSelectedClearing() {
   return selectedClearingId ? getClearingById(selectedClearingId) : null;
 }
 
-function renderClearingSummary() {
-  const container = document.getElementById("clearingActions");
-  if (!container) return;
-  const clearing = getSelectedClearing();
-  if (!clearing) {
-    container.innerHTML = "<p>Select a clearing to inspect.</p>";
-    hideClearingTooltip();
-    return;
-  }
-  const ownerLabel = getOwnerLabelForClearing(clearing);
-  const troopsHere = getPlayerTroopsInClearing(clearing.id);
-  const statusText =
-    troopsHere > 0
-      ? "🪖 Troops are stationed here."
-      : player.currentClearingId
-      ? `🚶 Primary column is currently focused on #${player.currentClearingId}.`
-      : "🚶 Troops begin consolidating at your capital.";
-  container.innerHTML = `
-    <h4>Clearing #${clearing.id} — ${ownerLabel}</h4>
-    <p>${statusText}</p>
-    <p>Troops stationed: <strong>${troopsHere}</strong></p>
-    <p>Structures: ${
-      clearing.structures?.length
-        ? clearing.structures.map(formatStructureName).join(", ")
-        : "None"
-    }</p>
-  `;
-}
+function renderClearingSummary() {}
 
-function showClearingTooltip(clearing, anchorEl) {
+function showClearingTooltip(clearing) {
   if (!clearingTooltipEl || !clearing) return;
   const actions = getClearingActionOptions(clearing);
   clearingTooltipEl.innerHTML = "";
@@ -774,15 +772,13 @@ function showClearingTooltip(clearing, anchorEl) {
   }
   clearingTooltipEl.dataset.clearingId = String(clearing.id);
   clearingTooltipEl.classList.remove("hidden");
-  positionClearingTooltip(anchorEl);
+  positionClearingTooltip();
 }
 
-function positionClearingTooltip(anchorEl) {
+function positionClearingTooltip() {
   if (!clearingTooltipEl || clearingTooltipEl.classList.contains("hidden")) return;
   const clearingId = Number(clearingTooltipEl.dataset.clearingId);
-  const tile =
-    anchorEl ||
-    document.querySelector(`.clearing-tile[data-clearing-id="${clearingId}"]`);
+  const tile = document.querySelector(`.clearing-tile[data-clearing-id="${clearingId}"]`);
   if (!tile || !mapPanelEl) return;
   const tileRect = tile.getBoundingClientRect();
   const panelRect = mapPanelEl.getBoundingClientRect();
@@ -806,7 +802,6 @@ function hideClearingTooltip() {
 }
 
 function repositionClearingTooltip() {
-  if (!clearingTooltipEl || clearingTooltipEl.classList.contains("hidden")) return;
   positionClearingTooltip();
 }
 
@@ -1448,11 +1443,16 @@ const aiAbilityEffects = {
   },
 };
 
-function initializeAIStates(playerFaction) {
+function initializeAIStates(playerFaction, capitalAssignments = new Map()) {
   aiStates.clear();
   factions.forEach(faction => {
     if (faction.name === playerFaction.name) return;
     const state = createAIState(faction);
+    state.capitalClearing = capitalAssignments.get(faction.name) ?? null;
+    state.troopsByClearing = new Map();
+    if (typeof state.capitalClearing === "number") {
+      state.troopsByClearing.set(state.capitalClearing, state.troops);
+    }
     aiStates.set(faction.name, state);
   });
   seedAIRivals();
@@ -1489,6 +1489,7 @@ function createAIState(faction) {
     energyBonus: 0,
     harvestLimit: 0,
     harvestsLeft: 0,
+    troopsByClearing: new Map(),
     capitalClearing: null,
   };
 }
@@ -3003,7 +3004,7 @@ function startGame(faction) {
     handleAction,
     renderFactionAbilities,
   });
-  initializeMapState(faction);
+  const capitalAssignments = initializeMapState(faction);
   player.goldStorageBase = BASE_GOLD_STORAGE;
   player.goldStorageBonus = 0;
   enforceGoldCapacity();
@@ -3015,7 +3016,7 @@ function startGame(faction) {
   player.pendingPeaceOffers = [];
   player.extraHarvestGoods = [];
   player.pendingPlayerPrompts = [];
-  initializeAIStates(faction);
+  initializeAIStates(faction, capitalAssignments);
   if (!restoreGameFromCookie()) {
     savePlayerStateToCookie();
   }
