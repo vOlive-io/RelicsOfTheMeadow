@@ -68,6 +68,12 @@ main {
   gap: 1.2em;
 }
 
+.bottom-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2em;
+}
+
 .stats-panel {
   background: linear-gradient(160deg, rgba(255, 237, 215, 0.96), rgba(244, 240, 229, 0.9));
   border: 3px solid var(--earth-brown);
@@ -80,7 +86,6 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.5em;
-  max-height: 460px;
   overflow-y: auto;
   position: relative;
 }
@@ -89,6 +94,7 @@ main {
   display: grid;
   grid-template-columns: repeat(5, minmax(30px, 1fr));
   gap: 0.2em;
+  
 }
 
 .clearing-tile {
@@ -102,7 +108,11 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.08em;
+<<<<<<< HEAD
   font-size: 0.6em;
+=======
+  font-size: 0.7em;
+>>>>>>> 5caab488320b1f1ddd873ccd32725e74718efe4e
   transition: transform 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
