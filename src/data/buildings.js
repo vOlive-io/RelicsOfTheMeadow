@@ -1,4 +1,7 @@
 export const buildingDefinitions = [
+  /////////////////////////
+  //       HOUSING       //
+  /////////////////////////
   {
     key: "basicHouse",
     name: "Basic House",
@@ -40,6 +43,9 @@ export const buildingDefinitions = [
     buildTime: 4,
     tier: 4,
   },
+  /////////////////////////
+  //     PRODUCTION      //
+  ///////////////////////// 
   {
     key: "orchard",
     name: "Orchard",
@@ -113,6 +119,9 @@ export const buildingDefinitions = [
     cost: {logs: 500, stone: 500, goldOre: 250, mythril: 100, silktoneObsidian: 50, lumenQuartz: 50, starpetalOre: 10},
     supportedTerrains: ["Crystal Cavern"],
   },
+  /////////////////////////
+  //      DECORATION     //
+  /////////////////////////
   {
     key: "statue1",
     name: "Basic Statue",
@@ -137,14 +146,10 @@ export const buildingDefinitions = [
     happinessBonus: 2,
     cost: {logs: 10, clay: 5, goldOre: 2 },
   },
-  {
-    key: "techLab",
-    name: "Tech Lab",
-    type: "utility",
-    icon: "⌨️",
-    happinessBonus: 1,
-    cost: {logs: 100, stone: 80, lumenQuartz: 2 },
-  },
+  
+  /////////////////////////
+  //      ADVANCED       //
+  /////////////////////////
   {
     key: "library",
     name: "Library",
@@ -154,11 +159,27 @@ export const buildingDefinitions = [
     cost: {logs: 140, stone: 100, lumenQuartz: 3 },
   },
   {
+    key: "techLab",
+    name: "Tech Lab",
+    type: "utility",
+    icon: "⌨️",
+    happinessBonus: 1,
+    cost: {logs: 100, stone: 80, lumenQuartz: 2 },
+  },
+  {
     key: "apexResearch",
     name: "Apex Research Laboratory",
     type: "utility",
     icon: "🥼",
     happinessBonus: 3,
-    cost: { logs: 200, stone: 160, lumenQuartz: 5, magicalEssence: 4 },
+    cost: { logs: 200, stone: 160, lumenQuartz: 10, magicalEssence: 4 },
+  },
+    {
+    key: "highApexResearch",
+    name: "High Level Apex Research Laboratory Bastion",
+    type: "utility",
+    icon: "🧠",
+    happinessBonus: 5,
+    cost: {logs: 2500, stone: 2500, goldOre: 1000, mythril: 1000, silktoneObsidian: 5000, lumenQuartz: 500, starpetalOre: 100, magicalEssence: 50},
   },
 ];
