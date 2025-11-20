@@ -40,22 +40,12 @@ export const buildingDefinitions = [
 
   // Orchard Line
   {
-<<<<<<< HEAD
     key: "basicOrchard",
     name: "Basic Orchard",
     type: "production",
     icon: "🍎",
     produces: { fruits: 6 },
     cost: { logs: 40, meadowheartOpal: 1 },
-=======
-    key: "orchard",
-    name: "Apple Orchard",
-    type: "production",
-    icon: "🍎",
-    produces: {fruits: 5, logs: 1},
-    cost: {logs: 30, clay: 10, meadowheartOpal: 3},
-    buildTime: 2,
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
@@ -88,14 +78,8 @@ export const buildingDefinitions = [
     name: "Basic Farm Field",
     type: "production",
     icon: "🌾",
-<<<<<<< HEAD
     produces: { wheat: 8 },
     cost: { logs: 40, clay: 10, meadowheartOpal: 1 },
-=======
-    produces: { wheat: 10 },
-    cost: {logs: 30, clay: 15, meadowheartOpal: 3},
-    buildTime: 1,
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Meadow", "River", "Ancient Grove"],
     blueprintTier: "default",
   },
@@ -129,21 +113,15 @@ export const buildingDefinitions = [
     type: "production",
     icon: "🍃",
     produces: { herbs: 6 },
-<<<<<<< HEAD
     cost: { logs: 30, stone: 10, meadowheartOpal: 1 },
-=======
-    cost: {logs: 10, stone: 5, clay: 5, meadowheartOpal: 3},
-    buildTime: 1,
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
   {
-<<<<<<< HEAD
     key: "largeHerbGarden",
     name: "Large Herb Garden",
     type: "production",
-    icon: x🥬",
+    icon: "🥬",
     produces: { herbs: 12 },
     cost: { logs: 60, stone: 20, meadowheartOpal: 2 },
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
@@ -231,40 +209,12 @@ export const buildingDefinitions = [
 
   // Mines
   {
-=======
-    key: "sawmill",
-    name: "Sawmill",
-    type: "production",
-    icon: "🪚",
-    produces: {wood: 20},
-    cost: {wood: 25, stone: 15, clay: 10},
-    buildTime: 1,
-    supportedTerrains: ["River", "Meadow"],
-  },
-  {
-    key: "mortarVeinworks",
-    name: "Mortar Veinworks",
-    type: "production",
-    icon: "🏺",
-    produces: {clay: 10},
-    cost: {logs: 30, stone: 10},
-    buildTime: 1,
-    supportedTerrains: ["River", "Meadow"],
-  },
-  {
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     key: "mineShaft",
     name: "Mine Shaft",
     type: "production",
     icon: "⛏️",
-<<<<<<< HEAD
     produces: { mythril: 3, meadowheartOpal: 1 },
     cost: { logs: 60, stone: 80 },
-=======
-    tier: 1,
-    produces: {stone: 25, goldOre: 5, mythril: 1, meadowheartOpal: 1, silktoneObsidian: 0, lumenQuartz: 0, starpetalOre: 0},
-    cost: {logs: 50, stone: 10},
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
     blueprintTier: "default",
   },
@@ -273,15 +223,8 @@ export const buildingDefinitions = [
     name: "Deep Mine Shaft",
     type: "production",
     icon: "⛏️",
-<<<<<<< HEAD
     produces: { mythril: 5, goldOre: 2 },
     cost: { logs: 80, stone: 120, mythril: 4 },
-=======
-    tier: 2,
-    upgradeFrom: "mineShaft",
-    produces: {stone: 50, goldOre: 10, mythril: 5, meadowheartOpal: 5, silktoneObsidian: 1, lumenQuartz: 1, starpetalOre: 0},
-    cost: {logs: 80, stone: 120, mythril: 4},
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
     blueprintTier: "library",
     upgradeFrom: "mineShaft",
@@ -290,17 +233,9 @@ export const buildingDefinitions = [
     key: "grandMine",
     name: "Grand Mine",
     type: "production",
-<<<<<<< HEAD
     icon: "⚒️",
     produces: { starpetalOre: 3, goldOre: 3 },
     cost: { logs: 110, stone: 160, mythril: 6, starpetalOre: 2 },
-=======
-    icon: "⛏️",
-    tier: 3,
-    upgradeFrom: "deepMineShaft",
-    produces: {stone: 200, goldOre: 25, mythril: 10, meadowheartOpal: 10, silktoneObsidian: 5, lumenQuartz: 5, starpetalOre: 1},
-    cost: {logs: 250, stone: 250, mythril: 10},
->>>>>>> 42e83e4e393333b2b8416029e8a80b17b8f76654
     supportedTerrains: ["Mountains", "Crystal Cavern"],
     blueprintTier: "apex",
     upgradeFrom: "deepMineShaft",
@@ -398,7 +333,6 @@ export const LIBRARY_UNLOCKS = [
   "deepMineShaft",
   "fountain",
   "villa",
-  "library", // ensure replacement allowed for multiple copies
   "apexResearch",
 ];
 
@@ -410,7 +344,6 @@ export const APEX_UNLOCKS = [
   "grandMine",
   "mansion",
   "manor",
-  "apexResearch",
   "apexBastion",
 ];
 
