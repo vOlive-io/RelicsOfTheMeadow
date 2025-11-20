@@ -19,6 +19,7 @@ const DEFAULT_BLUEPRINTS = [
   "library",
   "statue",
   "banner",
+  "mortarQuarry",
 ];
 const COST_STEP = 0.2;
 const COST_ACCELERATION = 0.3;

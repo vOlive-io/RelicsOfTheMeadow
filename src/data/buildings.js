@@ -218,6 +218,16 @@ export const buildingDefinitions = [
     blueprintTier: "ultra",
     titheBonus: 10,
   },
+  {
+    key: "mortarQuarry",
+    name: "Mortar Quarry",
+    type: "production",
+    icon: "🧱",
+    produces: { clay: 15 },
+    cost: { logs: 90, stone: 140, mythril: 2 },
+    supportedTerrains: ["Hills", "River"],
+    blueprintTier: "default",
+  },
 
   // Mines
   {

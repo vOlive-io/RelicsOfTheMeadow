@@ -126,6 +126,7 @@ const structureEmojiMap = {
   "Pasture of the Gods": "🦬",
   Evergarden: "🌼",
   "Industry Mill": "🏭",
+  "Mortar Quarry": "🧱",
   "Mine Shaft": "⛏️",
   "Deep Mine Shaft": "⛏️",
   "Grand Mine": "⚒️",
