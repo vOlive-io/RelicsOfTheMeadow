@@ -287,8 +287,8 @@ export const buildingDefinitions = [
     name: "Tech Lab",
     type: "utility",
     icon: "🧪",
-    produces: { lumenQuartz: 1 },
-    cost: { logs: 80, stone: 40, mythril: 1 },
+    produces: { magicalEssence: 1},
+    cost: {logs: 80, stone: 40, lumenQuartz: 10, mythril: 10},
     blueprintTier: "default",
   },
   {

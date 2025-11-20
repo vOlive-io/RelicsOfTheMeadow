@@ -350,10 +350,10 @@ function getOwnerColor(ownerName) {
 
 function formatOwnerLabel(ownerName) {
   if (!ownerName) return "—";
-  if (ownerName === player?.faction?.name) return `${player.faction.emoji} You`;
+  if (ownerName === player?.faction?.name) return "You";
   if (ownerName === NEUTRAL_OWNER) return "Unclaimed";
   const faction = factionLookup.get(ownerName);
-  return faction ? `${faction.emoji} ${faction.name}` : ownerName;
+  return faction ? faction.name : ownerName;
 }
 
 function getSelectedClearing() {
