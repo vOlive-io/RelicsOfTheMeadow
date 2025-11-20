@@ -351,7 +351,7 @@ function getOwnerColor(ownerName) {
 function formatOwnerLabel(ownerName) {
   if (!ownerName) return "—";
   if (ownerName === player?.faction?.name) return `${player.faction.emoji} You`;
-  if (ownerName === NEUTRAL_OWNER) return "🌲 Unclaimed";
+  if (ownerName === NEUTRAL_OWNER) return "Unclaimed";
   const faction = factionLookup.get(ownerName);
   return faction ? `${faction.emoji} ${faction.name}` : ownerName;
 }
@@ -432,13 +432,27 @@ function formatClearingTooltip(clearing) {
     return `
       <div><strong>Wild Clearing #${clearing.id}</strong></div>
       <div>Terrain: Unknown</div>
-      <div>Owner: 🌲 Wilds</div>
+      <div>Owner: Unknown</div>
       <div>Send troops nearby to reveal.</div>
     `;
   }
+  const terrainEmoji =
+    {
+      Meadow: "🌿",
+      Forest: "🌲",
+      Hills: "⛰️",
+      Beach: "🏝️",
+      Mountains: "🏔️",
+      River: "🌊",
+      Marsh: "🪵",
+      "Crystal Cavern": "💎",
+      "Ancient Grove": "🌳",
+      Ocean: "🌊",
+      "Deep Ocean": "🌊",
+    }[clearing.terrain] || "◻️";
   const owner =
     clearing.owner === NEUTRAL_OWNER
-      ? "Wilderness"
+      ? "Unclaimed"
       : clearing.owner === player?.faction?.name
       ? "Your control"
       : clearing.owner || "None";
@@ -449,7 +463,7 @@ function formatClearingTooltip(clearing) {
   const rarityLine = clearing.rarity ? `<div>Rarity: ${clearing.rarity}</div>` : "";
   return `
     <div><strong>Clearing #${clearing.id}</strong></div>
-    <div>Terrain: ${clearing.terrain}</div>
+    <div>Terrain: ${terrainEmoji} ${clearing.terrain}</div>
     <div>Owner: ${owner}</div>
     ${rarityLine}
     ${beastLine}

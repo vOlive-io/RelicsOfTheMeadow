@@ -102,7 +102,7 @@ export function renderMap({
           ? typeof formatOwnerLabel === "function"
             ? formatOwnerLabel(clearing.owner)
             : clearing.owner || "—"
-          : "🌲 Wild"
+          : "Unrevealed"
       }</span>
       <span class="clearing-structures">${
         clearing.revealed ? structureText : "Unknown"
