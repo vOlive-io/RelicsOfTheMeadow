@@ -37,6 +37,7 @@ export function startPlayerGame({
   player.relicShield = 0;
   player.pendingPeaceOffers = [];
   player.unlockedAbilityTags = new Set();
+  player.garrisonedClearings = new Set();
   resetResources();
   resetPopulationState();
   resetCraftingState();

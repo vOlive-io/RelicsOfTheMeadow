@@ -59,6 +59,7 @@ export function renderMap({
       classes.push("clearing-player");
     }
     if (clearing.beast) classes.push("clearing-beast");
+    if (!clearing.revealed) classes.push("clearing-hidden");
     tile.className = classes.join(" ");
     tile.type = "button";
     tile.style.borderColor =
@@ -71,11 +72,15 @@ export function renderMap({
     tile.innerHTML = `
       <span class="clearing-id">#${clearing.id}</span>
       <span class="clearing-owner">${
-        typeof formatOwnerLabel === "function"
-          ? formatOwnerLabel(clearing.owner)
-          : clearing.owner || "—"
+        clearing.revealed
+          ? typeof formatOwnerLabel === "function"
+            ? formatOwnerLabel(clearing.owner)
+            : clearing.owner || "—"
+          : "🌲 Wild"
       }</span>
-      <span class="clearing-structures">${structureText}</span>
+      <span class="clearing-structures">${
+        clearing.revealed ? structureText : "Unknown"
+      }</span>
     `;
     tile.addEventListener("click", () => {
       if (selectHandler) selectHandler(clearing.id);

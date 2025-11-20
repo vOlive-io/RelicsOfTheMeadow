@@ -8,6 +8,6 @@ Play the GitHub Pages build here:
 # ⭐ About the Game
 
 Relics of the Meadow is a single-player world-building strategy sandbox where you start on a tiny 5×5 frontier and grow it tile by tile.
-Build homes, tend your economy, craft powerful structures, explore dangerous biomes, discover rare Clearings, and defeat colossal Beasts hiding in the deep.
+Build homes, tend your economy, craft powerful structures, explore dangerous biomes, discover rare Clearings, and defeat colossal Beasts hiding in the deep. Every clearing begins as a **Wild** tile—its terrain is hidden until you station troops in or near it—so scouting and garrisoning matter as much as building.
 
 There are no AI factions — only you, your people, and the mysteries of the land.

@@ -18,6 +18,8 @@ import {
   getClearingById,
   clearBeastFromClearing,
   exploreFromClearing,
+  markClearingRevealed,
+  getAdjacentClearingIds,
   NEUTRAL_OWNER,
 } from "../managers/mapManager.js";
 import { constructBuilding } from "../managers/buildingManager.js";
@@ -340,8 +342,68 @@ function getSelectedClearing() {
   return getClearingById(selectedClearingId);
 }
 
+function ensureGarrisonContainer() {
+  if (!(player.garrisonedClearings instanceof Set)) {
+    player.garrisonedClearings = new Set(player.garrisonedClearings || []);
+  }
+}
+
+function isClearingGarrisoned(clearingId) {
+  if (!clearingId) return false;
+  ensureGarrisonContainer();
+  return player.garrisonedClearings.has(clearingId);
+}
+
+function revealClearingAndNeighbors(clearingId) {
+  if (!clearingId) return;
+  markClearingRevealed(clearingId);
+  getAdjacentClearingIds(clearingId).forEach(id => markClearingRevealed(id));
+}
+
+function revealClearingIfNearGarrison(clearingId) {
+  if (!clearingId) return;
+  ensureGarrisonContainer();
+  const neighbors = getAdjacentClearingIds(clearingId);
+  if (neighbors.some(id => player.garrisonedClearings.has(id))) {
+    markClearingRevealed(clearingId);
+  }
+}
+
+function garrisonClearing(clearingId, { silent = false } = {}) {
+  if (!clearingId) return;
+  ensureGarrisonContainer();
+  if (player.garrisonedClearings.has(clearingId)) return;
+  player.garrisonedClearings.add(clearingId);
+  revealClearingAndNeighbors(clearingId);
+  if (!silent) {
+    logEvent(`🪖 Troops now garrison clearing #${clearingId}. Nearby wilds reveal themselves.`);
+  }
+}
+
+function stationTroopsAtClearing(clearing) {
+  if (!clearing) return;
+  if (isClearingGarrisoned(clearing.id)) {
+    logEvent("🪖 Troops already stationed there.");
+    return;
+  }
+  if (player.troops <= 0) {
+    logEvent("🪖 No spare troops available to station.");
+    return;
+  }
+  garrisonClearing(clearing.id);
+  renderHUD();
+}
+
 function formatClearingTooltip(clearing) {
   if (!clearing) return "";
+  if (!clearing.revealed) {
+    return `
+      <div><strong>Wild Clearing #${clearing.id}</strong></div>
+      <div>Terrain: Unknown</div>
+      <div>Owner: 🌲 Wilds</div>
+      <div>Send troops nearby to reveal.</div>
+    `;
+  }
   const owner =
     clearing.owner === NEUTRAL_OWNER
       ? "Wilderness"
@@ -411,6 +473,12 @@ function renderMapActions() {
     return;
   }
   container.innerHTML = "";
+  const isGarrisoned = isClearingGarrisoned(clearing.id);
+  const garrisonBtn = document.createElement("button");
+  garrisonBtn.textContent = isGarrisoned ? "Troops Stationed" : "Station Troops";
+  garrisonBtn.disabled = isGarrisoned || player.troops <= 0;
+  garrisonBtn.addEventListener("click", () => stationTroopsAtClearing(clearing));
+  container.appendChild(garrisonBtn);
   const directions = [
     { id: "north", label: "Explore North" },
     { id: "east", label: "Explore East" },
@@ -447,6 +515,7 @@ function exploreSelectedDirection(direction) {
       return;
     }
     selectedClearingId = result.id;
+    revealClearingIfNearGarrison(result.id);
     const discoveryText = discovered
       ? `Discovered ${result.terrain}${result.rarity ? ` (${result.rarity})` : ""}.`
       : "Already mapped.";
@@ -2294,6 +2363,7 @@ let player = {
   pendingPeaceOffers: [],
   pendingPlayerPrompts: [],
   unlockedAbilityTags: new Set(),
+  garrisonedClearings: new Set(),
   gainGold(amount) {
     return grantGold(amount, this);
   },
@@ -2352,6 +2422,10 @@ function startGame(faction) {
   const { playerClearingId } = initializeWorldMap(faction, factions);
   selectedClearingId = playerClearingId ?? null;
   player.currentClearingId = selectedClearingId;
+  player.garrisonedClearings = new Set();
+  if (playerClearingId) {
+    garrisonClearing(playerClearingId, { silent: true });
+  }
   player.goldStorageBase = BASE_GOLD_STORAGE;
   player.goldStorageBonus = 0;
   enforceGoldCapacity();

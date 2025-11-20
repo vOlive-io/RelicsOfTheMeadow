@@ -63,6 +63,7 @@ function createClearing(row, col) {
     capitalOf: null,
     rarity: terrain === "Crystal Cavern" || terrain === "Ancient Grove" ? terrain : null,
     beast: maybeSpawnBeast(terrain),
+    revealed: false,
   };
   mapClearings.push(clearing);
   clearingLookup.set(clearing.id, clearing);
@@ -253,6 +254,22 @@ export function exploreFromClearing(clearingId, direction) {
   if (existing) return { clearing: existing, discovered: false };
   const clearing = createClearing(targetRow, targetCol);
   return { clearing, discovered: true };
+}
+
+export function markClearingRevealed(clearingId) {
+  const clearing = getClearingById(clearingId);
+  if (clearing) {
+    clearing.revealed = true;
+  }
+}
+
+export function getAdjacentClearingIds(clearingId) {
+  const clearing = getClearingById(clearingId);
+  if (!clearing) return [];
+  return getNeighborCoords(clearing.row, clearing.col)
+    .map(({ row, col }) => getClearingAt(row, col))
+    .filter(Boolean)
+    .map(neighbor => neighbor.id);
 }
 
 export function clearBeastFromClearing(clearingId) {

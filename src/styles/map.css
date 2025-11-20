@@ -40,6 +40,11 @@
   background: rgba(130, 224, 170, 0.6);
 }
 
+.clearing-hidden {
+  background: rgba(43, 79, 65, 0.5);
+  color: #95d5b2;
+}
+
 .clearing-beast {
   box-shadow: 0 0 0 2px rgba(230, 111, 81, 0.6);
 }
