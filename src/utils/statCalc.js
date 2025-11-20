@@ -7,7 +7,7 @@ export function calculateResilience(player) {
 }
 
 export function calculateEconomy(player) {
-  const tradeValue = (player.tradePostIncome || 0) * 5;
+  const tradeValue = (player.keepTithe || 0) * 5;
   const economyBonus = (player.economyBonus || 0) * 50;
   const storedGoods = (player.harvestedGoodsValue || 0) * 10;
   const totalWealth = Math.max(0, player.gold + tradeValue + economyBonus + storedGoods);

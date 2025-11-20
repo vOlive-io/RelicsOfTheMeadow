@@ -5,7 +5,7 @@ import { factions } from "../../data/factions.js";
 import { buildingDefinitions } from "../data/buildings.js";
 import { resources as resourceDefinitions } from "../data/resources.js";
 import { calculateResilience, calculateEconomy, calculateProwess, calcStartingEnergy } from "../utils/statCalc.js";
-import { importItems } from "../../data/importItems.js";
+import { importItems as giftItems } from "../../data/importItems.js";
 import { battleSpoils } from "../../data/spoils.js";
 import { relics as relicLibrary } from "../../data/relics.js";
 import { startPlayerGame } from "./gameSetup.js";
@@ -31,7 +31,13 @@ import {
   getProductionEntries,
   addResources as depositProducedResources,
 } from "../managers/craftingManager.js";
-import { hasResources, spendResources } from "../managers/resourceManager.js";
+import {
+  hasResources,
+  spendResources,
+  spendResource,
+  getResourceAmount,
+} from "../managers/resourceManager.js";
+import { getPopulation, adjustHappiness, tickPopulation } from "../managers/populationManager.js";
 import {
   applyEventProductionModifiers,
   getActiveEvents,
@@ -87,7 +93,7 @@ Object.values(factionHarvestGoods).forEach(list => registerHarvestGoods(list));
 const HARVEST_ENERGY_COST = 1;
 const RELIC_DELVE_COST = { energy: 5, gold: 250 };
 const RECRUIT_COST = { energy: 2, gold: 40 };
-const TRADE_MISSION_COST = { energy: 1, gold: 0 };
+const GIFT_RUN_COST = { energy: 1, gold: 0 };
 const ALLIANCE_COST = { energy: 1, gold: 30 };
 const DECLARE_WAR_COST = { energy: 2, gold: 50 };
 const PEACE_COST_ENERGY = 2;
@@ -106,40 +112,31 @@ const structureEmojiMap = {
   Villa: "🏡",
   Mansion: "🏘️",
   Manor: "🏛️",
-  Townhouse: "🏠",
-  Villa: "🏡",
-  "Humble Mansion": "🏘️",
-  Manor: "🏛️",
-  Barracks: "🪖",
-  "Farm Field": "🌾",
-  Farm: "🌾",
-  Orchard: "🍎",
-  "Herb Garden": "🌿",
-  "Garden of the Gods": "🌸",
-  "Trading Post": "🏪",
-  Vault: "🗄️",
-  "Super Vault": "💎",
-  Citadel: "⛪",
+  "Basic Orchard": "🍎",
+  "Large Orchard": "🍊",
+  "Orchard of the Gods": "🍇",
+  "Basic Farm Field": "🌾",
+  "Large Farm Field": "🌽",
+  "Farm Field of the Gods": "🌾",
+  "Basic Herb Garden": "🌿",
+  "Large Herb Garden": "🥬",
+  "Herb Garden of the Gods": "🌺",
+  "Basic Pasture": "🐑",
+  "Large Pasture": "🐄",
+  "Pasture of the Gods": "🦬",
+  Evergarden: "🌼",
+  "Industry Mill": "🏭",
   "Mine Shaft": "⛏️",
   "Deep Mine Shaft": "⛏️",
   "Grand Mine": "⚒️",
-  "Mine Hub": "⛏️",
+  "Mine Hub": "🏗️",
   Statue: "🗽",
   Fountain: "⛲",
   Banners: "🚩",
   "Tech Lab": "🧪",
   Library: "📚",
-  "Apex Research Laboratory": "🔭",
-  "Spinster's Hut": "🕸️",
-  "Spinster's Mansion": "🕷️",
-  "Web Outposts": "🕸️",
-  "Web Stations": "🕸️",
-  "Stronghold": "🛡️",
-  "Base of Operations": "🏗️",
-  "Spore Field": "🍄",
-  Nest: "🐣",
-  Hive: "🐝",
-  "Mega Hive": "🧠",
+  "Apex Research Laboratory": "🔬",
+  "Ultra Apex Bastion": "🏯",
 };
 
 function formatStructureName(name) {
@@ -172,6 +169,26 @@ function announceWorldEvent(message) {
     worldEventFeed = worldEventFeed.slice(-WORLD_EVENT_LIMIT);
   }
   renderWorldEventFeed();
+}
+
+function consumeFoodForPopulation() {
+  const population = getPopulation();
+  if (population <= 0) return;
+  const foodNeeded = Math.ceil(population / 5);
+  const pantryOrder = ["meat", "wheat", "fruits"];
+  let remaining = foodNeeded;
+  pantryOrder.forEach(resource => {
+    if (remaining <= 0) return;
+    const available = getResourceAmount(resource);
+    if (!available) return;
+    const spend = Math.min(available, remaining);
+    spendResource(resource, spend);
+    remaining -= spend;
+  });
+  if (remaining > 0) {
+    adjustHappiness(-remaining);
+    logEvent(`🍽️ Food shortage! Missing ${remaining} portions; morale falls.`);
+  }
 }
 
 function renderWorldEventFeed() {
@@ -313,6 +330,7 @@ function renderHUD() {
     getOwnerColor,
     formatStructures: formatStructureList,
     formatTooltip: formatClearingTooltip,
+    isGarrisoned: id => isClearingGarrisoned(id),
   });
   renderResourcePanel();
   renderPopulationPanel();
@@ -332,7 +350,7 @@ function getOwnerColor(ownerName) {
 function formatOwnerLabel(ownerName) {
   if (!ownerName) return "—";
   if (ownerName === player?.faction?.name) return `${player.faction.emoji} You`;
-  if (ownerName === NEUTRAL_OWNER) return "🌲 Wilds";
+  if (ownerName === NEUTRAL_OWNER) return "🌲 Unclaimed";
   const faction = factionLookup.get(ownerName);
   return faction ? `${faction.emoji} ${faction.name}` : ownerName;
 }
@@ -391,6 +409,19 @@ function stationTroopsAtClearing(clearing) {
     return;
   }
   garrisonClearing(clearing.id);
+  renderHUD();
+}
+
+function moveTroops(originId, targetId) {
+  if (!originId || !targetId) return;
+  ensureGarrisonContainer();
+  if (!player.garrisonedClearings.has(originId)) {
+    logEvent("🪖 No troops stationed there to move.");
+    return;
+  }
+  player.garrisonedClearings.delete(originId);
+  garrisonClearing(targetId, { silent: true });
+  logEvent(`🪖 Troops relocated from clearing #${originId} to #${targetId}.`);
   renderHUD();
 }
 
@@ -479,6 +510,17 @@ function renderMapActions() {
   garrisonBtn.disabled = isGarrisoned || player.troops <= 0;
   garrisonBtn.addEventListener("click", () => stationTroopsAtClearing(clearing));
   container.appendChild(garrisonBtn);
+  if (isGarrisoned) {
+    const neighbors = getAdjacentClearingIds(clearing.id)
+      .map(id => getClearingById(id))
+      .filter(Boolean);
+    neighbors.forEach(neighbor => {
+      const moveBtn = document.createElement("button");
+      moveBtn.textContent = `Move to #${neighbor.id}`;
+      moveBtn.addEventListener("click", () => moveTroops(clearing.id, neighbor.id));
+      container.appendChild(moveBtn);
+    });
+  }
   const directions = [
     { id: "north", label: "Explore North" },
     { id: "east", label: "Explore East" },
@@ -838,7 +880,7 @@ const aiAbilityEffects = {
     const levy = Math.min(player.gold, 25 + player.economy);
     player.gold -= levy;
     state.gold = (state.gold || 0) + levy;
-    announceWorldEvent(`🐉 ${state.faction.name} taxes your caravans for ${levy} gold.`);
+    announceWorldEvent(`🐉 ${state.faction.name} taxes your couriers for ${levy} gold.`);
   },
   Diplomats: state => {
     if (player.declaredWars.includes(state.faction.name)) {
@@ -903,8 +945,8 @@ const aiAbilityEffects = {
     announceWorldEvent("🌾 Meadowfolk regrow your fields, restoring harvest chances.");
   },
   SpinWeb: () => {
-    player.tradesRemaining = Math.max(0, (player.tradesRemaining || 0) - 1);
-    announceWorldEvent("🕷️ Silken Dominion webs delay one of your trade missions.");
+    player.courierRuns = Math.max(0, (player.courierRuns || 0) - 1);
+    announceWorldEvent("🕷️ Silken Dominion webs delay one of your courier runs.");
   },
   Manipulate: () => {
     player.happiness = Math.max(0, player.happiness - 1);
@@ -1647,14 +1689,14 @@ function handleAction(action) {
     case "harvest":
       harvestCrops();
       break;
-    case "trade":
-      showTradeModal();
+    case "gifts":
+      showGiftModal();
       break;
     case "festival":
       startFestivalAction();
       break;
-    case "collect-import":
-      collectImportCrate();
+    case "collect-gift":
+      openGiftCrate();
       break;
     case "recruit":
       recruitTroops();
@@ -1738,49 +1780,49 @@ function startFestivalAction() {
   renderHUD();
 }
 
-function performTrade(selectedKey, onSuccess) {
-  if (player.tradePosts <= 0) {
-    logEvent("🏚️ You need a Trading Post before you can export goods.");
+function sendGiftCourier(selectedKey, onSuccess) {
+  if (player.giftCouriers <= 0) {
+    logEvent("🏚️ You need to establish a courier before requesting gifts.");
     return;
   }
-  if (player.tradesRemaining <= 0) {
-    logEvent("🚫 All trade missions have been used this turn.");
+  if (player.courierRuns <= 0) {
+    logEvent("🚫 All courier runs have been used this turn.");
     return;
   }
   if (!selectedKey) {
-    logEvent("❌ Choose goods to export first.");
+    logEvent("❌ Choose goods to send first.");
     return;
   }
   const available = player.harvestedGoods[selectedKey] || 0;
   if (available <= 0) {
-    logEvent("🌾 No harvested goods ready for export.");
+    logEvent("🌾 No harvested goods ready to send.");
     return;
   }
   const good = harvestGoodsMap.get(selectedKey);
   if (!good) {
-    logEvent("❌ Unknown goods cannot be traded.");
+    logEvent("❌ Unknown goods cannot be offered.");
     return;
   }
   const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
-  const tradeStrength = 1 + player.tradePosts * 0.15;
-  const goldEarned = Math.round(good.value * economyMultiplier * tradeStrength);
+  const courierStrength = 1 + player.giftCouriers * 0.15;
+  const goldEarned = Math.round(good.value * economyMultiplier * courierStrength);
   spendEnergyAndGold(
-    TRADE_MISSION_COST.energy,
-    TRADE_MISSION_COST.gold,
-    `🚚 Exported ${good.emoji} ${good.name}.`,
+    GIFT_RUN_COST.energy,
+    GIFT_RUN_COST.gold,
+    `🎁 Sent ${good.emoji} ${good.name} to the Keep.`,
     () => {
       player.harvestedGoods[selectedKey] = Math.max(
         0,
         (player.harvestedGoods[selectedKey] || 0) - 1
       );
-      player.tradesRemaining = Math.max(0, player.tradesRemaining - 1);
+      player.courierRuns = Math.max(0, player.courierRuns - 1);
       recalcHarvestedGoodsValue();
       const addedGold = grantGold(goldEarned);
       const capNote = addedGold < goldEarned ? " (vaults full)" : "";
       logEvent(
-        `💹 Traders return with ${addedGold} gold${capNote} (Economy ×${economyMultiplier.toFixed(
+        `💹 Couriers return with ${addedGold} gold${capNote} (Economy ×${economyMultiplier.toFixed(
           2
-        )}, Posts ×${tradeStrength.toFixed(2)}).`
+        )}, Couriers ×${courierStrength.toFixed(2)}).`
       );
       if (typeof onSuccess === "function") onSuccess();
       renderHUD();
@@ -1788,14 +1830,14 @@ function performTrade(selectedKey, onSuccess) {
   );
 }
 
-function collectImportCrate(onSuccess) {
-  if (player.imports <= 0) {
-    logEvent("📭 No imports to collect!");
+function openGiftCrate(onSuccess) {
+  if (player.giftsWaiting <= 0) {
+    logEvent("📭 No gifts have arrived!");
     return;
   }
-  const importItem = importItems[Math.floor(Math.random() * importItems.length)];
+  const giftItem = giftItems[Math.floor(Math.random() * giftItems.length)];
   const bonusNames = [];
-  const boosts = importItem.statBoosts || {};
+  const boosts = giftItem.statBoosts || {};
   if (boosts.happiness) bonusNames.push(`${boosts.happiness} happiness`);
   if (boosts.protection) bonusNames.push(`${boosts.protection} protection`);
   if (boosts.troops) bonusNames.push(`${boosts.troops} troops`);
@@ -1804,15 +1846,15 @@ function collectImportCrate(onSuccess) {
   spendEnergyAndGold(
     0,
     0,
-    `📥 Collected imported ${importItem.name}!`,
+    `📥 Collected gift of ${giftItem.name}!`,
     () => {
-      player.imports = Math.max(0, player.imports - 1);
+      player.giftsWaiting = Math.max(0, player.giftsWaiting - 1);
       if (boosts.happiness) player.happiness += boosts.happiness;
       if (boosts.protection) player.protection += boosts.protection;
       if (boosts.troops) player.troops += boosts.troops;
       if (boosts.energy) player.energy += boosts.energy;
-      const addedGold = grantGold(importItem.price);
-      logEvent(`💰 Shipment yielded ${addedGold} gold${bonusMsg}.`);
+      const addedGold = grantGold(giftItem.price);
+      logEvent(`💰 Gift yielded ${addedGold} gold${bonusMsg}.`);
       if (typeof onSuccess === "function") onSuccess();
       renderHUD();
     }
@@ -1857,10 +1899,10 @@ function showInventoryPanel() {
     const info = document.createElement("div");
     info.className = "inventory-info";
     info.innerHTML = `
-      <div>🚢 Imports waiting: <strong>${player.imports}</strong></div>
+      <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
       <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
-      <div>📦 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts || 0}</strong></div>
-      <div>🛒 Trade Posts: <strong>${player.tradePosts || 0}</strong></div>
+      <div>📦 Courier runs left: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
+      <div>🕊️ Couriers hired: <strong>${player.giftCouriers || 0}</strong></div>
       <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
     `;
     const goodsGrid = document.createElement("div");
@@ -1880,26 +1922,26 @@ function showInventoryPanel() {
   });
 }
 
-function showTradeModal() {
-  openActionModal("🏛️ Trade & Imports", body => {
-    renderTradeContent(body);
+function showGiftModal() {
+  openActionModal("🏛️ Keeper's Gifts", body => {
+    renderGiftContent(body);
   });
 }
 
-function renderTradeContent(container) {
+function renderGiftContent(container) {
   container.innerHTML = "";
   const summary = document.createElement("div");
   summary.className = "inventory-info commerce-info";
   summary.innerHTML = `
-    <div>🛒 Trade Posts: <strong>${player.tradePosts || 0}</strong></div>
-    <div>🚚 Trades left: <strong>${player.tradesRemaining}/${player.tradePosts || 0}</strong></div>
+    <div>🕊️ Couriers: <strong>${player.giftCouriers || 0}</strong></div>
+    <div>📦 Runs left: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
     <div>📦 Goods stored: <strong>${getTotalHarvestedGoods()}</strong></div>
-    <div>📥 Imports waiting: <strong>${player.imports}</strong></div>
+    <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
   `;
   container.appendChild(summary);
   const quickTip = document.createElement("p");
   quickTip.className = "commerce-note";
-  quickTip.textContent = "Tip: use 📥 Collect Imports in the main action list for quick crates.";
+  quickTip.textContent = "Tip: use 📥 Collect Gifts in the main action list for instant deliveries.";
   container.appendChild(quickTip);
   if (player.faction && factionHarvestGoods[player.faction.name]) {
     const note = document.createElement("p");
@@ -1911,7 +1953,7 @@ function renderTradeContent(container) {
 
   const exportsSection = document.createElement("section");
   exportsSection.className = "commerce-section";
-  exportsSection.innerHTML = "<h3>Exports</h3>";
+  exportsSection.innerHTML = "<h3>Send Offerings</h3>";
   const exportable = getHarvestCatalog().filter(
     good => (player.harvestedGoods && player.harvestedGoods[good.key]) > 0
   );
@@ -1924,10 +1966,10 @@ function renderTradeContent(container) {
     const goodsGrid = document.createElement("div");
     goodsGrid.className = "inventory-goods";
     const economyMultiplier = Math.max(1, Math.pow(player.economy / 5 + 1, 1.05));
-    const tradeStrength = 1 + (player.tradePosts || 0) * 0.15;
+    const courierStrength = 1 + (player.giftCouriers || 0) * 0.15;
     exportable.forEach(good => {
       const count = (player.harvestedGoods && player.harvestedGoods[good.key]) || 0;
-      const payout = Math.round(good.value * economyMultiplier * tradeStrength);
+      const payout = Math.round(good.value * economyMultiplier * courierStrength);
       const card = document.createElement("div");
       card.className = "inventory-good commerce-good";
       card.innerHTML = `
@@ -1939,40 +1981,41 @@ function renderTradeContent(container) {
         </div>
       `;
       const button = document.createElement("button");
-      button.textContent = `Send Caravan (⚡${TRADE_MISSION_COST.energy})`;
+      button.textContent = `Dispatch Courier (⚡${GIFT_RUN_COST.energy})`;
       const disabled =
-        player.tradePosts <= 0 ||
-        player.tradesRemaining <= 0 ||
+        player.giftCouriers <= 0 ||
+        player.courierRuns <= 0 ||
         count <= 0 ||
-        player.energy < TRADE_MISSION_COST.energy;
+        player.energy < GIFT_RUN_COST.energy;
       button.disabled = disabled;
-      button.addEventListener("click", () => performTrade(good.key, () => renderTradeContent(container)));
+      button.addEventListener("click", () => sendGiftCourier(good.key, () => renderGiftContent(container)));
       card.appendChild(button);
       goodsGrid.appendChild(card);
     });
     exportsSection.appendChild(goodsGrid);
   }
-  if (player.tradePosts <= 0) {
+  if (player.giftCouriers <= 0) {
     const note = document.createElement("p");
     note.className = "commerce-note";
-    note.textContent = "Build Trading Posts to unlock caravans.";
+    note.textContent = "Construct more civic hubs to attract couriers.";
     exportsSection.appendChild(note);
   }
 
   const importSection = document.createElement("section");
   importSection.className = "commerce-section";
-  importSection.innerHTML = "<h3>Imports</h3>";
+  importSection.innerHTML = "<h3>Gifts for the Keep</h3>";
   const importInfo = document.createElement("p");
-  importInfo.textContent = "Collect shipments for gold and random bonuses.";
+  importInfo.textContent = "Collect parcels from loyal subjects for random boons.";
   importSection.appendChild(importInfo);
   const importBtn = document.createElement("button");
-  importBtn.textContent = player.imports > 0 ? `Collect Import (${player.imports} waiting)` : "No imports ready";
-  importBtn.disabled = player.imports <= 0;
-  importBtn.addEventListener("click", () => collectImportCrate(() => renderTradeContent(container)));
+  importBtn.textContent =
+    player.giftsWaiting > 0 ? `Collect Gift (${player.giftsWaiting} waiting)` : "No gifts ready";
+  importBtn.disabled = player.giftsWaiting <= 0;
+  importBtn.addEventListener("click", () => openGiftCrate(() => renderGiftContent(container)));
   importSection.appendChild(importBtn);
   const importHelp = document.createElement("p");
   importHelp.className = "commerce-note";
-  importHelp.textContent = "Imports can include troops, happiness, protection, and gold.";
+  importHelp.textContent = "Gifts can include troops, happiness, protection, and gold.";
   importSection.appendChild(importHelp);
 
   const splitWrapper = document.createElement("div");
@@ -2022,13 +2065,13 @@ function canHarvestNow() {
   return getProductionEntries().length > 0;
 }
 
-function hasTradeOpportunity() {
-  const hasImports = player.imports > 0;
-  const canTrade =
-    (player.tradePosts || 0) > 0 &&
-    (player.tradesRemaining || 0) > 0 &&
+function hasGiftOpportunity() {
+  const hasGifts = player.giftsWaiting > 0;
+  const canSend =
+    (player.giftCouriers || 0) > 0 &&
+    (player.courierRuns || 0) > 0 &&
     getTotalHarvestedGoods() > 0;
-  return hasImports || canTrade;
+  return hasGifts || canSend;
 }
 
 function hasUsableRelic() {
@@ -2091,20 +2134,20 @@ function updateActionIndicators() {
           canUse = false;
         }
         break;
-      case "trade":
+      case "gifts":
         if (labelEl) {
-          labelEl.textContent = `🏛️ Trade (${player.tradesRemaining}/${player.tradePosts || 0})`;
+          labelEl.textContent = `🏛️ Gifts (${player.courierRuns}/${player.giftCouriers || 0})`;
         }
-        detailText += ` • Imports waiting: ${player.imports}`;
-        if (!hasTradeOpportunity()) {
-          detailText += " • Nothing ready to trade or collect.";
+        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
+        if (!hasGiftOpportunity()) {
+          detailText += " • Nothing ready to send or collect.";
           canUse = false;
         }
         break;
-      case "collect-import":
-        detailText += ` • Imports waiting: ${player.imports}`;
-        if (player.imports <= 0) {
-          detailText += " • No shipments to open.";
+      case "collect-gift":
+        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
+        if (player.giftsWaiting <= 0) {
+          detailText += " • No parcels to open.";
           canUse = false;
         }
         break;
@@ -2137,7 +2180,7 @@ function updateActionIndicators() {
         break;
       }
       case "inventory":
-        detailText += ` • Imports: ${player.imports}`;
+        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
         break;
       case "end-turn":
         detailText = "Recover energy, refresh harvests and trade missions.";
@@ -2165,6 +2208,7 @@ function buildMenu() {
     const grid = document.createElement("div");
     grid.className = "build-grid";
     buildingDefinitions.forEach(def => {
+      if (!hasBlueprint(def.key)) return;
       const { canBuild, reason, cost } = evaluateBlueprintAvailability(def, clearing, structuresHere);
       const card = document.createElement("button");
       card.className = "build-card";
@@ -2216,6 +2260,15 @@ function executeConstruction(definition, clearing) {
   if (!Array.isArray(player.buildings)) player.buildings = [];
   player.buildings.push(definition.name);
   logEvent(`${definition.icon || "🏗️"} Built ${definition.name} in clearing #${clearing.id}.`);
+  if (definition.courierBonus) {
+    player.giftCouriers = Math.max(0, (player.giftCouriers || 0) + definition.courierBonus);
+    player.courierRuns = player.giftCouriers;
+    logEvent(`🕊️ Courier capacity increased to ${player.giftCouriers}.`);
+  }
+  if (definition.titheBonus) {
+    player.keepTithe = Math.max(0, (player.keepTithe || 0) + definition.titheBonus);
+    logEvent(`🏦 Keep tithes grow by ${definition.titheBonus}.`);
+  }
   if (definition.type === "production") {
     refreshHarvestAvailability();
   }
@@ -2299,10 +2352,10 @@ function endTurn() {
   const restored = calcStartingEnergy(player) + (player.energyBonus || 0);
   player.energy += restored;
   logEvent(`🌙 Turn ended. Recovered ${restored} energy (total ${player.energy}).`);
-  if (player.tradePostIncome) {
-    const income = grantGold(player.tradePostIncome);
-    const overflowNote = income < player.tradePostIncome ? " Your vaults overflow." : "";
-    logEvent(`📦 Trading Posts delivered ${income} gold.${overflowNote}`);
+  if (player.keepTithe) {
+    const income = grantGold(player.keepTithe);
+    const overflowNote = income < player.keepTithe ? " Your vaults overflow." : "";
+    logEvent(`📦 Keep tithes delivered ${income} gold.${overflowNote}`);
   }
   if (player.relicsUsedThisTurn?.clear) {
     player.relicsUsedThisTurn.clear();
@@ -2315,9 +2368,10 @@ function endTurn() {
     player.abilitiesUsedThisTurn = new Map();
   }
   player.harvestsLeft = player.harvestLimit || 0;
-  player.tradesRemaining = player.tradePosts || 0;
-  player.imports = Math.floor(Math.random() * 5) + 1;
-  processAIFactionTurns();
+  player.courierRuns = player.giftCouriers || 0;
+  player.giftsWaiting = Math.floor(Math.random() * 3) + 1;
+  tickPopulation();
+  consumeFoodForPopulation();
   advanceEvents(announceWorldEvent);
   maybeTriggerRandomEvent(announceWorldEvent);
   refreshHarvestAvailability();
@@ -2340,12 +2394,12 @@ let player = {
   prowess: 0,
   resilience: 0,
   economy: 1,
-  imports: 0,
+  giftsWaiting: 0,
   relics: [],
   buildings: [],
   declaredWars: [],
   alliances: [],
-  tradePostIncome: 0,
+  keepTithe: 0,
   economyBonus: 0,
   relicsUsedThisTurn: new Set(),
   abilitiesUsedThisTurn: new Map(),
@@ -2353,8 +2407,8 @@ let player = {
   harvestLimit: 0,
   harvestedGoods: {},
   harvestedGoodsValue: 0,
-  tradePosts: 0,
-  tradesRemaining: 0,
+  giftCouriers: 1,
+  courierRuns: 1,
   extraHarvestGoods: [],
   recruitBonus: 0,
   energyBonus: 0,
@@ -2369,17 +2423,6 @@ let player = {
   },
 };
 document.addEventListener("DOMContentLoaded", () => {
-  diplomacyModal = document.getElementById("diplomacyModal");
-  diplomacyList = document.getElementById("diplomacyList");
-  const closeBtn = document.getElementById("closeDiplomacy");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", hideDiplomacyMenu);
-  }
-  if (diplomacyModal) {
-    diplomacyModal.addEventListener("click", event => {
-      if (event.target === diplomacyModal) hideDiplomacyMenu();
-    });
-  }
   actionModal = document.getElementById("actionModal");
   actionModalTitle = document.getElementById("actionModalTitle");
   actionModalBody = document.getElementById("actionModalBody");
@@ -2437,6 +2480,5 @@ function startGame(faction) {
   player.pendingPeaceOffers = [];
   player.extraHarvestGoods = [];
   player.pendingPlayerPrompts = [];
-  initializeAIStates(faction);
 }
  

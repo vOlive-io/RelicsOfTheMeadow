@@ -1,7 +1,7 @@
 /////////////////////////////////////
 /// MODULE IMPORTS               ///
 /////////////////////////////////////
-import { buildingDefinitions } from "../data/buildings.js";
+import { buildingDefinitions, LIBRARY_UNLOCKS, APEX_UNLOCKS, ULTRA_UNLOCKS } from "../data/buildings.js";
 import { addResource, spendResources } from "./resourceManager.js";
 import { adjustHappiness, setHousingCapacity } from "./populationManager.js";
 
@@ -10,18 +10,36 @@ import { adjustHappiness, setHousingCapacity } from "./populationManager.js";
 /////////////////////////////////////
 const DEFAULT_BLUEPRINTS = [
   "basicHouse",
-  "farm",
-  "orchard",
-  "herbGarden",
+  "basicFarm",
+  "basicOrchard",
+  "basicHerbGarden",
+  "basicPasture",
   "mineShaft",
   "techLab",
   "library",
-  "apexResearch",
+  "statue",
+  "banner",
 ];
 const COST_STEP = 0.2;
 const COST_ACCELERATION = 0.3;
-const ANCIENT_GROVE_BOOST = new Set(["farm", "orchard", "herbGarden"]);
+const ANCIENT_GROVE_BOOST = new Set([
+  "basicFarm",
+  "largeFarm",
+  "farmOfTheGods",
+  "basicOrchard",
+  "largeOrchard",
+  "orchardOfTheGods",
+  "basicHerbGarden",
+  "largeHerbGarden",
+  "herbGardenOfTheGods",
+  "evergarden",
+]);
 const CRYSTAL_CAVERN_BOOST = new Set(["mineShaft", "deepMineShaft", "grandMine", "mineHub"]);
+const UNLOCK_GROUPS = {
+  library: LIBRARY_UNLOCKS,
+  apex: APEX_UNLOCKS,
+  ultra: ULTRA_UNLOCKS,
+};
 
 /////////////////////////////////////
 /// STATE                         ///
@@ -86,6 +104,16 @@ export function unlockBlueprint(key) {
   unlockedBlueprints.add(key);
 }
 
+export function unlockBlueprintBatch(keys = []) {
+  keys.forEach(key => unlockedBlueprints.add(key));
+}
+
+export function unlockBlueprintGroup(groupName) {
+  const batch = UNLOCK_GROUPS[groupName];
+  if (!batch) return;
+  unlockBlueprintBatch(batch);
+}
+
 export function hasBlueprint(key) {
   return unlockedBlueprints.has(key);
 }
@@ -145,6 +173,9 @@ export function buildStructure({ clearingId, key, terrain, rarity }) {
   structures.set(clearingId, list);
   if (instance.beds || replacedInstance?.beds) recalcHousingCapacity();
   if (instance.happinessBonus) adjustHappiness(instance.happinessBonus);
+  if (Array.isArray(def.unlockSets)) {
+    def.unlockSets.forEach(group => unlockBlueprintGroup(group));
+  }
   return { success: true, instance, replaced: replacedInstance?.name || null };
 }
 

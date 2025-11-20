@@ -20,8 +20,8 @@ function gainPercentOfGold(player, percent) {
   return addGold(player, gain);
 }
 
-function gainPercentOfTrade(player, percent) {
-  const base = Math.max(0, player.tradePostIncome || 0);
+function gainPercentOfTithe(player, percent) {
+  const base = Math.max(0, player.keepTithe || 0);
   const gain = Math.max(1, Math.floor(base * percent));
   return addGold(player, gain);
 }
@@ -137,7 +137,7 @@ export const relics = [
     energyCost: RELIC_ENERGY_COST,
     logic: ({ player, logEvent }) => {
       const gain = gainPercentOfGold(player, 0.1);
-      logEvent(`🏯 Trade partners tithe ${gain} gold from their windfalls.`);
+      logEvent(`🏯 Keep partners tithe ${gain} gold from their windfalls.`);
     },
   },
   {
@@ -180,7 +180,7 @@ export const relics = [
     effect: "10% increase to all income sources.",
     energyCost: RELIC_ENERGY_COST,
     logic: ({ player, logEvent }) => {
-      const trade = Math.max(0, (player.tradePostIncome || 0) * 5);
+      const trade = Math.max(0, (player.keepTithe || 0) * 5);
       const base = Math.max(0, player.gold) + trade;
       const gain = Math.max(5, Math.floor(base * 0.1));
       const added = addGold(player, gain);
@@ -193,7 +193,7 @@ export const relics = [
     effect: "+15% trade efficiency.",
     energyCost: RELIC_ENERGY_COST,
     logic: ({ player, logEvent }) => {
-      const gain = gainPercentOfTrade(player, 0.15);
+      const gain = gainPercentOfTithe(player, 0.15);
       logEvent(`🟨 Contracts tighten: +${gain} gold from efficient trade.`);
     },
   },
@@ -205,7 +205,7 @@ export const relics = [
     logic: ({ player, logEvent }) => {
       const gain = gainPercentOfGold(player, 0.1);
       boostProtection(player, 1);
-      logEvent(`🟨 Fair weights yield ${gain} bonus gold and sturdier caravans.`);
+      logEvent(`🟨 Fair weights yield ${gain} bonus gold and sturdier couriers.`);
     },
   },
   {
@@ -346,13 +346,13 @@ export const relics = [
   {
     name: "🏯 Imperial Standard",
     type: "Jade Empire",
-    effect: "Trade to neutral +10%, allies +25%.",
+    effect: "Tithes from neutrals +10%, allies +25%.",
     energyCost: RELIC_ENERGY_COST,
     logic: ({ player, logEvent }) => {
       const allyBonus = (player.alliances?.length || 0) * 0.25;
       const tradePercent = Math.min(0.5, 0.1 + allyBonus);
-      const gain = gainPercentOfTrade(player, tradePercent);
-      logEvent(`🏯 Imperial honors deliver ${gain} gold from trade partners.`);
+      const gain = gainPercentOfTithe(player, tradePercent);
+      logEvent(`🏯 Imperial honors deliver ${gain} gold from loyal partners.`);
     },
   },
   {

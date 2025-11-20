@@ -66,3 +66,34 @@ h1 {
 .hidden {
   display: none;
 }
+
+.action-modal,
+.diplomacy-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1200;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.action-modal.open,
+.diplomacy-modal.open {
+  display: flex;
+}
+
+.action-modal__content,
+.diplomacy-content {
+  background: #fefefe;
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: min(640px, 100%);
+}

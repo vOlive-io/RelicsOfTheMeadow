@@ -20,7 +20,7 @@ export function startPlayerGame({
   player.buildings = [];
   player.declaredWars = [];
   player.alliances = [];
-  player.tradePostIncome = 0;
+  player.keepTithe = 0;
   player.economyBonus = 0;
   player.relicsUsedThisTurn = new Set();
   player.abilitiesUsedThisTurn = new Map();
@@ -28,8 +28,8 @@ export function startPlayerGame({
   player.harvestsLeft = 0;
   player.harvestedGoods = {};
   player.harvestedGoodsValue = 0;
-  player.tradePosts = 0;
-  player.tradesRemaining = 0;
+  player.giftCouriers = 1;
+  player.courierRuns = 1;
   player.extraHarvestGoods = [];
   player.recruitBonus = 0;
   player.energyBonus = 0;
@@ -56,9 +56,9 @@ export function setupActionButtons(handleAction) {
     { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 3, gold: 0 } },
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
-    { id: "trade", label: "🏛️ Trade", detail: "Run caravans and collect imports.", costLabel: "Missions cost ⚡1 each" },
+    { id: "gifts", label: "🏛️ Gifts", detail: "Review Keep gifts and couriers.", costLabel: "Requests cost ⚡1 each" },
     { id: "festival", label: "🎉 Festival", detail: "Boost happiness and production briefly.", costLabel: "Consumes fruits & wheat" },
-    { id: "collect-import", label: "📥 Collect Imports", detail: "Open one shipment instantly.", cost: { energy: 0, gold: 0 } },
+    { id: "collect-gift", label: "📥 Collect Gifts", detail: "Open one shipment instantly.", cost: { energy: 0, gold: 0 } },
     { id: "recruit", label: "🪖 Recruit", detail: "Call fresh troops.", cost: { energy: 2, gold: 40 } },
     { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic.", cost: { energy: 5, gold: 250 } },
     { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic.", costLabel: "Varies per relic" },
@@ -94,9 +94,9 @@ function applyStartingStats(player, faction) {
   player.troops = parseTraitValue(faction?.defaultTraits?.prowess) * 5;
   player.happiness = 1;
   player.protection = 1;
-  player.imports = Math.floor(Math.random() * 5) + 1;
+  player.giftsWaiting = Math.floor(Math.random() * 3) + 1;
   player.relics = [];
-  player.tradePostIncome = 0;
+  player.keepTithe = 0;
   player.economyBonus = 0;
 }
 

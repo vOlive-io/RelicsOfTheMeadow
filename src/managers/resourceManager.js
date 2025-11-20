@@ -13,6 +13,9 @@ const STARTER_STOCK = {
   meadowheartOpal: 4,
   mythril: 2,
   goldOre: 2,
+  fruits: 10,
+  wheat: 10,
+  meat: 4,
 };
 
 let wallet = Object.fromEntries(resources.map(r => [r.key, 0]));

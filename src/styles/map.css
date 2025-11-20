@@ -1,10 +1,10 @@
 .map-panel {
   position: relative;
+  overflow: visible;
 }
 
 .clearing-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
@@ -40,6 +40,10 @@
   background: rgba(130, 224, 170, 0.6);
 }
 
+.clearing-garrisoned {
+  border-style: dashed;
+}
+
 .clearing-hidden {
   background: rgba(43, 79, 65, 0.5);
   color: #95d5b2;
@@ -51,6 +55,10 @@
 
 .clearing-id {
   font-weight: 600;
+}
+
+.clearing-terrain {
+  font-size: 0.9rem;
 }
 
 .clearing-tooltip {

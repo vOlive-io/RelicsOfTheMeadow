@@ -7,13 +7,13 @@
 /////////////////////////////////////
 export const GRID_WIDTH = 5;
 export const CLEARING_COUNT = GRID_WIDTH * GRID_WIDTH;
-export const NEUTRAL_OWNER = "Wilderness";
+export const NEUTRAL_OWNER = "Unclaimed";
 
 const terrainWeights = [
   { type: "Meadow", weight: 24 },
   { type: "Forest", weight: 16 },
   { type: "Hills", weight: 12 },
-  { type: "Coast", weight: 6 },
+  { type: "Beach", weight: 8 },
   { type: "Mountains", weight: 8 },
   { type: "River", weight: 6 },
   { type: "Marsh", weight: 5 },
@@ -104,6 +104,27 @@ function pickTerrain(row, col) {
   }
   if (choice === "Deep Ocean" && !hasAdjacentTerrain(row, col, "Ocean")) {
     choice = "Ocean";
+  }
+  return enforceWaterRules(choice, row, col);
+}
+
+function enforceWaterRules(choice, row, col) {
+  const neighbors = getNeighborCoords(row, col)
+    .map(coord => getClearingAt(coord.row, coord.col))
+    .filter(Boolean);
+  const terrainSet = new Set(neighbors.map(n => n.terrain));
+  if (choice === "Ocean") {
+    const hasBeachNeighbor = terrainSet.has("Beach");
+    const invalidNeighbor = [...terrainSet].some(t => t && t !== "Beach" && t !== "Ocean");
+    if (!hasBeachNeighbor || invalidNeighbor) {
+      return "Beach";
+    }
+  }
+  if (choice === "Deep Ocean" && !terrainSet.has("Ocean")) {
+    return "Ocean";
+  }
+  if (choice !== "Beach" && terrainSet.has("Ocean")) {
+    return "Beach";
   }
   return choice;
 }

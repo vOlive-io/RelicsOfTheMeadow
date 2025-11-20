@@ -3,6 +3,20 @@
 /////////////////////////////////////
 import { getMapClearings, NEUTRAL_OWNER } from "../managers/mapManager.js";
 
+const terrainEmoji = {
+  Meadow: "🌿",
+  Forest: "🌲",
+  Hills: "⛰️",
+  Beach: "🏝️",
+  Mountains: "🏔️",
+  River: "🌊",
+  Marsh: "🪵",
+  "Crystal Cavern": "💎",
+  "Ancient Grove": "🌳",
+  Ocean: "🌊",
+  "Deep Ocean": "🌊",
+};
+
 /////////////////////////////////////
 /// STATE                         ///
 /////////////////////////////////////
@@ -40,6 +54,7 @@ export function renderMap({
   getOwnerColor,
   formatStructures,
   formatTooltip,
+  isGarrisoned,
 }) {
   if (!gridElement) return;
   tooltipFormatter = formatTooltip || null;
@@ -50,6 +65,10 @@ export function renderMap({
   }
   gridElement.innerHTML = "";
   const ordered = [...clearings].sort((a, b) => a.id - b.id);
+  const minCol = Math.min(...ordered.map(c => c.col));
+  const maxCol = Math.max(...ordered.map(c => c.col));
+  const columnCount = Math.max(1, maxCol - minCol + 1);
+  gridElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(64px, 1fr))`;
   ordered.forEach(clearing => {
     const tile = document.createElement("button");
     const classes = ["clearing-tile"];
@@ -60,6 +79,9 @@ export function renderMap({
     }
     if (clearing.beast) classes.push("clearing-beast");
     if (!clearing.revealed) classes.push("clearing-hidden");
+    if (typeof isGarrisoned === "function" && isGarrisoned(clearing.id)) {
+      classes.push("clearing-garrisoned");
+    }
     tile.className = classes.join(" ");
     tile.type = "button";
     tile.style.borderColor =
@@ -69,8 +91,12 @@ export function renderMap({
       typeof formatStructures === "function"
         ? formatStructures(structures)
         : structures.slice(-2).join(", ") || "—";
+    const terrainIcon = clearing.revealed
+      ? terrainEmoji[clearing.terrain] || "◻️"
+      : "❓";
     tile.innerHTML = `
       <span class="clearing-id">#${clearing.id}</span>
+      <span class="clearing-terrain">${terrainIcon}</span>
       <span class="clearing-owner">${
         clearing.revealed
           ? typeof formatOwnerLabel === "function"

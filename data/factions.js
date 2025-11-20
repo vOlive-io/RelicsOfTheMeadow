@@ -256,18 +256,18 @@ export const factions = [
     abilities: [
       {
         name: "SpinWeb",
-        desc: "Extend webs to skim markets and free up caravans.",
+        desc: "Extend webs to skim Keep gifts and free up couriers.",
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
-          const base = 20 + (player.tradePosts || 0) * 5;
+          const base = 20 + (player.giftCouriers || 0) * 5;
           const gain = gainGold(player, base);
-          if ((player.tradePosts || 0) > 0) {
-            player.tradesRemaining = Math.min(
-              player.tradePosts,
-              Math.max(0, (player.tradesRemaining || 0) + 1)
+          if ((player.giftCouriers || 0) > 0) {
+            player.courierRuns = Math.min(
+              player.giftCouriers,
+              Math.max(0, (player.courierRuns || 0) + 1)
             );
           }
-          logEvent(`🕷️ New webs glisten with coin. +${gain} gold and a caravan untangles.`);
+          logEvent(`🕷️ New webs glisten with coin. +${gain} gold and a courier untangles.`);
         },
       },
       {
@@ -292,9 +292,9 @@ export const factions = [
         desc: "Trap merchants to steal their wares.",
         cost: { energy: 1, gold: 0 },
         logic: ({ player, logEvent }) => {
-          player.imports += 1;
+          player.giftsWaiting = Math.max(0, (player.giftsWaiting || 0) + 1);
           const spoils = gainGold(player, 12);
-          logEvent(`🕷️ Entangled traders surrender an import crate and ${spoils} gold.`);
+          logEvent(`🕷️ Entangled traders surrender a gift crate and ${spoils} gold.`);
         },
       },
     ],
