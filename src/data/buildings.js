@@ -1,4 +1,7 @@
 export const buildingDefinitions = [
+  /////////////////////////
+  //       HOUSING       //
+  /////////////////////////
   {
     key: "basicHouse",
     name: "Basic House",
@@ -40,13 +43,16 @@ export const buildingDefinitions = [
     buildTime: 4,
     tier: 4,
   },
+  /////////////////////////
+  //     PRODUCTION      //
+  ///////////////////////// 
   {
     key: "orchard",
     name: "Orchard",
     type: "production",
     icon: "🍎",
-    produces: { fruits: 8, logs: 2 },
-    cost: { logs: 50, clay: 10, meadowheartOpal: 2 },
+    produces: { fruits: 10, logs: 5 },
+    cost: { logs: 30, clay: 10, meadowheartOpal: 2 },
     buildTime: 2,
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
   },
@@ -56,7 +62,7 @@ export const buildingDefinitions = [
     type: "production",
     icon: "🌾",
     produces: { wheat: 10 },
-    cost: { logs: 40, clay: 15, meadowheartOpal: 2 },
+    cost: { logs: 30, clay: 15, meadowheartOpal: 2 },
     buildTime: 1,
     supportedTerrains: ["Meadow", "River", "Ancient Grove"],
   },
@@ -76,8 +82,8 @@ export const buildingDefinitions = [
     type: "production",
     icon: "⛏️",
     tier: 1,
-    produces: { mythril: 3, meadowheartOpal: 1 },
-    cost: { logs: 60, stone: 80 },
+    produces: {stone: 25, goldOre: 5, mythril: 1, meadowheartOpal: 1, silktoneObsidian: 0, lumenQuartz: 0, starpetalOre: 0},
+    cost: { logs: 50, stone: 10 },
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
   },
   {
@@ -87,7 +93,7 @@ export const buildingDefinitions = [
     icon: "⛏️",
     tier: 2,
     upgradeFrom: "mineShaft",
-    produces: { mythril: 5, goldOre: 2 },
+    produces: {stone: 50, goldOre: 10, mythril: 5, meadowheartOpal: 5, silktoneObsidian: 1, lumenQuartz: 1, starpetalOre: 0},
     cost: { logs: 80, stone: 120, mythril: 4 },
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
   },
@@ -98,8 +104,8 @@ export const buildingDefinitions = [
     icon: "⛏️",
     tier: 3,
     upgradeFrom: "deepMineShaft",
-    produces: { starpetalOre: 3, goldOre: 3 },
-    cost: { logs: 110, stone: 160, mythril: 6, starpetalOre: 3 },
+    produces: {stone: 200, goldOre: 25, mythril: 10, meadowheartOpal: 10, silktoneObsidian: 5, lumenQuartz: 5, starpetalOre: 1},
+    cost: { logs: 250, stone: 250, mythril: 10},
     supportedTerrains: ["Mountains", "Crystal Cavern"],
   },
   {
@@ -109,17 +115,20 @@ export const buildingDefinitions = [
     icon: "⛏️",
     tier: 4,
     upgradeFrom: "grandMine",
-    produces: { starpetalOre: 5, mythril: 4 },
-    cost: { logs: 160, stone: 220, mythril: 8, starpetalOre: 6 },
-    supportedTerrains: ["Mountains", "Crystal Cavern"],
+    produces: {stone: 200, goldOre: 50, mythril: 25, meadowheartOpal: 20, silktoneObsidian: 5, lumenQuartz: 5, starpetalOre: 2},
+    cost: {logs: 500, stone: 500, goldOre: 250, mythril: 100, silktoneObsidian: 50, lumenQuartz: 50, starpetalOre: 10},
+    supportedTerrains: ["Crystal Cavern"],
   },
+  /////////////////////////
+  //      DECORATION     //
+  /////////////////////////
   {
-    key: "statue",
-    name: "Statue",
+    key: "statue1",
+    name: "Basic Statue",
     type: "decoration",
     icon: "🗽",
     happinessBonus: 3,
-    cost: { stone: 40, goldOre: 6 },
+    cost: {logs: 40, stone: 40, goldOre: 20},
   },
   {
     key: "fountain",
@@ -127,7 +136,7 @@ export const buildingDefinitions = [
     type: "decoration",
     icon: "⛲",
     happinessBonus: 4,
-    cost: { stone: 40, clay: 20, mythril: 2, goldOre: 4 },
+    cost: {stone: 40, clay: 20, goldOre: 5, mythril: 4},
   },
   {
     key: "banner",
@@ -135,7 +144,19 @@ export const buildingDefinitions = [
     type: "decoration",
     icon: "🚩",
     happinessBonus: 2,
-    cost: { logs: 10, clay: 5, goldOre: 2 },
+    cost: {logs: 10, clay: 5, goldOre: 2 },
+  },
+  
+  /////////////////////////
+  //      ADVANCED       //
+  /////////////////////////
+  {
+    key: "library",
+    name: "Library",
+    type: "utility",
+    icon: "📚",
+    happinessBonus: 2,
+    cost: {logs: 140, stone: 100, lumenQuartz: 3 },
   },
   {
     key: "techLab",
@@ -143,15 +164,7 @@ export const buildingDefinitions = [
     type: "utility",
     icon: "⌨️",
     happinessBonus: 1,
-    cost: { logs: 100, stone: 80, lumenQuartz: 2 },
-  },
-  {
-    key: "library",
-    name: "Library",
-    type: "utility",
-    icon: "📚",
-    happinessBonus: 2,
-    cost: { logs: 140, stone: 100, lumenQuartz: 3 },
+    cost: {logs: 100, stone: 80, lumenQuartz: 2 },
   },
   {
     key: "apexResearch",
@@ -159,6 +172,14 @@ export const buildingDefinitions = [
     type: "utility",
     icon: "🥼",
     happinessBonus: 3,
-    cost: { logs: 200, stone: 160, lumenQuartz: 5, magicalEssence: 4 },
+    cost: { logs: 200, stone: 160, lumenQuartz: 10, magicalEssence: 4 },
+  },
+    {
+    key: "highApexResearch",
+    name: "High Level Apex Research Laboratory Bastion",
+    type: "utility",
+    icon: "🧠",
+    happinessBonus: 5,
+    cost: {logs: 2500, stone: 2500, goldOre: 1000, mythril: 1000, silktoneObsidian: 5000, lumenQuartz: 500, starpetalOre: 100, magicalEssence: 50},
   },
 ];
