@@ -154,6 +154,7 @@ const structureEmojiMap = {
   Evergarden: "🌼",
   "Industry Mill": "🏭",
   "Mortar Quarry": "🧱",
+  Sawmill: "🪵",
   Dock: "⚓",
   "Fishman's Wharf": "🐟",
   "Mine Shaft": "⛏️",
