@@ -3,7 +3,7 @@
 /////////////////////////////////////
 import { calcStartingEnergy } from "../utils/statCalc.js";
 import { resetResources } from "../managers/resourceManager.js";
-import { resetPopulationState } from "../managers/populationManager.js";
+import { resetPopulationState, getHappiness, getHealth } from "../managers/populationManager.js";
 import { resetCraftingState } from "../managers/craftingManager.js";
 
 export function startPlayerGame({
@@ -43,6 +43,8 @@ export function startPlayerGame({
   resetCraftingState();
   updateDerivedStats();
   player.energy = calcStartingEnergy(player);
+  player.happiness = getHappiness();
+  player.health = getHealth();
   setupActionButtons(handleAction);
   renderHUD();
   logEvent(`🌿 Welcome, ${faction.name}!`);

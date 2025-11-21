@@ -21,6 +21,7 @@ const DEFAULT_BLUEPRINTS = [
   "banner",
   "mortarQuarry",
 ];
+const BASE_HOUSING = 20; // Keep provides initial beds
 const COST_STEP = 0.2;
 const COST_ACCELERATION = 0.3;
 const ANCIENT_GROVE_BOOST = new Set([
@@ -57,7 +58,7 @@ function getDefinition(key) {
 }
 
 function recalcHousingCapacity() {
-  housingCapacityCache = 0;
+  housingCapacityCache = BASE_HOUSING;
   structures.forEach(list => {
     list.forEach(instance => {
       if (instance.beds) {

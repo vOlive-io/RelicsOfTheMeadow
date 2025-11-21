@@ -9,21 +9,26 @@ let population = 20;
 let housingCapacity = 20;
 let homeless = 0;
 let happiness = 60;
+let health = 100;
 
 /////////////////////////////////////
 /// CONSTANTS                     ///
 /////////////////////////////////////
 const HAPPINESS_MIN = 0;
 const HAPPINESS_MAX = 100;
+const HEALTH_MIN = 0;
+const HEALTH_MAX = 100;
+const KEEP_STARTING_BEDS = 20;
 
 /////////////////////////////////////
 /// FUNCTIONS                     ///
 /////////////////////////////////////
 export function resetPopulationState() {
   population = 20;
-  housingCapacity = 20;
+  housingCapacity = KEEP_STARTING_BEDS;
   homeless = 0;
   happiness = 60;
+  health = HEALTH_MAX;
 }
 
 export function getPopulation() {
@@ -66,6 +71,14 @@ export function getHappiness() {
 
 export function adjustHappiness(amount) {
   happiness = Math.min(HAPPINESS_MAX, Math.max(HAPPINESS_MIN, happiness + amount));
+}
+
+export function getHealth() {
+  return health;
+}
+
+export function adjustHealth(amount) {
+  health = Math.min(HEALTH_MAX, Math.max(HEALTH_MIN, health + amount));
 }
 
 function updateHomeless() {

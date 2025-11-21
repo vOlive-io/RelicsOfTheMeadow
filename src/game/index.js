@@ -37,7 +37,15 @@ import {
   spendResource,
   getResourceAmount,
 } from "../managers/resourceManager.js";
-import { getPopulation, adjustHappiness, tickPopulation } from "../managers/populationManager.js";
+import {
+  getPopulation,
+  getHappiness,
+  adjustHappiness,
+  getHealth,
+  adjustHealth,
+  addPopulation,
+  tickPopulation,
+} from "../managers/populationManager.js";
 import {
   applyEventProductionModifiers,
   getActiveEvents,
@@ -98,6 +106,7 @@ const ALLIANCE_COST = { energy: 1, gold: 30 };
 const DECLARE_WAR_COST = { energy: 2, gold: 50 };
 const PEACE_COST_ENERGY = 2;
 const EXPLORE_ENERGY_COST = 1;
+const STATION_ENERGY_COST = 1;
 const FESTIVAL_COST = { fruits: 12, wheat: 10 };
 const aiStates = new Map();
 const BASE_GOLD_STORAGE = 500;
@@ -172,23 +181,52 @@ function announceWorldEvent(message) {
   renderWorldEventFeed();
 }
 
+function applyHappinessDelta(delta) {
+  adjustHappiness(delta);
+  player.happiness = getHappiness();
+}
+
+function syncHealth() {
+  player.health = getHealth();
+}
+
 function consumeFoodForPopulation() {
   const population = getPopulation();
   if (population <= 0) return;
   const foodNeeded = Math.ceil(population / 5);
   const pantryOrder = ["meat", "wheat", "fruits"];
   let remaining = foodNeeded;
+  const eaten = new Set();
   pantryOrder.forEach(resource => {
     if (remaining <= 0) return;
     const available = getResourceAmount(resource);
     if (!available) return;
     const spend = Math.min(available, remaining);
+    if (spend > 0) eaten.add(resource);
     spendResource(resource, spend);
     remaining -= spend;
   });
+  const balanced = eaten.size >= 2;
   if (remaining > 0) {
-    adjustHappiness(-remaining);
-    logEvent(`🍽️ Food shortage! Missing ${remaining} portions; morale falls.`);
+    applyHappinessDelta(-remaining);
+    adjustHealth(-10 - remaining);
+    syncHealth();
+    logEvent(`🍽️ Food shortage! Missing ${remaining} portions; health and morale fall.`);
+  } else if (!balanced) {
+    applyHappinessDelta(-2);
+    adjustHealth(-6);
+    syncHealth();
+    logEvent("🍽️ Diet lacked variety; people feel weak.");
+  } else {
+    adjustHealth(2);
+    syncHealth();
+  }
+  const healthNow = getHealth();
+  if (healthNow < 35 && population > 0) {
+    const losses = Math.max(1, Math.round((35 - healthNow) / 15));
+    addPopulation(-losses);
+    applyHappinessDelta(-losses);
+    logEvent(`🤒 Illness spreads (health ${healthNow}%). ${losses} citizens were lost.`);
   }
 }
 
@@ -286,10 +324,13 @@ function renderHUD() {
   } else {
     factionBanner.classList.add("status-neutral");
   }
+  player.happiness = getHappiness();
+  player.health = getHealth();
   updateDerivedStats();
   const goldCap = getGoldStorageCapacity();
   const leftStats = [
-    { label: "💖 Happiness", value: player.happiness },
+    { label: "❤️ Health", value: `${player.health}%` },
+    { label: "💖 Happiness", value: `${player.happiness}%` },
     { label: "🛡️ Protection", value: player.protection },
     { label: "🪖 Troops", value: player.troops },
     { label: "💰 Gold", value: `${player.gold}/${goldCap}` },
@@ -388,6 +429,12 @@ function revealClearingIfNearGarrison(clearingId) {
   }
 }
 
+function hasAdjacentGarrison(clearingId) {
+  ensureGarrisonContainer();
+  const neighbors = getAdjacentClearingIds(clearingId);
+  return neighbors.some(id => player.garrisonedClearings.has(id));
+}
+
 function garrisonClearing(clearingId, { silent = false } = {}) {
   if (!clearingId) return;
   ensureGarrisonContainer();
@@ -401,49 +448,87 @@ function garrisonClearing(clearingId, { silent = false } = {}) {
 
 function stationTroopsAtClearing(clearing) {
   if (!clearing) return;
-  if (isClearingGarrisoned(clearing.id)) {
-    logEvent("🧭 Explorers already stationed there.");
-    return;
-  }
-  if (player.troops <= 0) {
-    logEvent("🧭 No spare explorers available to station.");
-    return;
-  }
-  garrisonClearing(clearing.id);
-  renderHUD();
+  openAdvanceExplorersModal(clearing);
 }
 
-function moveTroops(originId, targetId) {
-  if (!originId || !targetId) return;
+function openAdvanceExplorersModal(clearing) {
+  if (!clearing) return;
   ensureGarrisonContainer();
-  if (!player.garrisonedClearings.has(originId)) {
-    logEvent("🧭 No explorers stationed there to move.");
-    return;
-  }
-  const adjacent = new Set(getAdjacentClearingIds(originId));
-  if (!adjacent.has(targetId)) {
-    logEvent("🧭 Explorers can only advance to adjacent clearings.");
+  if (isClearingGarrisoned(clearing.id)) {
+    logEvent("🧭 Explorers already stationed there.");
     return;
   }
   if (player.troops <= 0) {
     logEvent("🧭 No explorers ready to advance.");
     return;
   }
+  if (player.garrisonedClearings.size > 0 && !hasAdjacentGarrison(clearing.id)) {
+    logEvent("🧭 Explorers can only be stationed from an adjacent clearing.");
+    return;
+  }
   const maxAdvance = player.troops;
-  const input = window.prompt(`How many explorers will advance to clearing #${targetId}? (1-${maxAdvance})`, "1");
-  const amount = Number.parseInt(input, 10);
-  if (!Number.isFinite(amount) || amount < 1) {
-    logEvent("🧭 Advance cancelled: choose at least one explorer.");
-    return;
-  }
-  if (amount > maxAdvance) {
-    logEvent("🧭 Advance cancelled: not enough explorers ready.");
-    return;
-  }
-  player.garrisonedClearings.delete(originId);
-  garrisonClearing(targetId, { silent: true });
-  logEvent(`🧭 Advanced ${amount} explorer${amount === 1 ? "" : "s"} from #${originId} to #${targetId}.`);
-  renderHUD();
+  let amount = 1;
+  openActionModal(`🧭 Station Explorers (⚡${STATION_ENERGY_COST})`, body => {
+    const info = document.createElement("p");
+    info.textContent = `Order explorers into clearing #${clearing.id}. Choose how many will advance.`;
+
+    const counter = document.createElement("div");
+    counter.className = "counter-row";
+    counter.style.display = "flex";
+    counter.style.alignItems = "center";
+    counter.style.gap = "8px";
+    const minusBtn = document.createElement("button");
+    minusBtn.type = "button";
+    minusBtn.textContent = "−";
+    const amountLabel = document.createElement("span");
+    amountLabel.textContent = `${amount}`;
+    amountLabel.className = "counter-value";
+    amountLabel.style.minWidth = "32px";
+    amountLabel.style.textAlign = "center";
+    const plusBtn = document.createElement("button");
+    plusBtn.type = "button";
+    plusBtn.textContent = "+";
+    const clamp = value => Math.min(maxAdvance, Math.max(1, value));
+    const updateAmount = delta => {
+      amount = clamp(amount + delta);
+      amountLabel.textContent = `${amount}`;
+    };
+    minusBtn.addEventListener("click", () => updateAmount(-1));
+    plusBtn.addEventListener("click", () => updateAmount(1));
+    counter.appendChild(minusBtn);
+    counter.appendChild(amountLabel);
+    counter.appendChild(plusBtn);
+
+    const actions = document.createElement("div");
+    actions.className = "modal-actions";
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "primary";
+    confirmBtn.textContent = "Advance";
+    confirmBtn.disabled = player.energy < STATION_ENERGY_COST;
+    confirmBtn.addEventListener("click", () => {
+      const success = spendEnergyAndGold(
+        STATION_ENERGY_COST,
+        0,
+        `🧭 Advanced ${amount} explorer${amount === 1 ? "" : "s"} to clearing #${clearing.id}.`,
+        () => {
+          garrisonClearing(clearing.id, { silent: true });
+        }
+      );
+      if (success) {
+        closeActionModal();
+        renderHUD();
+      }
+    });
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", closeActionModal);
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+
+    body.appendChild(info);
+    body.appendChild(counter);
+    body.appendChild(actions);
+  });
 }
 
 function formatClearingTooltip(clearing) {
@@ -539,22 +624,21 @@ function renderMapActions() {
     return;
   }
   container.innerHTML = "";
+  ensureGarrisonContainer();
   const isGarrisoned = isClearingGarrisoned(clearing.id);
+  const canReach =
+    player.garrisonedClearings.size === 0 ? true : hasAdjacentGarrison(clearing.id);
   const garrisonBtn = document.createElement("button");
-  garrisonBtn.textContent = isGarrisoned ? "Explorers Stationed" : "Station Explorers";
-  garrisonBtn.disabled = isGarrisoned || player.troops <= 0;
+  garrisonBtn.textContent = isGarrisoned ? "Explorers Stationed" : `Station Explorers (⚡${STATION_ENERGY_COST})`;
+  garrisonBtn.disabled =
+    isGarrisoned || player.troops <= 0 || player.energy < STATION_ENERGY_COST || !canReach;
   garrisonBtn.addEventListener("click", () => stationTroopsAtClearing(clearing));
   container.appendChild(garrisonBtn);
-  if (isGarrisoned) {
-    const neighbors = getAdjacentClearingIds(clearing.id)
-      .map(id => getClearingById(id))
-      .filter(Boolean);
-    neighbors.forEach(neighbor => {
-      const moveBtn = document.createElement("button");
-      moveBtn.textContent = `Move to #${neighbor.id}`;
-      moveBtn.addEventListener("click", () => moveTroops(clearing.id, neighbor.id));
-      container.appendChild(moveBtn);
-    });
+  if (!canReach && player.garrisonedClearings.size > 0) {
+    const reachNote = document.createElement("p");
+    reachNote.className = "hint";
+    reachNote.textContent = "Explorers must advance from an adjacent clearing.";
+    container.appendChild(reachNote);
   }
   const directions = [
     { id: "north", label: "Explore North" },
@@ -922,7 +1006,7 @@ const aiAbilityEffects = {
       player.declaredWars = player.declaredWars.filter(name => name !== state.faction.name);
       announceWorldEvent(`🐉 ${state.faction.name} enforces diplomatic peace and exits the war.`);
     } else {
-      player.happiness += 1;
+      applyHappinessDelta(1);
       announceWorldEvent(`🐉 ${state.faction.name}'s diplomats soothe tensions, boosting happiness.`);
     }
   },
@@ -935,7 +1019,7 @@ const aiAbilityEffects = {
   Raid: () => {
     const loss = Math.min(player.troops, 5 + Math.round(player.protection / 2));
     player.troops = Math.max(0, player.troops - loss);
-    player.happiness = Math.max(0, player.happiness - 1);
+    applyHappinessDelta(-1);
     announceWorldEvent(`🐺 Horde raiders cut down ${loss} of your troops and demoralize the people.`);
   },
   Consume: () => {
@@ -951,7 +1035,7 @@ const aiAbilityEffects = {
   Sanctify: () => {
     const tithe = Math.min(player.gold, 20);
     player.gold -= tithe;
-    player.happiness = Math.max(0, player.happiness - 1);
+    applyHappinessDelta(-1);
     announceWorldEvent(`🕯️ The Devoured Faith sanctifies your markets, seizing ${tithe} gold.`);
   },
   Encamp: () => {
@@ -965,7 +1049,7 @@ const aiAbilityEffects = {
     }
   },
   Harmony: () => {
-    player.happiness += 1;
+    applyHappinessDelta(1);
     player.protection += 1;
     announceWorldEvent("🌾 Meadowfolk harmony radiates outward, lifting spirits and defenses.");
   },
@@ -984,7 +1068,7 @@ const aiAbilityEffects = {
     announceWorldEvent("🕷️ Silken Dominion webs delay one of your courier runs.");
   },
   Manipulate: () => {
-    player.happiness = Math.max(0, player.happiness - 1);
+    applyHappinessDelta(-1);
     announceWorldEvent("🕷️ Silken agents spread rumors, dinging happiness.");
   },
   Entangle: () => {
@@ -997,7 +1081,7 @@ const aiAbilityEffects = {
     announceWorldEvent("🍄 Spores spread through your ramparts, weakening protection.");
   },
   Bloom: () => {
-    player.happiness = Math.max(0, player.happiness - 1);
+    applyHappinessDelta(-1);
     announceWorldEvent("🍄 Mycelial blooms unsettle the populace, lowering happiness.");
   },
   Rebirth: () => {
@@ -1162,7 +1246,7 @@ function aiWarSkirmish(state) {
       break;
     }
     case "The Devoured Faith":
-      player.happiness = Math.max(0, player.happiness - 1);
+      applyHappinessDelta(-1);
       player.protection = Math.max(0, player.protection - 1);
       attemptPlayerRelicTheft(name, 0.45);
       announceWorldEvent(`${state.faction.emoji} ${name} spreads dread through your people.`);
@@ -1250,7 +1334,7 @@ function aiMeadowfolkTurn(state) {
     aiRequestAlliance(state);
     return;
   }
-  player.happiness += 1;
+  applyHappinessDelta(1);
   player.resilience += 1;
   announceWorldEvent("🌾 Meadowfolk gifts bolster your morale and resilience.");
   state.energy = Math.max(0, (state.energy || 0) - 1);
@@ -1460,7 +1544,7 @@ function executeBattle(targetFaction) {
       const mitigation = player.battleBonus || 0;
       player.troops = Math.max(0, player.troops - Math.max(0, troopLoss - mitigation));
       player.protection = Math.max(0, player.protection + 1);
-      player.happiness = Math.max(0, player.happiness - 1);
+      applyHappinessDelta(-1);
       const captured = attemptRelicCapture(targetFaction);
       if (!captured) {
         grantBattleSpoils(targetFaction, atWar);
@@ -1884,7 +1968,7 @@ function openGiftCrate(onSuccess) {
     `📥 Collected gift of ${giftItem.name}!`,
     () => {
       player.giftsWaiting = Math.max(0, player.giftsWaiting - 1);
-      if (boosts.happiness) player.happiness += boosts.happiness;
+      if (boosts.happiness) applyHappinessDelta(boosts.happiness);
       if (boosts.protection) player.protection += boosts.protection;
       if (boosts.troops) player.troops += boosts.troops;
       if (boosts.energy) player.energy += boosts.energy;
@@ -2425,6 +2509,7 @@ let player = {
   goldStorageBonus: 0,
   troops: 0,
   happiness: 0,
+  health: 100,
   protection: 0,
   prowess: 0,
   resilience: 0,
