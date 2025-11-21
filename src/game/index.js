@@ -395,18 +395,18 @@ function garrisonClearing(clearingId, { silent = false } = {}) {
   player.garrisonedClearings.add(clearingId);
   revealClearingAndNeighbors(clearingId);
   if (!silent) {
-    logEvent(`🪖 Troops now garrison clearing #${clearingId}. Nearby wilds reveal themselves.`);
+    logEvent(`🧭 Explorers now garrison clearing #${clearingId}. Nearby wilds reveal themselves.`);
   }
 }
 
 function stationTroopsAtClearing(clearing) {
   if (!clearing) return;
   if (isClearingGarrisoned(clearing.id)) {
-    logEvent("🪖 Troops already stationed there.");
+    logEvent("🧭 Explorers already stationed there.");
     return;
   }
   if (player.troops <= 0) {
-    logEvent("🪖 No spare troops available to station.");
+    logEvent("🧭 No spare explorers available to station.");
     return;
   }
   garrisonClearing(clearing.id);
@@ -417,12 +417,32 @@ function moveTroops(originId, targetId) {
   if (!originId || !targetId) return;
   ensureGarrisonContainer();
   if (!player.garrisonedClearings.has(originId)) {
-    logEvent("🪖 No troops stationed there to move.");
+    logEvent("🧭 No explorers stationed there to move.");
+    return;
+  }
+  const adjacent = new Set(getAdjacentClearingIds(originId));
+  if (!adjacent.has(targetId)) {
+    logEvent("🧭 Explorers can only advance to adjacent clearings.");
+    return;
+  }
+  if (player.troops <= 0) {
+    logEvent("🧭 No explorers ready to advance.");
+    return;
+  }
+  const maxAdvance = player.troops;
+  const input = window.prompt(`How many explorers will advance to clearing #${targetId}? (1-${maxAdvance})`, "1");
+  const amount = Number.parseInt(input, 10);
+  if (!Number.isFinite(amount) || amount < 1) {
+    logEvent("🧭 Advance cancelled: choose at least one explorer.");
+    return;
+  }
+  if (amount > maxAdvance) {
+    logEvent("🧭 Advance cancelled: not enough explorers ready.");
     return;
   }
   player.garrisonedClearings.delete(originId);
   garrisonClearing(targetId, { silent: true });
-  logEvent(`🪖 Troops relocated from clearing #${originId} to #${targetId}.`);
+  logEvent(`🧭 Advanced ${amount} explorer${amount === 1 ? "" : "s"} from #${originId} to #${targetId}.`);
   renderHUD();
 }
 
@@ -433,7 +453,7 @@ function formatClearingTooltip(clearing) {
       <div><strong>Wild Clearing #${clearing.id}</strong></div>
       <div>Terrain: Unknown</div>
       <div>Owner: Unknown</div>
-      <div>Send troops nearby to reveal.</div>
+      <div>Send explorers nearby to reveal.</div>
     `;
   }
   const terrainEmoji =
@@ -521,7 +541,7 @@ function renderMapActions() {
   container.innerHTML = "";
   const isGarrisoned = isClearingGarrisoned(clearing.id);
   const garrisonBtn = document.createElement("button");
-  garrisonBtn.textContent = isGarrisoned ? "Troops Stationed" : "Station Troops";
+  garrisonBtn.textContent = isGarrisoned ? "Explorers Stationed" : "Station Explorers";
   garrisonBtn.disabled = isGarrisoned || player.troops <= 0;
   garrisonBtn.addEventListener("click", () => stationTroopsAtClearing(clearing));
   container.appendChild(garrisonBtn);
