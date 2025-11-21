@@ -28,15 +28,22 @@ document.addEventListener("DOMContentLoaded", () => {
         <p>🍃 <strong>Resilience:</strong> ${faction.defaultEmojis?.resilience ?? "?"}</p>
         <p>💰 <strong>Economy:</strong> ${faction.defaultEmojis?.economy ?? "?"}</p>
       </div>
-      <button class="select-btn">Pledge to ${faction.name}</button>
+      <button class="select-btn"${faction.playable === false || faction.earlyAccess ? " disabled" : ""}>
+        ${faction.playable === false || faction.earlyAccess ? "Early Access (Locked)" : `Pledge to ${faction.name}`}
+      </button>
     `;
 
-    card.querySelector(".select-btn").addEventListener("click", () => {
-      localStorage.setItem("selectedFaction", faction.name);
-      localStorage.setItem("chosenFaction", faction.name);
-      alert(`You’ve pledged to ${faction.name}! ${faction.emoji}`);
-      window.location.href = "../../game/index.html";
-    });
+    const btn = card.querySelector(".select-btn");
+    if (faction.playable === false || faction.earlyAccess) {
+      card.classList.add("disabled");
+    } else {
+      btn.addEventListener("click", () => {
+        localStorage.setItem("selectedFaction", faction.name);
+        localStorage.setItem("chosenFaction", faction.name);
+        alert(`You’ve pledged to ${faction.name}! ${faction.emoji}`);
+        window.location.href = "../../game/index.html";
+      });
+    }
 
     factionList.appendChild(card);
   });

@@ -2,6 +2,7 @@
 /// MODULE IMPORTS               ///
 /////////////////////////////////////
 import { addResource } from "./resourceManager.js";
+import { getBeastDefinition } from "../data/beasts.js";
 
 /////////////////////////////////////
 /// STATE                         ///
@@ -12,24 +13,26 @@ let lastEncounter = null;
 /// HELPERS                       ///
 /////////////////////////////////////
 function grantSpoils(beast, announce) {
-  const rewards = {};
-  const baseOre = Math.max(1, Math.round(beast.strength));
-  rewards.mythril = baseOre;
-  if (beast.strength >= 4) {
-    rewards.starpetalOre = Math.max(1, Math.round(beast.strength / 2));
-  }
-  if (beast.type?.includes("Leviathan")) {
-    rewards.lumenQuartz = 2;
-  }
-  if (beast.strength >= 3) {
-    rewards.magicalEssence = (rewards.magicalEssence || 0) + 1;
+  const def = getBeastDefinition(beast.type);
+  const rewards = def?.rewards ? { ...def.rewards } : {};
+  if (!def?.rewards) {
+    const baseOre = Math.max(1, Math.round(beast.strength));
+    rewards.mythril = baseOre;
+    if (beast.strength >= 4) {
+      rewards.starpetalOre = Math.max(1, Math.round(beast.strength / 2));
+    }
+    if (beast.type?.includes("Leviathan")) {
+      rewards.lumenQuartz = 2;
+    }
+    if (beast.strength >= 3) {
+      rewards.magicalEssence = (rewards.magicalEssence || 0) + 1;
+    }
   }
   Object.entries(rewards).forEach(([key, amount]) => addResource(key, amount));
-  announce(
-    `💎 Spoils recovered: ${Object.entries(rewards)
-      .map(([key, amount]) => `${amount} ${key}`)
-      .join(", ")}.`
-  );
+  const summary = Object.entries(rewards)
+    .map(([key, amount]) => `${amount} ${key}`)
+    .join(", ");
+  announce(`💎 Spoils recovered: ${summary || "None"}.`);
   return rewards;
 }
 

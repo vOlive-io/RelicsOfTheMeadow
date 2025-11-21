@@ -54,6 +54,11 @@ p {
   border-color: #89c97f;
 }
 
+.faction-card.disabled {
+  opacity: 0.55;
+  border-color: #bbb;
+}
+
 .faction-card h2 {
   font-size: 1.4em;
   margin-bottom: 0.5em;
@@ -79,4 +84,9 @@ button {
 
 button:hover {
   background: #6bb863;
+}
+
+button:disabled {
+  background: #888;
+  cursor: not-allowed;
 }

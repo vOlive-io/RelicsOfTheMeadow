@@ -105,14 +105,15 @@ const GIFT_RUN_COST = { energy: 1, gold: 0 };
 const ALLIANCE_COST = { energy: 1, gold: 30 };
 const DECLARE_WAR_COST = { energy: 2, gold: 50 };
 const PEACE_COST_ENERGY = 2;
-const EXPLORE_ENERGY_COST = 1;
-const STATION_ENERGY_COST = 1;
+const ADVANCE_ENERGY_COST = 1;
+const BATTLE_ENERGY_COST = 1;
 const FESTIVAL_COST = { fruits: 12, wheat: 10 };
 const aiStates = new Map();
 const BASE_GOLD_STORAGE = 500;
 let selectedClearingId = null;
 const WORLD_EVENT_LIMIT = 6;
 let worldEventFeed = [];
+const WATER_TERRAINS = new Set(["Ocean", "Deep Ocean"]);
 const structureEmojiMap = {
   Keep: "🏰",
   "Captured Holdfast": "🏴",
@@ -136,6 +137,8 @@ const structureEmojiMap = {
   Evergarden: "🌼",
   "Industry Mill": "🏭",
   "Mortar Quarry": "🧱",
+  Dock: "⚓",
+  "Fishman's Wharf": "🐟",
   "Mine Shaft": "⛏️",
   "Deep Mine Shaft": "⛏️",
   "Grand Mine": "⚒️",
@@ -194,7 +197,7 @@ function consumeFoodForPopulation() {
   const population = getPopulation();
   if (population <= 0) return;
   const foodNeeded = Math.ceil(population / 5);
-  const pantryOrder = ["meat", "wheat", "fruits"];
+  const pantryOrder = ["meat", "fish", "wheat", "fruits"];
   let remaining = foodNeeded;
   const eaten = new Set();
   pantryOrder.forEach(resource => {
@@ -414,6 +417,11 @@ function isClearingGarrisoned(clearingId) {
   return player.garrisonedClearings.has(clearingId);
 }
 
+function hasWaterAccess(clearingId) {
+  const structuresHere = getStructuresInClearing(clearingId);
+  return structuresHere.some(struct => struct.waterAccess);
+}
+
 function revealClearingAndNeighbors(clearingId) {
   if (!clearingId) return;
   markClearingRevealed(clearingId);
@@ -429,12 +437,6 @@ function revealClearingIfNearGarrison(clearingId) {
   }
 }
 
-function hasAdjacentGarrison(clearingId) {
-  ensureGarrisonContainer();
-  const neighbors = getAdjacentClearingIds(clearingId);
-  return neighbors.some(id => player.garrisonedClearings.has(id));
-}
-
 function garrisonClearing(clearingId, { silent = false } = {}) {
   if (!clearingId) return;
   ensureGarrisonContainer();
@@ -442,92 +444,56 @@ function garrisonClearing(clearingId, { silent = false } = {}) {
   player.garrisonedClearings.add(clearingId);
   revealClearingAndNeighbors(clearingId);
   if (!silent) {
-    logEvent(`🧭 Explorers now garrison clearing #${clearingId}. Nearby wilds reveal themselves.`);
+    logEvent(`🪖 Troops now hold clearing #${clearingId}. Nearby wilds reveal themselves.`);
   }
 }
 
-function stationTroopsAtClearing(clearing) {
-  if (!clearing) return;
-  openAdvanceExplorersModal(clearing);
-}
-
-function openAdvanceExplorersModal(clearing) {
-  if (!clearing) return;
+function advanceTroops(direction) {
+  const clearing = getSelectedClearing();
+  if (!clearing) {
+    logEvent("🪖 Select a clearing to advance from.");
+    return;
+  }
   ensureGarrisonContainer();
-  if (isClearingGarrisoned(clearing.id)) {
-    logEvent("🧭 Explorers already stationed there.");
+  if (!player.garrisonedClearings.has(clearing.id)) {
+    logEvent("🪖 No troops stationed there to advance.");
     return;
   }
   if (player.troops <= 0) {
-    logEvent("🧭 No explorers ready to advance.");
+    logEvent("🪖 No troops ready to advance.");
     return;
   }
-  if (player.garrisonedClearings.size > 0 && !hasAdjacentGarrison(clearing.id)) {
-    logEvent("🧭 Explorers can only be stationed from an adjacent clearing.");
+  if (player.energy < ADVANCE_ENERGY_COST) {
+    logEvent("⚡ Not enough energy to advance.");
     return;
   }
-  const maxAdvance = player.troops;
-  let amount = 1;
-  openActionModal(`🧭 Station Explorers (⚡${STATION_ENERGY_COST})`, body => {
-    const info = document.createElement("p");
-    info.textContent = `Order explorers into clearing #${clearing.id}. Choose how many will advance.`;
-
-    const counter = document.createElement("div");
-    counter.className = "counter-row";
-    counter.style.display = "flex";
-    counter.style.alignItems = "center";
-    counter.style.gap = "8px";
-    const minusBtn = document.createElement("button");
-    minusBtn.type = "button";
-    minusBtn.textContent = "−";
-    const amountLabel = document.createElement("span");
-    amountLabel.textContent = `${amount}`;
-    amountLabel.className = "counter-value";
-    amountLabel.style.minWidth = "32px";
-    amountLabel.style.textAlign = "center";
-    const plusBtn = document.createElement("button");
-    plusBtn.type = "button";
-    plusBtn.textContent = "+";
-    const clamp = value => Math.min(maxAdvance, Math.max(1, value));
-    const updateAmount = delta => {
-      amount = clamp(amount + delta);
-      amountLabel.textContent = `${amount}`;
-    };
-    minusBtn.addEventListener("click", () => updateAmount(-1));
-    plusBtn.addEventListener("click", () => updateAmount(1));
-    counter.appendChild(minusBtn);
-    counter.appendChild(amountLabel);
-    counter.appendChild(plusBtn);
-
-    const actions = document.createElement("div");
-    actions.className = "modal-actions";
-    const confirmBtn = document.createElement("button");
-    confirmBtn.className = "primary";
-    confirmBtn.textContent = "Advance";
-    confirmBtn.disabled = player.energy < STATION_ENERGY_COST;
-    confirmBtn.addEventListener("click", () => {
-      const success = spendEnergyAndGold(
-        STATION_ENERGY_COST,
-        0,
-        `🧭 Advanced ${amount} explorer${amount === 1 ? "" : "s"} to clearing #${clearing.id}.`,
-        () => {
-          garrisonClearing(clearing.id, { silent: true });
-        }
-      );
-      if (success) {
-        closeActionModal();
-        renderHUD();
-      }
-    });
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.addEventListener("click", closeActionModal);
-    actions.appendChild(confirmBtn);
-    actions.appendChild(cancelBtn);
-
-    body.appendChild(info);
-    body.appendChild(counter);
-    body.appendChild(actions);
+  const { clearing: result, discovered } = exploreFromClearing(clearing.id, direction);
+  if (!result) {
+    logEvent("🪖 Cannot advance that way.");
+    return;
+  }
+  const isWater = WATER_TERRAINS.has(result.terrain);
+  if (isWater && !hasWaterAccess(clearing.id)) {
+    logEvent("⚓ A dock or wharf is required to move troops onto the water.");
+    return;
+  }
+  spendEnergyAndGold(ADVANCE_ENERGY_COST, 0, null, () => {
+    player.garrisonedClearings.delete(clearing.id);
+    garrisonClearing(result.id, { silent: true });
+    selectedClearingId = result.id;
+    player.currentClearingId = result.id;
+    const discoveryText = discovered
+      ? `discovered clearing #${result.id} (${result.terrain}).`
+      : `entered clearing #${result.id}.`;
+    logEvent(`🪖 Advanced ${direction} and ${discoveryText}`);
+    if (result.beast) {
+      logEvent(`⚠️ A ${result.beast.type} lurks here.`);
+    }
+    if (discovered && result.beast) {
+      handleBeastEncounter(result, true);
+    }
+    refreshHarvestAvailability();
+    renderHUD();
   });
 }
 
@@ -538,7 +504,7 @@ function formatClearingTooltip(clearing) {
       <div><strong>Wild Clearing #${clearing.id}</strong></div>
       <div>Terrain: Unknown</div>
       <div>Owner: Unknown</div>
-      <div>Send explorers nearby to reveal.</div>
+      <div>Send troops nearby to reveal.</div>
     `;
   }
   const terrainEmoji =
@@ -564,7 +530,11 @@ function formatClearingTooltip(clearing) {
   const structures = Array.isArray(clearing.structures) && clearing.structures.length
     ? clearing.structures.join(", ")
     : "None";
-  const beastLine = clearing.beast ? `<div>Beast: ${clearing.beast.type} (⚔️ ${clearing.beast.strength})</div>` : "";
+  const beastLine = clearing.beast
+    ? `<div>Beast: ${clearing.beast.type} (⚔️ ${clearing.beast.strength}${
+        clearing.beast.health ? ` • ❤️ ${clearing.beast.health}` : ""
+      })</div>`
+    : "";
   const rarityLine = clearing.rarity ? `<div>Rarity: ${clearing.rarity}</div>` : "";
   return `
     <div><strong>Clearing #${clearing.id}</strong></div>
@@ -580,6 +550,9 @@ function evaluateBlueprintAvailability(definition, clearing, structuresHere = nu
   if (!definition || !clearing) return { canBuild: false, reason: "No clearing selected", cost: {} };
   if (!hasBlueprint(definition.key)) {
     return { canBuild: false, reason: "Blueprint locked", cost: getScaledCostForBlueprint(definition.key) };
+  }
+  if (clearing.beast) {
+    return { canBuild: false, reason: "Beast present", cost: getScaledCostForBlueprint(definition.key) };
   }
   if (definition.supportedTerrains && !definition.supportedTerrains.includes(clearing.terrain)) {
     return { canBuild: false, reason: "Wrong terrain", cost: getScaledCostForBlueprint(definition.key) };
@@ -626,72 +599,54 @@ function renderMapActions() {
   container.innerHTML = "";
   ensureGarrisonContainer();
   const isGarrisoned = isClearingGarrisoned(clearing.id);
-  const canReach =
-    player.garrisonedClearings.size === 0 ? true : hasAdjacentGarrison(clearing.id);
-  const garrisonBtn = document.createElement("button");
-  garrisonBtn.textContent = isGarrisoned ? "Explorers Stationed" : `Station Explorers (⚡${STATION_ENERGY_COST})`;
-  garrisonBtn.disabled =
-    isGarrisoned || player.troops <= 0 || player.energy < STATION_ENERGY_COST || !canReach;
-  garrisonBtn.addEventListener("click", () => stationTroopsAtClearing(clearing));
-  container.appendChild(garrisonBtn);
-  if (!canReach && player.garrisonedClearings.size > 0) {
-    const reachNote = document.createElement("p");
-    reachNote.className = "hint";
-    reachNote.textContent = "Explorers must advance from an adjacent clearing.";
-    container.appendChild(reachNote);
-  }
   const directions = [
-    { id: "north", label: "Explore North" },
-    { id: "east", label: "Explore East" },
-    { id: "south", label: "Explore South" },
-    { id: "west", label: "Explore West" },
+    { id: "north", label: `Advance North (⚡${ADVANCE_ENERGY_COST})` },
+    { id: "east", label: `Advance East (⚡${ADVANCE_ENERGY_COST})` },
+    { id: "south", label: `Advance South (⚡${ADVANCE_ENERGY_COST})` },
+    { id: "west", label: `Advance West (⚡${ADVANCE_ENERGY_COST})` },
   ];
   directions.forEach(dir => {
     const btn = document.createElement("button");
     btn.textContent = dir.label;
-    btn.disabled = player.energy < EXPLORE_ENERGY_COST;
-    btn.addEventListener("click", () => exploreSelectedDirection(dir.id));
+    btn.disabled = player.energy < ADVANCE_ENERGY_COST || player.troops <= 0 || !isGarrisoned;
+    btn.addEventListener("click", () => advanceTroops(dir.id));
     container.appendChild(btn);
   });
+  if (!isGarrisoned) {
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent = "Advance troops into this clearing before moving out.";
+    container.appendChild(hint);
+  }
   if (clearing.beast) {
     const beastBtn = document.createElement("button");
-    beastBtn.textContent = "Battle Beast";
+    beastBtn.textContent = `Battle Here (⚡${BATTLE_ENERGY_COST})`;
     beastBtn.className = "danger";
-    beastBtn.disabled = player.troops <= 0;
+    beastBtn.disabled = player.troops <= 0 || player.energy < BATTLE_ENERGY_COST;
     beastBtn.addEventListener("click", () => battleBeastAtClearing(clearing));
     container.appendChild(beastBtn);
+  } else {
+    const noBattle = document.createElement("button");
+    noBattle.textContent = "Battle Unavailable";
+    noBattle.disabled = true;
+    noBattle.className = "danger";
+    container.appendChild(noBattle);
   }
-}
-
-function exploreSelectedDirection(direction) {
-  const clearing = getSelectedClearing();
-  if (!clearing) {
-    logEvent("📍 Select a clearing to explore from.");
-    return;
-  }
-  spendEnergyAndGold(EXPLORE_ENERGY_COST, 0, `🧭 Scouts push ${direction}.`, () => {
-    const { clearing: result, discovered } = exploreFromClearing(clearing.id, direction);
-    if (!result) {
-      logEvent("🧭 The path leads nowhere interesting.");
-      return;
-    }
-    selectedClearingId = result.id;
-    revealClearingIfNearGarrison(result.id);
-    const discoveryText = discovered
-      ? `Discovered ${result.terrain}${result.rarity ? ` (${result.rarity})` : ""}.`
-      : "Already mapped.";
-    logEvent(`🗺️ Exploration ${direction}: ${discoveryText}`);
-    if (discovered && result.beast) {
-      handleBeastEncounter(result, true);
-    }
-    refreshHarvestAvailability();
-    renderHUD();
-  });
 }
 
 function battleBeastAtClearing(clearing) {
   if (!clearing) return;
-  handleBeastEncounter(clearing, false);
+  if (player.troops <= 0) {
+    logEvent("🪖 No troops available to battle.");
+    return;
+  }
+  if (player.energy < BATTLE_ENERGY_COST) {
+    logEvent("⚡ Not enough energy to battle.");
+    return;
+  }
+  spendEnergyAndGold(BATTLE_ENERGY_COST, 0, `⚔️ Battle at clearing #${clearing.id}.`, () => {
+    handleBeastEncounter(clearing, false);
+  });
 }
 
 function handleBeastEncounter(clearing, autoTriggered = false) {
@@ -1496,7 +1451,7 @@ function showBattleModal() {
     logEvent("🪖 Your armies are too depleted to battle.");
     return;
   }
-  if (player.energy < 3) {
+  if (player.energy < BATTLE_ENERGY_COST) {
     logEvent("⚡ Not enough energy to battle.");
     return;
   }
@@ -1513,7 +1468,7 @@ function showBattleModal() {
       const relation = isWar ? "At War" : "Neutral";
       const card = document.createElement("button");
       card.className = `build-card battle-card ${isWar ? "status-war" : ""}`;
-      card.disabled = player.energy < 3;
+      card.disabled = player.energy < BATTLE_ENERGY_COST;
       card.innerHTML = `
         <strong>${target.emoji} ${target.name}</strong>
         <p class="battle-summary">${target.overview || "Their intentions are unknown."}</p>
@@ -1537,7 +1492,7 @@ function executeBattle(targetFaction) {
   const projectedLoss = Math.max(3, Math.floor(player.troops * 0.15));
   const troopLoss = Math.min(player.troops, projectedLoss);
   spendEnergyAndGold(
-    3,
+    BATTLE_ENERGY_COST,
     0,
     `⚔️ Clashed with ${targetFaction.name}. Lost ${troopLoss} troops but gained grit.`,
     () => {
@@ -2565,8 +2520,12 @@ document.addEventListener("DOMContentLoaded", () => {
       renderHUD();
     },
   });
-  const chosen = localStorage.getItem("chosenFaction") || factions[0].name;
-  const faction = factions.find(f => f.name === chosen) || factions[0];
+  const playableFactions = factions.filter(f => f.playable !== false && !f.earlyAccess);
+  const chosen = localStorage.getItem("chosenFaction");
+  const fallbackFaction = playableFactions[0] || factions[0];
+  const faction =
+    playableFactions.find(f => f.name === chosen) ||
+    fallbackFaction;
   startGame(faction);
 }); 
 function startGame(faction) {

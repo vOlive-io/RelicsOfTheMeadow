@@ -6,6 +6,7 @@ export const resources = [
   { key: "wheat", name: "Wheat", icon: "🌾" },
   { key: "herbs", name: "Herbs", icon: "🌿" },
   { key: "meat", name: "Meat", icon: "🍖" },
+  { key: "fish", name: "Fish", icon: "🐟" },
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
   { key: "goldOre", name: "Gold", icon: "🏵️", group: "ore" },
   { key: "meadowheartOpal", name: "Meadowheart Opal", icon: "💚", group: "ore" },

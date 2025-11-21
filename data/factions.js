@@ -196,6 +196,8 @@ export const factions = [
   {
     name: "The Meadowfolk Union",
     emoji: "🐾",
+    earlyAccess: true,
+    playable: false,
     overview: "The grass remembers every step, and the earth rises to meet its keepers.",
     fullLore:
       "The Meadowfolk Union are builders, tenders, and dreamers. They thrive on harmony between land and life, weaving a civilization from roots and sunlight. Once scattered across open plains, the Meadowfolk united to resist conquest—not through might, but through unity and patience. They measure time in harvests, not wars, and see prosperity as something cultivated, not taken.\n\nIn gameplay, the Union excels in synergy and growth. They gain strength from cooperation—units that stand together become stronger, and clearings left in peace reward them richly. Their structures and trade routes bloom faster when left undisturbed, turning stability into power. They represent the patient hand of creation in a world obsessed with destruction.",
@@ -250,6 +252,8 @@ export const factions = [
   {
     name: "The Silken Dominion",
     emoji: "🕷️",
+    earlyAccess: true,
+    playable: false,
     overview: "They whisper from the walls, and their webs glisten with secrets and lies.",
     fullLore:
       "Hidden beneath layers of silk and intrigue, the Silken Dominion spins control through manipulation. Where others wage wars with armies, they fight with whispers, contracts, and poisoned promises. Their society is ruled by spider nobles, each vying for influence, spinning webs that bind lesser creatures into servitude or debt. To outsiders, they appear fragmented—yet every web leads back to the throne.\n\nIn gameplay, the Silken Dominion specialize in subterfuge. They drain enemies slowly, stealing resources and corrupting trade. They gain power from the spread of webs across the map, strangling rival economies in the name of the Spider Court. The more territory they weave, the more they entrap the world.",
@@ -317,6 +321,8 @@ export const factions = [
   {
     name: "The Mycelial Monarchy",
     emoji: "🍄",
+    earlyAccess: true,
+    playable: false,
     overview: "When the old world rots, the new one grows from beneath.",
     fullLore:
       "The Mycelial Monarchy thrives in darkness, spreading unseen through decay and ruin. Born from the fusion of fungus and flesh, their society sees death not as an end, but as fertile ground for renewal. Their rulers, the Sporelords, guide the growth of vast fungal networks that reclaim the fallen world—digesting what once was to fuel what will be.\n\nIn gameplay, they expand relentlessly, spreading spore fields that bolster their resilience and spawn new forces. Where they spread, others falter; poison and rebirth go hand in hand. The Monarchy grows through attrition, favoring endurance and inevitability over direct conquest.",

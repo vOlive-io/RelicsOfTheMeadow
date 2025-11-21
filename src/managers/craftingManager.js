@@ -20,6 +20,7 @@ const DEFAULT_BLUEPRINTS = [
   "statue",
   "banner",
   "mortarQuarry",
+  "dock",
 ];
 const BASE_HOUSING = 20; // Keep provides initial beds
 const COST_STEP = 0.2;
@@ -163,6 +164,7 @@ export function buildStructure({ clearingId, key, terrain, rarity }) {
     produces: def.produces || null,
     happinessBonus: def.happinessBonus || 0,
     icon: def.icon || null,
+    waterAccess: Boolean(def.waterAccess),
     multiplier,
     rarity,
     terrain,

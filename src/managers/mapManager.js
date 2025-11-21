@@ -1,7 +1,7 @@
 /////////////////////////////////////
 /// MODULE IMPORTS               ///
 /////////////////////////////////////
-
+import { getBeastDefinition } from "../data/beasts.js";
 /////////////////////////////////////
 /// CONSTANTS                    ///
 /////////////////////////////////////
@@ -131,12 +131,23 @@ function enforceWaterRules(choice, row, col) {
 
 function maybeSpawnBeast(terrain) {
   if (!beastFriendlyTerrains.has(terrain)) return null;
-  if (terrain === "Mountains" && Math.random() < 0.1) {
-    return { type: "Mountain Beast", strength: 4 };
+  const spawnType =
+    terrain === "Mountains"
+      ? Math.random() < 0.1
+        ? "Mountain Beast"
+        : null
+      : terrain === "Deep Ocean"
+      ? Math.random() < 0.4
+        ? "Deep Leviathan"
+        : null
+      : null;
+  if (!spawnType) return null;
+  const def = getBeastDefinition(spawnType);
+  if (def) {
+    return { type: def.type, strength: def.strength, health: def.health, rewards: def.rewards };
   }
-  if (terrain === "Deep Ocean" && Math.random() < 0.4) {
-    return { type: "Deep Leviathan", strength: 7 };
-  }
+  if (spawnType === "Mountain Beast") return { type: spawnType, strength: 4 };
+  if (spawnType === "Deep Leviathan") return { type: spawnType, strength: 7 };
   return null;
 }
 
@@ -208,6 +219,25 @@ export function initializeMapState(playerFaction, factions = []) {
     clearing.structures = ["Keep"];
     factionCapitals.set(playerFaction.name, clearing.id);
   }
+  const startingReveal = [
+    { row: 0, col: 0 },
+    { row: -1, col: 0 },
+    { row: 1, col: 0 },
+    { row: 0, col: -1 },
+    { row: 0, col: 1 },
+    { row: -1, col: -1 },
+    { row: -1, col: 1 },
+    { row: 1, col: -1 },
+    { row: 1, col: 1 },
+    { row: -2, col: 0 },
+    { row: 2, col: 0 },
+    { row: 0, col: -2 },
+    { row: 0, col: 2 },
+  ];
+  startingReveal.forEach(({ row, col }) => {
+    const clearing = getClearingAt(row, col);
+    if (clearing) clearing.revealed = true;
+  });
   return {
     playerClearingId: typeof playerIndex === "number" ? mapClearings[playerIndex]?.id ?? null : null,
   };

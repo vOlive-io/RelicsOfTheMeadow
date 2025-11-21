@@ -206,6 +206,27 @@ export const buildingDefinitions = [
     supportedTerrains: ["Hills", "River"],
     blueprintTier: "default",
   },
+  {
+    key: "dock",
+    name: "Dock",
+    type: "utility",
+    icon: "⚓",
+    cost: {logs: 90, stone: 60, clay: 20},
+    supportedTerrains: ["Beach", "River", "Ocean"],
+    blueprintTier: "default",
+    waterAccess: true,
+  },
+  {
+    key: "fishmansWharf",
+    name: "Fishman's Wharf",
+    type: "production",
+    icon: "🐟",
+    produces: {fish: 10, meat: 2},
+    cost: {logs: 120, stone: 80, clay: 30},
+    supportedTerrains: ["Beach", "River", "Ocean", "Deep Ocean"],
+    blueprintTier: "library",
+    waterAccess: true,
+  },
 
   // Mines
   {
@@ -333,6 +354,7 @@ export const LIBRARY_UNLOCKS = [
   "deepMineShaft",
   "fountain",
   "villa",
+  "fishmansWharf",
   "apexResearch",
 ];
 

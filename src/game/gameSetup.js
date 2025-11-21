@@ -55,7 +55,7 @@ export function setupActionButtons(handleAction) {
   if (!actionArea) return;
   actionArea.innerHTML = "";
   const actions = [
-    { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 3, gold: 0 } },
+    { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 1, gold: 0 } },
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
     { id: "gifts", label: "🏛️ Gifts", detail: "Review Keep gifts and couriers.", costLabel: "Requests cost ⚡1 each" },
