@@ -143,18 +143,19 @@ function enforceWaterRules(choice, row, col) {
 
 function maybeSpawnBeast(terrain) {
   if (!beastFriendlyTerrains.has(terrain)) return null;
+  // Elevated spawn chances to make beasts more common on discovery.
   const table = {
-    Meadow: { type: "Meadow Stag", chance: 0.08 },
-    Forest: { type: "Forest Alpha", chance: 0.12 },
-    Hills: { type: "Hills Golem", chance: 0.12 },
-    Beach: { type: "Mega Crab", chance: 0.18 },
-    Mountains: { type: "Mountain Beast", chance: 0.15 },
-    River: { type: "River Serpent", chance: 0.14 },
-    Marsh: { type: "Marsh Horror", chance: 0.14 },
-    Ocean: { type: "Sea Serpent", chance: 0.18 },
-    Deep Ocean: { type: "Deep Leviathan", chance: 0.35 },
-    "Crystal Cavern": { type: "Crystal Wyrm", chance: 0.2 },
-    "Ancient Grove": { type: "Grove Guardian", chance: 0.16 },
+    Meadow: { type: "Meadow Stag", chance: 0.15 },
+    Forest: { type: "Forest Alpha", chance: 0.2 },
+    Hills: { type: "Hills Golem", chance: 0.18 },
+    Beach: { type: "Mega Crab", chance: 0.3 },
+    Mountains: { type: "Mountain Beast", chance: 0.22 },
+    River: { type: "River Serpent", chance: 0.22 },
+    Marsh: { type: "Marsh Horror", chance: 0.22 },
+    Ocean: { type: "Sea Serpent", chance: 0.3 },
+    Deep Ocean: { type: "Deep Leviathan", chance: 0.45 },
+    "Crystal Cavern": { type: "Crystal Wyrm", chance: 0.28 },
+    "Ancient Grove": { type: "Grove Guardian", chance: 0.25 },
   };
   const entry = table[terrain];
   if (!entry || Math.random() > entry.chance) return null;

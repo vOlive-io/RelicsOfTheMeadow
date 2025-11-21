@@ -37,6 +37,7 @@ import {
   spendResource,
   getResourceAmount,
   addResource,
+  getAllResources,
 } from "../managers/resourceManager.js";
 import {
   getPopulation,
@@ -45,6 +46,7 @@ import {
   getHealth,
   adjustHealth,
   addPopulation,
+  getHomeless,
   tickPopulation,
 } from "../managers/populationManager.js";
 import {
@@ -59,6 +61,7 @@ import { resolveBeastEncounter, resetCombatState } from "../managers/combatManag
 import { initMapUI, renderMap as renderWorldMap } from "../ui/mapUI.js";
 import { renderResourcePanel } from "../ui/resourceUI.js";
 import { renderPopulationPanel } from "../ui/populationUI.js";
+import { getBeastDefinition } from "../data/beasts.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
@@ -112,6 +115,15 @@ const FESTIVAL_COST = { fruits: 12, wheat: 10 };
 const aiStates = new Map();
 const BASE_GOLD_STORAGE = 500;
 let selectedClearingId = null;
+let turnCounter = 0;
+const SEASON_LENGTH = 5;
+const seasons = [
+  { key: "spring", name: "Spring", hungerMultiplier: 0.9, homelessPenalty: 1 },
+  { key: "summer", name: "Summer", hungerMultiplier: 1, homelessPenalty: 1 },
+  { key: "fall", name: "Fall", hungerMultiplier: 1.3, homelessPenalty: 1 },
+  { key: "winter", name: "Winter", hungerMultiplier: 1.1, homelessPenalty: 1.5 },
+];
+let currentSeasonIndex = 0;
 const WORLD_EVENT_LIMIT = 6;
 let worldEventFeed = [];
 const WATER_TERRAINS = new Set(["Ocean", "Deep Ocean"]);
@@ -152,6 +164,15 @@ const structureEmojiMap = {
   "Apex Research Laboratory": "🔬",
   "Ultra Apex Bastion": "🏯",
 };
+const foodCategoryMap = {
+  fruits: "fruits",
+  spices: "fruits",
+  fish: "fish",
+  meat: "meat",
+  crabMeat: "meat",
+  wheat: "grains",
+  seaweed: "grains",
+};
 
 function formatStructureName(name) {
   if (!name) return "";
@@ -185,6 +206,16 @@ function announceWorldEvent(message) {
   renderWorldEventFeed();
 }
 
+function getCurrentSeason() {
+  return seasons[currentSeasonIndex] || seasons[0];
+}
+
+function nextSeason() {
+  currentSeasonIndex = (currentSeasonIndex + 1) % seasons.length;
+  const season = getCurrentSeason();
+  logEvent(`🍃 Season changes to ${season.name}.`);
+}
+
 function applyHappinessDelta(delta) {
   adjustHappiness(delta);
   player.happiness = getHappiness();
@@ -194,21 +225,81 @@ function syncHealth() {
   player.health = getHealth();
 }
 
+function aggregateEventEffects() {
+  const active = getActiveEvents();
+  return active.reduce(
+    (acc, event) => {
+      const effects = event.effects || {};
+      if (effects.energyGainMultiplier) acc.energyGainMultiplier *= effects.energyGainMultiplier;
+      if (effects.giftMultiplier) acc.giftMultiplier *= effects.giftMultiplier;
+      if (effects.housingHappinessBonus)
+        acc.housingHappinessBonus += effects.housingHappinessBonus;
+      return acc;
+    },
+    { energyGainMultiplier: 1, giftMultiplier: 1, housingHappinessBonus: 0 }
+  );
+}
+
+function calculateFoodCategories() {
+  const resources = getAllResources();
+  const definitions = resourceDefinitions.reduce((map, r) => {
+    map[r.key] = r;
+    return map;
+  }, {});
+  const categories = {
+    fruits: { icon: "🍎", total: 0, items: [] },
+    sweets: { icon: "🍬", total: 0, items: [] },
+    fish: { icon: "🐟", total: 0, items: [] },
+    meat: { icon: "🍖", total: 0, items: [] },
+    grains: { icon: "🍞", total: 0, items: [] },
+  };
+  Object.entries(resources).forEach(([key, amount]) => {
+    if (!amount) return;
+    const category = foodCategoryMap[key];
+    if (!category || !categories[category]) return;
+    categories[category].total += amount;
+    categories[category].items.push({ name: definitions[key]?.name || key, amount });
+  });
+  return categories;
+}
+
 function consumeFoodForPopulation() {
   const population = getPopulation();
   if (population <= 0) return;
-  const foodNeeded = Math.ceil(population / 5);
-  const pantryOrder = ["meat", "fish", "wheat", "fruits"];
+  const season = getCurrentSeason();
+  const active = getActiveEvents();
+  let hungerMultiplier = season.hungerMultiplier || 1;
+  let meatMultiplier = 1;
+  let fruitMultiplier = 1;
+  let sweetsMultiplier = 1;
+  active.forEach(event => {
+    const effects = event.effects || {};
+    if (effects.hungerMultiplier) hungerMultiplier *= effects.hungerMultiplier;
+    if (effects.meatMultiplier) meatMultiplier *= effects.meatMultiplier;
+    if (effects.fruitMultiplier) fruitMultiplier *= effects.fruitMultiplier;
+    if (effects.sweetsMultiplier) sweetsMultiplier *= effects.sweetsMultiplier;
+  });
+  const foodNeeded = Math.ceil((population / 5) * hungerMultiplier);
+  const pantryOrder = ["meat", "crabMeat", "fish", "wheat", "fruits"];
   let remaining = foodNeeded;
   const eaten = new Set();
   pantryOrder.forEach(resource => {
     if (remaining <= 0) return;
     const available = getResourceAmount(resource);
     if (!available) return;
-    const spend = Math.min(available, remaining);
+    const category = foodCategoryMap[resource] || "other";
+    const catMult =
+      category === "meat"
+        ? meatMultiplier
+        : category === "fruits"
+        ? fruitMultiplier
+        : category === "sweets"
+        ? sweetsMultiplier
+        : 1;
+    const spend = Math.min(available, Math.ceil(remaining * catMult));
     if (spend > 0) eaten.add(resource);
     spendResource(resource, spend);
-    remaining -= spend;
+    remaining -= Math.min(spend, remaining);
   });
   const balanced = eaten.size >= 2;
   if (remaining > 0) {
@@ -427,6 +518,15 @@ function revealClearingAndNeighbors(clearingId) {
   if (!clearingId) return;
   markClearingRevealed(clearingId);
   getAdjacentClearingIds(clearingId).forEach(id => markClearingRevealed(id));
+}
+
+function spawnRandomBeast() {
+  const clearings = getMapClearings().filter(c => !c.beast);
+  if (!clearings.length) return;
+  const target = clearings[Math.floor(Math.random() * clearings.length)];
+  const def = getBeastDefinition("Beast") || { type: "Beast", strength: 3, health: 100 };
+  target.beast = { type: def.type, strength: def.strength, health: def.health, rewards: def.rewards };
+  announceWorldEvent(`🐾 A ${target.beast.type} prowls in clearing #${target.id}!`);
 }
 
 function revealClearingIfNearGarrison(clearingId) {
@@ -1985,12 +2085,22 @@ function showInventoryPanel() {
   openActionModal("📦 Inventory Ledger", body => {
     const info = document.createElement("div");
     info.className = "inventory-info";
+    const categories = calculateFoodCategories();
+    const categoryMarkup = Object.entries(categories)
+      .map(([label, data]) => {
+        const items = data.items
+          .map(entry => `<div class="food-item">• ${entry.name}: ${entry.amount}</div>`)
+          .join("");
+        return `<div class="food-category"><strong>${data.icon} ${label}: ${data.total}</strong>${items ? `<div class="food-items">${items}</div>` : ""}</div>`;
+      })
+      .join("");
     info.innerHTML = `
       <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
       <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
       <div>📦 Courier runs left: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
       <div>🕊️ Couriers hired: <strong>${player.giftCouriers || 0}</strong></div>
       <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
+      <div class="food-breakdown">${categoryMarkup}</div>
     `;
     const goodsGrid = document.createElement("div");
     goodsGrid.className = "inventory-goods";
@@ -2436,7 +2546,8 @@ function showNextPlayerPrompt() {
 }
 
 function endTurn() {
-  const restored = calcStartingEnergy(player) + (player.energyBonus || 0);
+  const effects = aggregateEventEffects();
+  const restored = Math.round((calcStartingEnergy(player) + (player.energyBonus || 0)) * effects.energyGainMultiplier);
   player.energy += restored;
   logEvent(`🌙 Turn ended. Recovered ${restored} energy (total ${player.energy}).`);
   if (player.keepTithe) {
@@ -2456,11 +2567,25 @@ function endTurn() {
   }
   player.harvestsLeft = player.harvestLimit || 0;
   player.courierRuns = player.giftCouriers || 0;
-  player.giftsWaiting = Math.floor(Math.random() * 3) + 1;
+  player.giftsWaiting = Math.round((Math.floor(Math.random() * 3) + 1) * effects.giftMultiplier);
   tickPopulation();
   consumeFoodForPopulation();
   advanceEvents(announceWorldEvent);
-  maybeTriggerRandomEvent(announceWorldEvent);
+  const triggered = maybeTriggerRandomEvent(announceWorldEvent, getCurrentSeason().key);
+  if (triggered?.effects?.spawnBeast) {
+    spawnRandomBeast();
+  }
+  turnCounter += 1;
+  if (turnCounter % SEASON_LENGTH === 0) {
+    nextSeason();
+  }
+  const season = getCurrentSeason();
+  const homeless = getHomeless();
+  if (homeless > 0 && season.homelessPenalty > 1) {
+    const penalty = Math.max(1, Math.round(homeless * 0.02 * season.homelessPenalty));
+    applyHappinessDelta(-penalty);
+    logEvent(`❄️ Seasonal hardship hits the homeless (-${penalty} happiness).`);
+  }
   refreshHarvestAvailability();
   renderHUD();
   showNextPlayerPrompt();

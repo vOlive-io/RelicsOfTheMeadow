@@ -59,10 +59,12 @@ export function advanceEvents(onUpdate = () => {}) {
   activeEvents = activeEvents.filter(event => event.turnsRemaining > 0);
 }
 
-export function maybeTriggerRandomEvent(onUpdate = () => {}) {
+export function maybeTriggerRandomEvent(onUpdate = () => {}, seasonKey = null) {
   if (Math.random() > 0.4) return null;
   const available = seasonalEvents.filter(
-    event => !activeEvents.some(active => active.key === event.key)
+    event =>
+      !activeEvents.some(active => active.key === event.key) &&
+      (!seasonKey || !event.seasons || event.seasons.includes(seasonKey))
   );
   if (!available.length) return null;
   const definition = available[Math.floor(Math.random() * available.length)];

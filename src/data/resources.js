@@ -7,6 +7,8 @@ export const resources = [
   { key: "herbs", name: "Herbs", icon: "🌿" },
   { key: "meat", name: "Meat", icon: "🍖" },
   { key: "fish", name: "Fish", icon: "🐟" },
+  { key: "spices", name: "Spices", icon: "🌶️" },
+  { key: "pearls", name: "Sea Pearls", icon: "🦪" },
   { key: "crabMeat", name: "Crab Meat", icon: "🦀" },
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
   { key: "goldOre", name: "Gold", icon: "🏵️", group: "ore" },

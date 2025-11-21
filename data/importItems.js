@@ -203,6 +203,18 @@ export const importItems = [
     price: 40,
     statBoosts: {},
   },
+  {
+    name: "Spice Crate",
+    price: 12,
+    statBoosts: {},
+    resourceRewards: { spices: 10 },
+  },
+  {
+    name: "Pearl Satchel",
+    price: 14,
+    statBoosts: {},
+    resourceRewards: { pearls: 6 },
+  },
 ];
 
 
