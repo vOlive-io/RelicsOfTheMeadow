@@ -20,6 +20,7 @@ const terrainWeights = [
   { type: "Marsh", weight: 5 },
   { type: "Ocean", weight: 3 },
   { type: "Deep Ocean", weight: 1 },
+  { type: "Enfenal Depths", weight: 1 },
   { type: "Crystal Cavern", weight: 1 },
   { type: "Ancient Grove", weight: 1 },
 ];
@@ -34,6 +35,7 @@ const beastFriendlyTerrains = new Set([
   "Marsh",
   "Ocean",
   "Deep Ocean",
+  "Enfenal Depths",
   "Crystal Cavern",
   "Ancient Grove",
 ]);

@@ -12,23 +12,16 @@ let lastEncounter = null;
 /////////////////////////////////////
 /// HELPERS                       ///
 /////////////////////////////////////
+
 function grantSpoils(beast, announce) {
   const def = getBeastDefinition(beast.type);
-  const rewards = def?.rewards ? { ...def.rewards } : {};
-  if (!def?.rewards) {
-    const baseOre = Math.max(1, Math.round(beast.strength));
-    rewards.mythril = baseOre;
-    if (beast.strength >= 4) {
-      rewards.starpetalOre = Math.max(1, Math.round(beast.strength / 2));
-    }
-    if (beast.type?.includes("Leviathan")) {
-      rewards.lumenQuartz = 2;
-    }
-    if (beast.strength >= 3) {
-      rewards.magicalEssence = (rewards.magicalEssence || 0) + 1;
-    }
-  }
-  Object.entries(rewards).forEach(([key, amount]) => addResource(key, amount));
+  const baseRewards = def?.rewards ? { ...def.rewards } : {};
+  const rewards = {};
+  Object.entries(baseRewards).forEach(([key, amount]) => {
+    const gained = Math.floor(Math.random() * amount) + 1;
+    if (gained > 0) addResource(key, gained);
+    rewards[key] = gained;
+  });
   const summary = Object.entries(rewards)
     .map(([key, amount]) => `${amount} ${key}`)
     .join(", ");
