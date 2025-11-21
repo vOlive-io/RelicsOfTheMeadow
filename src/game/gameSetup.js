@@ -58,6 +58,7 @@ export function setupActionButtons(handleAction) {
     { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 1, gold: 0 } },
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
+    { id: "conquest", label: "🏴 Conquest", detail: "Expand your realm outward.", costLabel: "Costs heavy gold & resources" },
     { id: "gifts", label: "🏛️ Gifts", detail: "Review Keep gifts and couriers.", costLabel: "Requests cost ⚡1 each" },
     { id: "festival", label: "🎉 Festival", detail: "Boost happiness and production briefly.", costLabel: "Consumes fruits & wheat" },
     { id: "collect-gift", label: "📥 Collect Gifts", detail: "Open one shipment instantly.", cost: { energy: 0, gold: 0 } },

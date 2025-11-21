@@ -21,6 +21,8 @@ import {
   markClearingRevealed,
   getAdjacentClearingIds,
   NEUTRAL_OWNER,
+  expandMap,
+  getGridSize,
 } from "../managers/mapManager.js";
 import { constructBuilding } from "../managers/buildingManager.js";
 import {
@@ -112,6 +114,7 @@ const PEACE_COST_ENERGY = 2;
 const ADVANCE_ENERGY_COST = 1;
 const BATTLE_ENERGY_COST = 1;
 const FESTIVAL_COST = { fruits: 12, wheat: 10 };
+const CONQUEST_ENERGY_COST = 3;
 const aiStates = new Map();
 const BASE_GOLD_STORAGE = 500;
 let selectedClearingId = null;
@@ -238,6 +241,61 @@ function aggregateEventEffects() {
     },
     { energyGainMultiplier: 1, giftMultiplier: 1, housingHappinessBonus: 0 }
   );
+}
+
+function calculateConquestCost() {
+  const currentSize = getGridSize();
+  const expansions = Math.max(0, Math.floor((currentSize - 5) / 2));
+  const factor = Math.pow(expansions + 1, 2) + expansions;
+  const gold = 600 * factor;
+  const resources = {
+    logs: 350 * factor,
+    stone: 350 * factor,
+    clay: 220 * factor,
+    mythril: 30 * factor,
+    goldOre: 40 * factor,
+  };
+  return { goldCost: gold, resourcesCost: resources, nextSize: currentSize + 2 };
+}
+
+function attemptConquest() {
+  const { goldCost, resourcesCost, nextSize } = calculateConquestCost();
+  const energyCost = CONQUEST_ENERGY_COST;
+  if (player.energy < energyCost) {
+    logEvent("⚡ Not enough energy for conquest.");
+    return;
+  }
+  if (!hasResources(resourcesCost)) {
+    logEvent("⛏️ Not enough materials for conquest.");
+    return;
+  }
+  if (player.gold < goldCost) {
+    logEvent("💰 Not enough gold for conquest.");
+    return;
+  }
+  spendResources(resourcesCost);
+  const success = spendEnergyAndGold(
+    energyCost,
+    goldCost,
+    `🏴 Conquest launched toward a ${nextSize}x${nextSize} realm.`,
+    () => {
+      const result = expandMap(true);
+      logEvent(
+        `🏴 Conquest succeeds! Realm now ${result.newSize}x${result.newSize} (+${result.createdCount} clearings).`
+      );
+      renderWorldMap({
+        selectedClearingId,
+        formatOwnerLabel,
+        getOwnerColor,
+        formatStructures: formatStructureList,
+        formatTooltip: formatClearingTooltip,
+        isGarrisoned: id => isClearingGarrisoned(id),
+      });
+    }
+  );
+  if (!success) {
+    logEvent("🚫 Conquest failed to execute.");
+  }
 }
 
 function calculateFoodCategories() {
@@ -1888,6 +1946,9 @@ function handleAction(action) {
       break;
     case "inventory":
       showInventoryPanel();
+      break;
+    case "conquest":
+      attemptConquest();
       break;
     case "end-turn":
       endTurn();

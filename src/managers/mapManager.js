@@ -3,10 +3,11 @@
 /////////////////////////////////////
 import { getBeastDefinition } from "../data/beasts.js";
 /////////////////////////////////////
-/// CONSTANTS                    ///
+/// CONSTANTS & STATE            ///
 /////////////////////////////////////
-export const GRID_WIDTH = 5;
-export const CLEARING_COUNT = GRID_WIDTH * GRID_WIDTH;
+const INITIAL_GRID_WIDTH = 5;
+const INITIAL_GRID_HALF = Math.floor(INITIAL_GRID_WIDTH / 2);
+let gridHalf = INITIAL_GRID_HALF;
 export const NEUTRAL_OWNER = "Unclaimed";
 
 const terrainWeights = [
@@ -37,9 +38,6 @@ const beastFriendlyTerrains = new Set([
   "Ancient Grove",
 ]);
 
-/////////////////////////////////////
-/// STATE                         ///
-/////////////////////////////////////
 let mapClearings = [];
 const clearingLookup = new Map();
 const factionCapitals = new Map();
@@ -61,6 +59,7 @@ function resetMapState() {
   coordsToId.clear();
   nextClearingId = 1;
   oceanSeeded = false;
+  gridHalf = INITIAL_GRID_HALF;
 }
 
 function createClearing(row, col) {
@@ -216,9 +215,8 @@ function areIndicesAdjacent(idxA, idxB) {
 /////////////////////////////////////
 export function initializeMapState(playerFaction, factions = []) {
   resetMapState();
-  const half = Math.floor(GRID_WIDTH / 2);
-  for (let row = -half; row <= half; row += 1) {
-    for (let col = -half; col <= half; col += 1) {
+  for (let row = -gridHalf; row <= gridHalf; row += 1) {
+    for (let col = -gridHalf; col <= gridHalf; col += 1) {
       createClearing(row, col);
     }
   }
@@ -260,6 +258,14 @@ export function initializeMapState(playerFaction, factions = []) {
 
 export function getMapClearings() {
   return mapClearings;
+}
+
+export function getGridSize() {
+  return gridHalf * 2 + 1;
+}
+
+export function getClearingCount() {
+  return mapClearings.length;
 }
 
 export function getClearingById(id) {
@@ -343,4 +349,21 @@ export function clearBeastFromClearing(clearingId) {
   if (clearing) {
     clearing.beast = null;
   }
+}
+
+export function expandMap(revealNew = true) {
+  const newHalf = gridHalf + 1;
+  const created = [];
+  for (let row = -newHalf; row <= newHalf; row += 1) {
+    for (let col = -newHalf; col <= newHalf; col += 1) {
+      const onEdge = Math.abs(row) === newHalf || Math.abs(col) === newHalf;
+      if (!onEdge) continue;
+      if (getClearingAt(row, col)) continue;
+      const clearing = createClearing(row, col);
+      if (revealNew && clearing) clearing.revealed = true;
+      created.push(clearing.id);
+    }
+  }
+  gridHalf = newHalf;
+  return { createdCount: created.length, newSize: getGridSize(), created };
 }
