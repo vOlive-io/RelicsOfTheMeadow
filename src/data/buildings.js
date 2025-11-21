@@ -206,6 +206,16 @@ export const buildingDefinitions = [
     supportedTerrains: ["Hills", "River"],
     blueprintTier: "default",
   },
+    {
+    key: "sawmill",
+    name: "Sawmill",
+    type: "production",
+    icon: "🪵",
+    produces: {logs: 25},
+    cost: {logs: 90, stone: 140, mythril: 2},
+    supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
+    blueprintTier: "default",
+  },
   {
     key: "dock",
     name: "Dock",
