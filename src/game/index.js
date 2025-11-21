@@ -619,6 +619,10 @@ function renderMapActions() {
     container.appendChild(hint);
   }
   if (clearing.beast) {
+    const beastInfo = document.createElement("p");
+    const hp = clearing.beast.health ? ` • ❤️ ${clearing.beast.health}` : "";
+    beastInfo.textContent = `Beast present: ${clearing.beast.type} (⚔️ ${clearing.beast.strength}${hp})`;
+    container.appendChild(beastInfo);
     const beastBtn = document.createElement("button");
     beastBtn.textContent = `Battle Here (⚡${BATTLE_ENERGY_COST})`;
     beastBtn.className = "danger";

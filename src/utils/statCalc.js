@@ -1,8 +1,8 @@
 export function calculateResilience(player) {
   const mood = Math.max(0, player.happiness);
   const defenses = Math.max(0, player.protection);
-  const shelterBonus = (player.buildings?.length || 0) * 0.5;
-  const resilience = Math.floor((mood + defenses) / 2 + shelterBonus);
+  const shelterBonus = Math.min(2, (player.buildings?.length || 0) * 0.1);
+  const resilience = Math.floor((mood + defenses) / 4 + shelterBonus);
   return Math.max(0, resilience);
 }
 
