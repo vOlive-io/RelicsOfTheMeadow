@@ -64,6 +64,7 @@ import { initMapUI, renderMap as renderWorldMap } from "../ui/mapUI.js";
 import { renderResourcePanel } from "../ui/resourceUI.js";
 import { renderPopulationPanel } from "../ui/populationUI.js";
 import { getBeastDefinition } from "../data/beasts.js";
+import { isNearKeep } from "../managers/mapManager.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
@@ -579,7 +580,7 @@ function revealClearingAndNeighbors(clearingId) {
 }
 
 function spawnRandomBeast() {
-  const clearings = getMapClearings().filter(c => !c.beast);
+  const clearings = getMapClearings().filter(c => !c.beast && !isNearKeep(c.row, c.col, 1));
   if (!clearings.length) return;
   const target = clearings[Math.floor(Math.random() * clearings.length)];
   const def = getBeastDefinition("Beast") || { type: "Beast", strength: 3, health: 100 };

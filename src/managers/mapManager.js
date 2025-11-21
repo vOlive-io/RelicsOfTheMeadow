@@ -73,7 +73,7 @@ function createClearing(row, col) {
     structures: [],
     capitalOf: null,
     rarity: terrain === "Crystal Cavern" || terrain === "Ancient Grove" ? terrain : null,
-    beast: maybeSpawnBeast(terrain),
+    beast: maybeSpawnBeast(terrain, row, col),
     revealed: false,
   };
   mapClearings.push(clearing);
@@ -140,8 +140,9 @@ function enforceWaterRules(choice, row, col) {
   return choice;
 }
 
-function maybeSpawnBeast(terrain) {
+function maybeSpawnBeast(terrain, row, col) {
   if (!beastFriendlyTerrains.has(terrain)) return null;
+  if (isNearKeep(row, col, 1)) return null;
   // Elevated spawn chances to make beasts more common on discovery.
   const table = {
     Meadow: { type: "Meadow Stag", chance: 0.15 },
@@ -266,6 +267,13 @@ export function getGridSize() {
 
 export function getClearingCount() {
   return mapClearings.length;
+}
+
+export function isNearKeep(row, col, radius = 1) {
+  const keepCoords = [...factionCapitals.values()]
+    .map(id => getClearingById(id))
+    .filter(Boolean);
+  return keepCoords.some(keep => Math.max(Math.abs(row - keep.row), Math.abs(col - keep.col)) <= radius);
 }
 
 export function getClearingById(id) {
