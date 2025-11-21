@@ -36,6 +36,7 @@ import {
   spendResources,
   spendResource,
   getResourceAmount,
+  addResource,
 } from "../managers/resourceManager.js";
 import {
   getPopulation,
@@ -1914,25 +1915,33 @@ function openGiftCrate(onSuccess) {
     return;
   }
   const giftItem = giftItems[Math.floor(Math.random() * giftItems.length)];
-  const bonusNames = [];
   const boosts = giftItem.statBoosts || {};
-  if (boosts.happiness) bonusNames.push(`${boosts.happiness} happiness`);
-  if (boosts.protection) bonusNames.push(`${boosts.protection} protection`);
-  if (boosts.troops) bonusNames.push(`${boosts.troops} troops`);
-  if (boosts.energy) bonusNames.push(`${boosts.energy} energy`);
-  const bonusMsg = bonusNames.length ? ` and bonus ${bonusNames.join(", ")}` : "";
+  const resources = giftItem.resourceRewards || {};
   spendEnergyAndGold(
     0,
     0,
-    `📥 Collected gift of ${giftItem.name}!`,
+    null,
     () => {
       player.giftsWaiting = Math.max(0, player.giftsWaiting - 1);
       if (boosts.happiness) applyHappinessDelta(boosts.happiness);
       if (boosts.protection) player.protection += boosts.protection;
       if (boosts.troops) player.troops += boosts.troops;
       if (boosts.energy) player.energy += boosts.energy;
-      const addedGold = grantGold(giftItem.price);
-      logEvent(`💰 Gift yielded ${addedGold} gold${bonusMsg}.`);
+      Object.entries(resources).forEach(([key, amount]) => addResource(key, amount));
+      const parts = [];
+      parts.push(`🎁 ${giftItem.name}`);
+      if (giftItem.price) {
+        const addedGold = grantGold(giftItem.price);
+        parts.push(`+${addedGold} gold`);
+      }
+      const bonusNames = [];
+      if (boosts.happiness) bonusNames.push(`+${boosts.happiness} happiness`);
+      if (boosts.protection) bonusNames.push(`+${boosts.protection} protection`);
+      if (boosts.troops) bonusNames.push(`+${boosts.troops} troops`);
+      if (boosts.energy) bonusNames.push(`+${boosts.energy} energy`);
+      Object.entries(resources).forEach(([key, amount]) => bonusNames.push(`+${amount} ${key}`));
+      const detail = bonusNames.length ? ` (${bonusNames.join(", ")})` : "";
+      logEvent(`${parts.join(" ")}${detail}`);
       if (typeof onSuccess === "function") onSuccess();
       renderHUD();
     }

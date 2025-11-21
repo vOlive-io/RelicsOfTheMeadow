@@ -124,6 +124,45 @@ export const importItems = [
     statBoosts: {troops: 5},
   },
   /////////////////
+  // FOOD & MATERIALS //
+  /////////////////
+  {
+    name: "Fish Crate",
+    price: 12,
+    statBoosts: {},
+    resourceRewards: { fish: 12 },
+  },
+  {
+    name: "Harvest Bundle",
+    price: 10,
+    statBoosts: {},
+    resourceRewards: { wheat: 10, fruits: 6 },
+  },
+  {
+    name: "Meat Rations",
+    price: 8,
+    statBoosts: {},
+    resourceRewards: { meat: 8 },
+  },
+  {
+    name: "Lumber Shipment",
+    price: 10,
+    statBoosts: {},
+    resourceRewards: { logs: 20 },
+  },
+  {
+    name: "Stone Blocks",
+    price: 10,
+    statBoosts: {},
+    resourceRewards: { stone: 16 },
+  },
+  {
+    name: "Clay Tiles",
+    price: 8,
+    statBoosts: {},
+    resourceRewards: { clay: 14 },
+  },
+  /////////////////
   //    ENERGY   //
   /////////////////
   {
