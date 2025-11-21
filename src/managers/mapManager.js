@@ -152,7 +152,7 @@ function maybeSpawnBeast(terrain) {
     River: { type: "River Serpent", chance: 0.22 },
     Marsh: { type: "Marsh Horror", chance: 0.22 },
     Ocean: { type: "Sea Serpent", chance: 0.3 },
-    Deep Ocean: { type: "Deep Leviathan", chance: 0.45 },
+    "Deep Ocean": { type: "Deep Leviathan", chance: 0.45 },
     "Crystal Cavern": { type: "Crystal Wyrm", chance: 0.28 },
     "Ancient Grove": { type: "Grove Guardian", chance: 0.25 },
   };
