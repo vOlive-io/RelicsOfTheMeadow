@@ -20,6 +20,7 @@ const DEFAULT_BLUEPRINTS = [
   "statue",
   "banner",
   "mortarQuarry",
+  "sawmill",
   "dock",
 ];
 const BASE_HOUSING = 20; // Keep provides initial beds
