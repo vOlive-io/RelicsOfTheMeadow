@@ -1800,6 +1800,7 @@ function renderDiplomacyMenu() {
     loreBtn.textContent = "📜 Lore";
 
     const loreBlock = document.createElement("div");
+
     loreBlock.className = "faction-lore";
     loreBlock.textContent = faction.fullLore || "No lore recorded yet.";
     loreBlock.hidden = true;
@@ -2460,6 +2461,14 @@ function buildMenu() {
     return;
   }
   const structuresHere = getStructuresInClearing(clearing.id);
+
+  // DEBUG: list all blueprints and why they are not buildable (temporary)
+  console.groupCollapsed("DEBUG: build options for clearing", clearing.id);
+  buildingDefinitions.forEach(def => {
+    const info = evaluateBlueprintAvailability(def, clearing, structuresHere);
+    console.log(`${def.name || def.key}: canBuild=${info.canBuild} reason="${info.reason}" cost=`, info.cost);
+  });
+  console.groupEnd();
   openActionModal(`🔨 Build in Clearing #${clearing.id}`, body => {
     const summary = document.createElement("p");
     summary.textContent = `Terrain: ${clearing.terrain}${clearing.rarity ? ` • ${clearing.rarity}` : ""}`;
@@ -2761,4 +2770,4 @@ function startGame(faction) {
   player.extraHarvestGoods = [];
   player.pendingPlayerPrompts = [];
 }
- 
+

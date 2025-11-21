@@ -206,7 +206,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Hills", "River"],
     blueprintTier: "default",
   },
-    {
+  {
     key: "sawmill",
     name: "Sawmill",
     type: "production",
