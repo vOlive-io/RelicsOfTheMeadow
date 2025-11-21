@@ -7,6 +7,7 @@ export const resources = [
   { key: "herbs", name: "Herbs", icon: "🌿" },
   { key: "meat", name: "Meat", icon: "🍖" },
   { key: "fish", name: "Fish", icon: "🐟" },
+  { key: "crabMeat", name: "Crab Meat", icon: "🦀" },
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
   { key: "goldOre", name: "Gold", icon: "🏵️", group: "ore" },
   { key: "meadowheartOpal", name: "Meadowheart Opal", icon: "💚", group: "ore" },
@@ -14,4 +15,6 @@ export const resources = [
   { key: "starpetalOre", name: "Starpetal Ore", icon: "✨", group: "ore" },
   { key: "lumenQuartz", name: "Lumen Quartz", icon: "💡", group: "ore" },
   { key: "magicalEssence", name: "Magical Essence", icon: "🌠" },
+  { key: "seashells", name: "Seashells", icon: "🐚" },
+  { key: "seaweed", name: "Seaweed", icon: "🪸" },
 ];

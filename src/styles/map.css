@@ -24,6 +24,7 @@
   font-size: 0.65rem;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  position: relative;
 }
 
 .clearing-tile:hover,
@@ -59,6 +60,13 @@
 
 .clearing-terrain {
   font-size: 0.9rem;
+}
+
+.clearing-terrain.corner-icon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 1rem;
 }
 
 .clearing-tooltip {

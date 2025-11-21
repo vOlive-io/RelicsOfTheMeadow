@@ -23,7 +23,19 @@ const terrainWeights = [
   { type: "Ancient Grove", weight: 1 },
 ];
 
-const beastFriendlyTerrains = new Set(["Deep Ocean", "Mountains"]);
+const beastFriendlyTerrains = new Set([
+  "Meadow",
+  "Forest",
+  "Hills",
+  "Beach",
+  "Mountains",
+  "River",
+  "Marsh",
+  "Ocean",
+  "Deep Ocean",
+  "Crystal Cavern",
+  "Ancient Grove",
+]);
 
 /////////////////////////////////////
 /// STATE                         ///
@@ -131,23 +143,25 @@ function enforceWaterRules(choice, row, col) {
 
 function maybeSpawnBeast(terrain) {
   if (!beastFriendlyTerrains.has(terrain)) return null;
-  const spawnType =
-    terrain === "Mountains"
-      ? Math.random() < 0.1
-        ? "Mountain Beast"
-        : null
-      : terrain === "Deep Ocean"
-      ? Math.random() < 0.4
-        ? "Deep Leviathan"
-        : null
-      : null;
-  if (!spawnType) return null;
-  const def = getBeastDefinition(spawnType);
+  const table = {
+    Meadow: { type: "Meadow Stag", chance: 0.08 },
+    Forest: { type: "Forest Alpha", chance: 0.12 },
+    Hills: { type: "Hills Golem", chance: 0.12 },
+    Beach: { type: "Mega Crab", chance: 0.18 },
+    Mountains: { type: "Mountain Beast", chance: 0.15 },
+    River: { type: "River Serpent", chance: 0.14 },
+    Marsh: { type: "Marsh Horror", chance: 0.14 },
+    Ocean: { type: "Sea Serpent", chance: 0.18 },
+    Deep Ocean: { type: "Deep Leviathan", chance: 0.35 },
+    "Crystal Cavern": { type: "Crystal Wyrm", chance: 0.2 },
+    "Ancient Grove": { type: "Grove Guardian", chance: 0.16 },
+  };
+  const entry = table[terrain];
+  if (!entry || Math.random() > entry.chance) return null;
+  const def = getBeastDefinition(entry.type);
   if (def) {
     return { type: def.type, strength: def.strength, health: def.health, rewards: def.rewards };
   }
-  if (spawnType === "Mountain Beast") return { type: spawnType, strength: 4 };
-  if (spawnType === "Deep Leviathan") return { type: spawnType, strength: 7 };
   return null;
 }
 

@@ -10,7 +10,7 @@ const terrainEmoji = {
   Beach: "🏝️",
   Mountains: "🏔️",
   River: "🌊",
-  Marsh: "🪵",
+  Marsh: "🦠",
   "Crystal Cavern": "💎",
   "Ancient Grove": "🌳",
   Ocean: "🌊",
@@ -95,8 +95,8 @@ export function renderMap({
       ? terrainEmoji[clearing.terrain] || "◻️"
       : "❓";
     tile.innerHTML = `
+      <span class="clearing-terrain corner-icon">${terrainIcon}</span>
       <span class="clearing-id">#${clearing.id}</span>
-      <span class="clearing-terrain">${terrainIcon}</span>
       <span class="clearing-owner">${
         clearing.revealed
           ? typeof formatOwnerLabel === "function"

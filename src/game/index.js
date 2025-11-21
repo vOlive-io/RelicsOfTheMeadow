@@ -516,7 +516,7 @@ function formatClearingTooltip(clearing) {
       Beach: "🏝️",
       Mountains: "🏔️",
       River: "🌊",
-      Marsh: "🪵",
+      Marsh: "🦠",
       "Crystal Cavern": "💎",
       "Ancient Grove": "🌳",
       Ocean: "🌊",
