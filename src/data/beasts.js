@@ -3,19 +3,19 @@ export const beastCatalog = [
     type: "Mountain Beast",
     strength: 4,
     health: 120,
-    rewards: { mythril: 3, starpetalOre: 1 },
+    rewards: { mythril: 3, starpetalOre: 1, magicalEssence: 10 },
   },
   {
     type: "Deep Leviathan",
     strength: 7,
     health: 200,
-    rewards: { mythril: 4, starpetalOre: 2, lumenQuartz: 2, magicalEssence: 1 },
+    rewards: { mythril: 5, lumenQuartz: 2, magicalEssence: 15 },
   },
   {
-    type: "Beast",
+    type: "Medeaw Beast",
     strength: 3,
-    health: 100,
-    rewards: { mythril: 2 },
+    health: 150,
+    rewards: { amberWheat: 2, mythril: 2, magicalEssence: 10 },
   },
 ];
 
