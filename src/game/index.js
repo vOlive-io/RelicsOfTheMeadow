@@ -282,7 +282,9 @@ function loadGameState() {
     importResourceState(data.resources || {});
     importPopulationState(data.population || {});
     importCraftingState(data.crafting || {});
-    importMapState(data.map || {});
+    if (data.map?.mapClearings?.length) {
+      importMapState(data.map);
+    }
     importEventState(data.events || []);
     worldEventFeed = Array.isArray(data.worldEventFeed) ? data.worldEventFeed : [];
     selectedClearingId = data.selectedClearingId ?? selectedClearingId;
@@ -964,29 +966,47 @@ function renderInventorySidebar() {
     })
     .filter(Boolean)
     .join("");
-  const statsSection = `
-    <div class="inventory-info">
-      <div>❤️ Health: <strong>${player.health}%</strong></div>
-      <div>💖 Happiness: <strong>${player.happiness}%</strong></div>
-      <div>🛡️ Protection: <strong>${player.protection}</strong></div>
-      <div>🪖 Troops: <strong>${player.troops}</strong></div>
-      <div>⚡ Energy: <strong>${player.energy}</strong></div>
-      <div>⚔️ Prowess Rank: <strong>${player.prowess}</strong></div>
-      <div>🧱 Resilience Rank: <strong>${player.resilience}</strong></div>
-      <div>📊 Economy Rank: <strong>${player.economy}</strong></div>
-    </div>
-  `;
+  const statsPills = [
+    { icon: "❤️", label: "Health", value: `${player.health}%` },
+    { icon: "💖", label: "Happiness", value: `${player.happiness}%` },
+    { icon: "🛡️", label: "Protection", value: player.protection },
+    { icon: "🪖", label: "Troops", value: player.troops },
+    { icon: "⚡", label: "Energy", value: player.energy },
+    { icon: "⚔️", label: "Prowess", value: player.prowess },
+    { icon: "🧱", label: "Resilience", value: player.resilience },
+    { icon: "📊", label: "Economy", value: player.economy },
+  ]
+    .map(
+      stat => `
+      <div class="inventory-pill">
+        <span>${stat.icon}</span>
+        <div>
+          <strong>${stat.value}</strong>
+          <small>${stat.label}</small>
+        </div>
+      </div>`
+    )
+    .join("");
   container.innerHTML = `
-    <div class="inventory-info">
-      <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
-      <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
-      <div>📦 Courier runs: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
-      <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
-      <div class="food-breakdown">${categoryMarkup}</div>
+    <div class="inventory-section">
+      <div class="inventory-card-title">Realm Status</div>
+      <div class="inventory-pills">${statsPills}</div>
     </div>
-    ${statsSection}
-    <div class="inventory-goods">
-      ${goodsMarkup || "<p class='inventory-empty'>No goods harvested yet.</p>"}
+    <div class="inventory-section">
+      <div class="inventory-card-title">Logistics</div>
+      <div class="inventory-info">
+        <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
+        <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
+        <div>📦 Courier runs: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
+        <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
+      </div>
+      <div class="food-breakdown">${categoryMarkup || "<p class='inventory-empty'>No food stockpiles.</p>"}</div>
+    </div>
+    <div class="inventory-section">
+      <div class="inventory-card-title">Stockpiles</div>
+      <div class="inventory-goods">
+        ${goodsMarkup || "<p class='inventory-empty'>No goods harvested yet.</p>"}
+      </div>
     </div>
   `;
 }
