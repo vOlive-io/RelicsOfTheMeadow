@@ -288,6 +288,7 @@ function loadGameState() {
     selectedClearingId = data.selectedClearingId ?? selectedClearingId;
     turnCounter = Number.isFinite(data.turnCounter) ? data.turnCounter : turnCounter;
     currentSeasonIndex = Number.isFinite(data.currentSeasonIndex) ? data.currentSeasonIndex : currentSeasonIndex;
+    refreshHarvestAvailability();
     return true;
   } catch (err) {
     console.error("Failed to load saved game", err);
@@ -2976,8 +2977,8 @@ function startGame(faction) {
   player.goldStorageBase = BASE_GOLD_STORAGE;
   player.goldStorageBonus = 0;
   enforceGoldCapacity();
-  refreshHarvestAvailability();
   const loaded = loadGameState();
+  refreshHarvestAvailability();
   renderHUD();
   renderWorldEventFeed();
   if (!loaded) {
