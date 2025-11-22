@@ -600,6 +600,7 @@ function renderHUD() {
   });
   renderResourcePanel();
   renderPopulationPanel();
+  renderInventorySidebar();
   renderWorldEventFeed();
   renderMapActions();
 }
@@ -888,6 +889,47 @@ function renderMapActions() {
     <div>Needs: ${resourceLines}</div>
   `;
   container.appendChild(costBox);
+}
+
+function renderInventorySidebar() {
+  const container = document.getElementById("inventoryPanel");
+  if (!container) return;
+  const categories = calculateFoodCategories();
+  const categoryMarkup = Object.entries(categories)
+    .map(([label, data]) => {
+      const items = data.items
+        .map(entry => `<div class="food-item">• ${entry.name}: ${entry.amount}</div>`)
+        .join("");
+      return `<div class="food-category"><strong>${data.icon} ${label}: ${data.total}</strong>${
+        items ? `<div class="food-items">${items}</div>` : ""
+      }</div>`;
+    })
+    .join("");
+  const goodsMarkup = getHarvestCatalog()
+    .map(g => {
+      const count = (player.harvestedGoods && player.harvestedGoods[g.key]) || 0;
+      return `
+        <div class="inventory-good">
+          <span>${g.emoji}</span>
+          <div>
+            <strong>${g.name}</strong>
+            <small>${count} crate(s)</small>
+          </div>
+        </div>`;
+    })
+    .join("");
+  container.innerHTML = `
+    <div class="inventory-info">
+      <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
+      <div>🌾 Harvests left: <strong>${player.harvestsLeft}/${player.harvestLimit || 0}</strong></div>
+      <div>📦 Courier runs: <strong>${player.courierRuns}/${player.giftCouriers || 0}</strong></div>
+      <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
+      <div class="food-breakdown">${categoryMarkup}</div>
+    </div>
+    <div class="inventory-goods">
+      ${goodsMarkup || "<p class='inventory-empty'>No goods harvested yet.</p>"}
+    </div>
+  `;
 }
 
 function battleBeastAtClearing(clearing) {
