@@ -44,20 +44,35 @@ export function resolveBeastEncounter({ player, clearing, beast, announce }) {
   if (!player || !clearing || !beast) {
     return { victory: false, error: "No beast to confront." };
   }
+  const def = getBeastDefinition(beast.type) || {};
+  const beastStrength = beast.strength || def.strength || 3;
+  if (typeof beast.health !== "number" || Number.isNaN(beast.health)) {
+    beast.health = def.health || 120;
+  }
   const troopPower = Math.max(1, player.troops) + (player.battleBonus || 0) * 2;
-  const beastPower = (beast.strength || 3) * 12;
-  const roll = Math.random() * (troopPower + beastPower);
-  const victory = roll > beastPower;
-  const casualtyFactor = victory ? 0.15 : 0.35;
-  const casualties = Math.max(1, Math.round(player.troops * casualtyFactor));
+  const beastPower = beastStrength * 12;
+  const exchangeTilt = troopPower / Math.max(1, troopPower + beastPower);
+  const rawDamage = Math.round(troopPower * (0.35 + Math.random() * 0.45));
+  const maxDamage = Math.max(12, Math.floor(beast.health * 0.65));
+  const damageDealt = Math.min(rawDamage, maxDamage);
+  const healthBefore = beast.health;
+  beast.health = Math.max(0, beast.health - damageDealt);
+
+  const casualtyBase = Math.max(1, Math.round((beastPower / 8) * (0.6 + Math.random() * 0.6)));
+  const casualties = Math.min(
+    player.troops,
+    Math.max(1, Math.round(casualtyBase * (1 - exchangeTilt * 0.25)))
+  );
   player.troops = Math.max(0, player.troops - casualties);
+
+  const victory = beast.health <= 0;
   let rewards = null;
   if (victory) {
-    announce(`⚔️ ${beast.type || "Beast"} defeated near clearing #${clearing.id}! Lost ${casualties} troops.`);
-    rewards = grantSpoils(beast, announce);
+    announce?.(`⚔️ ${beast.type || "Beast"} finally falls! Lost ${casualties} troops.`);
+    rewards = grantSpoils(beast, announce || (() => {}));
   } else {
-    announce(
-      `💀 ${beast.type || "Beast"} repelled your forces at clearing #${clearing.id}. Lost ${casualties} troops.`
+    announce?.(
+      `🩸 ${beast.type || "Beast"} is wounded (❤️ ${beast.health} left). Your forces lost ${casualties} troops.`
     );
   }
   lastEncounter = {
@@ -66,6 +81,9 @@ export function resolveBeastEncounter({ player, clearing, beast, announce }) {
     victory,
     casualties,
     rewards,
+    damageDealt,
+    remainingHealth: beast.health,
+    healthBefore,
   };
-  return { victory, casualties, rewards };
+  return { victory, casualties, rewards, damageDealt, remainingHealth: beast.health };
 }

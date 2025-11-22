@@ -49,6 +49,7 @@ import {
   adjustHealth,
   addPopulation,
   getHomeless,
+  getHousingCapacity,
   tickPopulation,
 } from "../managers/populationManager.js";
 import {
@@ -127,6 +128,15 @@ const seasons = [
   { key: "fall", name: "Fall", hungerMultiplier: 1.3, homelessPenalty: 1 },
   { key: "winter", name: "Winter", hungerMultiplier: 1.1, homelessPenalty: 1.5 },
 ];
+const seasonAtmosphere = {
+  spring: { className: "season-spring", emoji: "🌸", count: 18 },
+  summer: { className: "season-summer", emoji: null, count: 0 },
+  fall: { className: "season-fall", emoji: "🍂", count: 14 },
+  winter: { className: "season-winter", emoji: "❄️", count: 20 },
+};
+const seasonClassNames = Object.values(seasonAtmosphere)
+  .map(entry => entry.className)
+  .filter(Boolean);
 let currentSeasonIndex = 0;
 const WORLD_EVENT_LIMIT = 6;
 let worldEventFeed = [];
@@ -209,6 +219,50 @@ function announceWorldEvent(message) {
     worldEventFeed = worldEventFeed.slice(-WORLD_EVENT_LIMIT);
   }
   renderWorldEventFeed();
+}
+
+function renderSeasonalFx(config, seasonKey) {
+  const container = document.getElementById("seasonalFx");
+  if (!container || !config) return;
+  if (container.dataset.season === seasonKey) return;
+  container.dataset.season = seasonKey;
+  container.innerHTML = "";
+  if (!config.emoji || config.count <= 0) {
+    container.classList.add("seasonal-fx--inactive");
+    return;
+  }
+  container.classList.remove("seasonal-fx--inactive");
+  for (let i = 0; i < config.count; i += 1) {
+    const drop = document.createElement("span");
+    drop.className = "falling-emoji";
+    drop.textContent = config.emoji;
+    drop.style.left = `${Math.random() * 100}%`;
+    drop.style.animationDuration = `${6 + Math.random() * 6}s`;
+    drop.style.animationDelay = `${Math.random() * 4}s`;
+    drop.style.fontSize = `${0.9 + Math.random() * 0.6}rem`;
+    drop.style.setProperty("--drift", `${Math.random() * 60 - 30}px`);
+    container.appendChild(drop);
+  }
+}
+
+function applySeasonalTheme() {
+  const season = getCurrentSeason();
+  const config = seasonAtmosphere[season.key] || seasonAtmosphere.spring;
+  const body = document.body;
+  if (!body) return;
+  seasonClassNames.forEach(cls => body.classList.remove(cls));
+  if (config.className) {
+    body.classList.add(config.className);
+  }
+  renderSeasonalFx(config, season.key);
+}
+
+function updateSeasonDisplay() {
+  const season = getCurrentSeason();
+  const display = document.getElementById("seasonDisplay");
+  if (display) {
+    display.textContent = `Season: ${season.name}`;
+  }
 }
 
 function getCurrentSeason() {
@@ -385,6 +439,19 @@ function consumeFoodForPopulation() {
   }
 }
 
+function welcomeNewSettlers() {
+  const happiness = getHappiness();
+  if (happiness < 75) return;
+  const capacity = getHousingCapacity();
+  const population = getPopulation();
+  const room = Math.max(0, capacity - population);
+  if (room <= 0) return;
+  const bonus = Math.max(0, Math.floor((happiness - 70) / 10));
+  const arrivals = Math.min(room, Math.max(1, Math.round(population * 0.03) + bonus));
+  addPopulation(arrivals);
+  logEvent(`🎉 Word spreads of your happy people. ${arrivals} new settlers join your kingdom.`);
+}
+
 function renderWorldEventFeed() {
   const ticker = document.getElementById("eventTicker");
   if (!ticker) return;
@@ -467,6 +534,8 @@ function updateDerivedStats() {
 
 function renderHUD() {
   if (!player?.faction) return;
+  applySeasonalTheme();
+  updateSeasonDisplay();
   enforceGoldCapacity();
   const f = player.faction;
   const factionBanner = document.getElementById("factionDisplay");
@@ -586,7 +655,7 @@ function spawnRandomBeast() {
   const target = clearings[Math.floor(Math.random() * clearings.length)];
   const def = getBeastDefinition("Beast") || { type: "Beast", strength: 3, health: 100 };
   target.beast = { type: def.type, strength: def.strength, health: def.health, rewards: def.rewards };
-  announceWorldEvent(`🐾 A ${target.beast.type} prowls in clearing #${target.id}!`);
+  announceWorldEvent(`🐾 A ${target.beast.type} prowls in a nearby ${target.terrain} clearing!`);
 }
 
 function revealClearingIfNearGarrison(clearingId) {
@@ -605,7 +674,7 @@ function garrisonClearing(clearingId, { silent = false } = {}) {
   player.garrisonedClearings.add(clearingId);
   revealClearingAndNeighbors(clearingId);
   if (!silent) {
-    logEvent(`🪖 Troops now hold clearing #${clearingId}. Nearby wilds reveal themselves.`);
+    logEvent(`🪖 Troops now hold the clearing. Nearby wilds reveal themselves.`);
   }
 }
 
@@ -644,8 +713,8 @@ function advanceTroops(direction) {
     selectedClearingId = result.id;
     player.currentClearingId = result.id;
     const discoveryText = discovered
-      ? `discovered clearing #${result.id} (${result.terrain}).`
-      : `entered clearing #${result.id}.`;
+      ? `discovered a ${result.terrain} clearing.`
+      : `entered the clearing.`;
     logEvent(`🪖 Advanced ${direction} and ${discoveryText}`);
     if (result.beast) {
       logEvent(`⚠️ A ${result.beast.type} lurks here.`);
@@ -662,7 +731,7 @@ function formatClearingTooltip(clearing) {
   if (!clearing) return "";
   if (!clearing.revealed) {
     return `
-      <div><strong>Wild Clearing #${clearing.id}</strong></div>
+      <div><strong>Wild Clearing</strong></div>
       <div>Terrain: Unknown</div>
       <div>Owner: Unknown</div>
       <div>Send troops nearby to reveal.</div>
@@ -698,7 +767,7 @@ function formatClearingTooltip(clearing) {
     : "";
   const rarityLine = clearing.rarity ? `<div>Rarity: ${clearing.rarity}</div>` : "";
   return `
-    <div><strong>Clearing #${clearing.id}</strong></div>
+    <div><strong>Clearing</strong></div>
     <div>Terrain: ${terrainEmoji} ${clearing.terrain}</div>
     <div>Owner: ${owner}</div>
     ${rarityLine}
@@ -719,6 +788,14 @@ function evaluateBlueprintAvailability(definition, clearing, structuresHere = nu
     return { canBuild: false, reason: "Wrong terrain", cost: getScaledCostForBlueprint(definition.key) };
   }
   const structures = structuresHere || getStructuresInClearing(clearing.id);
+  const structureCount = Math.max(structures.length, Array.isArray(clearing.structures) ? clearing.structures.length : 0);
+  if (!definition.upgradeFrom && structureCount >= 5) {
+    return {
+      canBuild: false,
+      reason: "Clearing full (max 5 structures)",
+      cost: getScaledCostForBlueprint(definition.key),
+    };
+  }
   if (definition.upgradeFrom && !structures.some(structure => structure.key === definition.upgradeFrom)) {
     const previous = buildingDefinitions.find(entry => entry.key === definition.upgradeFrom);
     return {
@@ -784,19 +861,21 @@ function renderMapActions() {
     const hp = clearing.beast.health ? ` • ❤️ ${clearing.beast.health}` : "";
     beastInfo.textContent = `Beast present: ${clearing.beast.type} (⚔️ ${clearing.beast.strength}${hp})`;
     container.appendChild(beastInfo);
-    const beastBtn = document.createElement("button");
-    beastBtn.textContent = `Battle Here (⚡${BATTLE_ENERGY_COST})`;
-    beastBtn.className = "danger";
-    beastBtn.disabled = player.troops <= 0 || player.energy < BATTLE_ENERGY_COST;
-    beastBtn.addEventListener("click", () => battleBeastAtClearing(clearing));
-    container.appendChild(beastBtn);
-  } else {
-    const noBattle = document.createElement("button");
-    noBattle.textContent = "Battle Unavailable";
-    noBattle.disabled = true;
-    noBattle.className = "danger";
-    container.appendChild(noBattle);
   }
+
+  const conquestCosts = calculateConquestCost();
+  const costBox = document.createElement("div");
+  costBox.className = "map-conquest-cost";
+  const resourceLines = Object.entries(conquestCosts.resourcesCost)
+    .map(([key, amount]) => `${resourceLabelMap[key] || key}: ${amount}`)
+    .join(" • ");
+  costBox.innerHTML = `
+    <strong>Next Conquest</strong>
+    <div>Realm size: ${conquestCosts.nextSize}x${conquestCosts.nextSize}</div>
+    <div>Cost: ⚡ ${CONQUEST_ENERGY_COST} • 💰 ${conquestCosts.goldCost}</div>
+    <div>Needs: ${resourceLines}</div>
+  `;
+  container.appendChild(costBox);
 }
 
 function battleBeastAtClearing(clearing) {
@@ -809,7 +888,7 @@ function battleBeastAtClearing(clearing) {
     logEvent("⚡ Not enough energy to battle.");
     return;
   }
-  spendEnergyAndGold(BATTLE_ENERGY_COST, 0, `⚔️ Battle at clearing #${clearing.id}.`, () => {
+  spendEnergyAndGold(BATTLE_ENERGY_COST, 0, `⚔️ Battle at the clearing.`, () => {
     handleBeastEncounter(clearing, false);
   });
 }
@@ -824,16 +903,26 @@ function handleBeastEncounter(clearing, autoTriggered = false) {
     return;
   }
   if (!autoTriggered) {
-    logEvent(`⚔️ You engage the ${clearing.beast.type} at clearing #${clearing.id}.`);
+    logEvent(`⚔️ You engage the ${clearing.beast.type} in the clearing.`);
   }
+  const beastType = clearing.beast?.type || "Beast";
   const result = resolveBeastEncounter({
     player,
     clearing,
     beast: clearing.beast,
     announce: announceWorldEvent,
   });
+  if (result?.error) {
+    logEvent(result.error);
+    return;
+  }
   if (result.victory) {
+    logEvent(`🏆 The ${beastType} is slain! Lost ${result.casualties} troops.`);
     clearBeastFromClearing(clearing.id);
+  } else {
+    logEvent(
+      `🩸 The ${beastType} is wounded (${result.damageDealt} dmg, ${result.remainingHealth} health left). Lost ${result.casualties} troops.`
+    );
   }
   renderHUD();
 }
@@ -1592,7 +1681,7 @@ function respawnFaction(state) {
   state.eliminated = false;
   state.returnTimer = 0;
   state.troops = Math.max(40, state.troopBase || 60);
-  announceWorldEvent(`${state.faction.emoji} ${factionName} resurfaces in clearing #${target.id}!`);
+  announceWorldEvent(`${state.faction.emoji} ${factionName} resurfaces in a reclaimed clearing!`);
   renderWorldMap({
     selectedClearingId,
     formatOwnerLabel,
@@ -1920,9 +2009,6 @@ function offerPeace(faction) {
 /////////////////////////////////////
 function handleAction(action) {
   switch (action) {
-    case "battle":
-      showBattleModal();
-      break;
     case "build":
       buildMenu();
       break;
@@ -1946,9 +2032,6 @@ function handleAction(action) {
       break;
     case "use-relic":
       showRelicMenu();
-      break;
-    case "inventory":
-      showInventoryPanel();
       break;
     case "conquest":
       attemptConquest();
@@ -2379,13 +2462,6 @@ function updateActionIndicators() {
           canUse = false;
         }
         break;
-      case "battle":
-        detailText += ` • Troops ready: ${player.troops}`;
-        if (!hasBattleTargets()) {
-          detailText += " • No eligible foes.";
-          canUse = false;
-        }
-        break;
       case "build":
         if (!selectedClearingId) {
           detailText += " • Select a clearing on the map.";
@@ -2469,7 +2545,7 @@ function buildMenu() {
     console.log(`${def.name || def.key}: canBuild=${info.canBuild} reason="${info.reason}" cost=`, info.cost);
   });
   console.groupEnd();
-  openActionModal(`🔨 Build in Clearing #${clearing.id}`, body => {
+  openActionModal(`🔨 Build in this Clearing`, body => {
     const summary = document.createElement("p");
     summary.textContent = `Terrain: ${clearing.terrain}${clearing.rarity ? ` • ${clearing.rarity}` : ""}`;
     summary.className = "clearing-summary";
@@ -2528,7 +2604,7 @@ function executeConstruction(definition, clearing) {
   }
   if (!Array.isArray(player.buildings)) player.buildings = [];
   player.buildings.push(definition.name);
-  logEvent(`${definition.icon || "🏗️"} Built ${definition.name} in clearing #${clearing.id}.`);
+  logEvent(`${definition.icon || "🏗️"} Built ${definition.name} in the clearing.`);
   if (definition.courierBonus) {
     player.giftCouriers = Math.max(0, (player.giftCouriers || 0) + definition.courierBonus);
     player.courierRuns = player.giftCouriers;
@@ -2658,6 +2734,7 @@ function endTurn() {
     applyHappinessDelta(-penalty);
     logEvent(`❄️ Seasonal hardship hits the homeless (-${penalty} happiness).`);
   }
+  welcomeNewSettlers();
   refreshHarvestAvailability();
   renderHUD();
   showNextPlayerPrompt();
@@ -2770,4 +2847,3 @@ function startGame(faction) {
   player.extraHarvestGoods = [];
   player.pendingPlayerPrompts = [];
 }
-

@@ -152,6 +152,8 @@ export function buildStructure({ clearingId, key, terrain, rarity }) {
       return { success: false, reason: `Requires existing ${label}` };
     }
     replacedInstance = list[replaceIndex];
+  } else if (list.length >= 5) {
+    return { success: false, reason: "Clearing at structure capacity (5)" };
   }
   const scaledCost = getScaledCostForBlueprint(key);
   if (!spendResources(scaledCost)) {

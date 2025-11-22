@@ -55,7 +55,6 @@ export function setupActionButtons(handleAction) {
   if (!actionArea) return;
   actionArea.innerHTML = "";
   const actions = [
-    { id: "battle", label: "🛡️ Battle", detail: "March troops into combat.", cost: { energy: 1, gold: 0 } },
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
     { id: "conquest", label: "🏴 Conquest", detail: "Expand your realm outward.", costLabel: "Costs heavy gold & resources" },
@@ -65,7 +64,6 @@ export function setupActionButtons(handleAction) {
     { id: "recruit", label: "🪖 Recruit", detail: "Call fresh troops.", cost: { energy: 2, gold: 40 } },
     { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic.", cost: { energy: 5, gold: 250 } },
     { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic.", costLabel: "Varies per relic" },
-    { id: "inventory", label: "📚 Inventory", detail: "Review goods & logistics.", cost: { energy: 0, gold: 0 } },
     { id: "end-turn", label: "🌅 End Turn", detail: "Recover energy & income.", cost: { energy: 0, gold: 0 } },
   ];
   actions.forEach(a => {

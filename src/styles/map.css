@@ -54,10 +54,6 @@
   box-shadow: 0 0 0 2px rgba(230, 111, 81, 0.6);
 }
 
-.clearing-id {
-  font-weight: 600;
-}
-
 .clearing-terrain {
   font-size: 0.9rem;
 }
@@ -106,4 +102,15 @@
 .map-actions button.danger {
   background: linear-gradient(180deg, #ffd1d1, #f3a6a6);
   border-color: #b94a48;
+}
+
+.map-conquest-cost {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px dashed #1b4332;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }

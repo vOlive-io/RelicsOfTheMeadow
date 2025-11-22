@@ -3,6 +3,7 @@
 /////////////////////////////////////
 import { buildStructure, getStructuresInClearing } from "./craftingManager.js";
 import { getClearingById } from "./mapManager.js";
+import { buildingDefinitions } from "../data/buildings.js";
 
 /////////////////////////////////////
 /// FUNCTIONS                     ///
@@ -10,6 +11,13 @@ import { getClearingById } from "./mapManager.js";
 export function constructBuilding({ clearingId, blueprintKey }) {
   const clearing = getClearingById(clearingId);
   if (!clearing) return { success: false, reason: "Unknown clearing" };
+  const definition = buildingDefinitions.find(def => def.key === blueprintKey);
+  if (definition && !definition.upgradeFrom) {
+    const existingNames = Array.isArray(clearing.structures) ? clearing.structures.length : 0;
+    if (existingNames >= 5) {
+      return { success: false, reason: "Clearing structure limit reached (5)" };
+    }
+  }
   const result = buildStructure({
     clearingId,
     key: blueprintKey,

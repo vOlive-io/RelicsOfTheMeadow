@@ -1,9 +1,30 @@
+:root {
+  --meadow-bg: radial-gradient(circle at top, #ffe8d6 0%, #ffd6a5 45%, #ffb55a 100%);
+}
+
 body {
   margin: 0;
   font-family: "Cardo", "Segoe UI", serif;
-  background: radial-gradient(circle at top, #d8f3dc 0%, #95d5b2 45%, #52b788 100%);
+  background: var(--meadow-bg);
   color: #1f3c2d;
   min-height: 100vh;
+  transition: background 0.6s ease;
+}
+
+body.season-spring {
+  --meadow-bg: radial-gradient(circle at 30% 20%, #fff1f2 0%, #d4f8d8 45%, #8fd3a8 100%);
+}
+
+body.season-summer {
+  --meadow-bg: radial-gradient(circle at 25% 15%, #fff5d7 0%, #ffd59e 50%, #f7a35c 100%);
+}
+
+body.season-fall {
+  --meadow-bg: radial-gradient(circle at 10% 10%, #fce8d5 0%, #f6c28b 45%, #c97b63 100%);
+}
+
+body.season-winter {
+  --meadow-bg: linear-gradient(180deg, #e5f1ff 0%, #b7d3ff 45%, #5c7ddc 100%);
 }
 
 header {
@@ -14,6 +35,7 @@ header {
   background: rgba(255, 255, 255, 0.7);
   border-bottom: 2px solid #1b4332;
   box-shadow: 0 2px 10px rgba(27, 67, 50, 0.2);
+  gap: 1rem;
 }
 
 main {
@@ -63,6 +85,22 @@ h1 {
   font-size: 1.1rem;
 }
 
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.season-display {
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border: 2px solid rgba(27, 67, 50, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
 .hidden {
   display: none;
 }
@@ -96,4 +134,38 @@ h1 {
   max-height: 90vh;
   overflow-y: auto;
   width: min(640px, 100%);
+}
+
+.seasonal-fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 500;
+  opacity: 0.8;
+}
+
+.seasonal-fx--inactive {
+  display: none;
+}
+
+.falling-emoji {
+  position: absolute;
+  top: -10%;
+  animation-name: seasonal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes seasonal-fall {
+  0% {
+    transform: translate3d(0, -10%, 0);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 110vh, 0);
+    opacity: 0;
+  }
 }

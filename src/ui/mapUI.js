@@ -96,7 +96,6 @@ export function renderMap({
       : "❓";
     tile.innerHTML = `
       <span class="clearing-terrain corner-icon">${terrainIcon}</span>
-      <span class="clearing-id">#${clearing.id}</span>
       <span class="clearing-owner">${
         clearing.revealed
           ? typeof formatOwnerLabel === "function"

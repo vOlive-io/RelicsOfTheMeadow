@@ -7,15 +7,15 @@ import { resources } from "../data/resources.js";
 /// STATE                         ///
 /////////////////////////////////////
 const STARTER_STOCK = {
-  logs: 100,
-  stone: 80,
-  clay: 40,
-  meadowheartOpal: 4,
-  mythril: 2,
-  goldOre: 2,
-  fruits: 10,
-  wheat: 10,
-  meat: 4,
+  logs: 180,
+  stone: 140,
+  clay: 80,
+  meadowheartOpal: 8,
+  mythril: 4,
+  goldOre: 6,
+  fruits: 20,
+  wheat: 20,
+  meat: 12,
 };
 
 let wallet = Object.fromEntries(resources.map(r => [r.key, 0]));
