@@ -1,12 +1,30 @@
 export const buildingDefinitions = [
   // Housing
-  {
-    key: "basicHouse",
-    name: "Basic House",
+   {
+    key: "hovel",
+    name: "Hovel",
     type: "housing",
-    icon: "🏠",
+    icon: "🪹",
     beds: 5,
-    cost: { logs: 20, stone: 10 },
+    cost: { logs: 30, stone: 30, mythril: 15, },
+    blueprintTier: "default",
+  },
+  {
+    key: "hut",
+    name: "Hut",
+    type: "housing",
+    icon: "🛖",
+    beds: 15,
+    cost: { logs: 75, stone: 75, mythril: 30, goldOre: 15, },
+    blueprintTier: "default",
+  },
+  {
+    key: "cottage",
+    name: "Cottage",
+    type: "housing",
+    icon: "🏡",
+    beds: 30,
+    cost: { logs: 125, stone: 125, mythril: 75, goldOre: 30, silktoneObsidian: 30, lumenQuartz: 15, },
     blueprintTier: "default",
   },
   {
@@ -15,7 +33,7 @@ export const buildingDefinitions = [
     type: "housing",
     icon: "🏡",
     beds: 25,
-    cost: { logs: 80, stone: 40, clay: 10, goldOre: 4 },
+    cost: { logs: 250, stone: 250, mythril: 125, goldOre: 75, silktoneObsidian: 25, lumenQuartz: 25, },
     blueprintTier: "library",
   },
   {
@@ -24,7 +42,7 @@ export const buildingDefinitions = [
     type: "housing",
     icon: "🏘️",
     beds: 50,
-    cost: { logs: 150, stone: 80, clay: 40, goldOre: 8, silktoneObsidian: 2 },
+    cost: { logs: 500, stone: 375, mythril: 125, goldOre: 125, silktoneObsidian: 50, lumenQuartz: 50, magicalEssence: 25, starpetalOre: 5, },
     blueprintTier: "apex",
   },
   {
@@ -33,7 +51,7 @@ export const buildingDefinitions = [
     type: "housing",
     icon: "🏛️",
     beds: 100,
-    cost: { logs: 250, stone: 120, mythril: 5, goldOre: 10, silktoneObsidian: 4 },
+    cost: { logs: 1000, stone: 750, mythril: 250, goldOre: 250, silktoneObsidian: 100, lumenQuartz: 100, magicalEssence: 50, starpetalOre: 10, },
     upkeep: { logs: 10, mythril: 2 },
     blueprintTier: "apex",
   },
