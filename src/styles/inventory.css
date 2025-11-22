@@ -17,6 +17,13 @@
   margin-bottom: 0.35rem;
 }
 
+.inventory-subcard {
+  border: 1px dashed #cbb18a;
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .inventory-good {
   border: 1px solid #c8b38a;
   border-radius: 10px;
@@ -63,6 +70,19 @@
 .inventory-pill small {
   display: block;
   color: #5d4631;
+}
+
+.resource-list .resource-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(200, 179, 138, 0.4);
+}
+
+.resource-list .resource-row:last-child {
+  border-bottom: none;
 }
 
 .commerce-section {

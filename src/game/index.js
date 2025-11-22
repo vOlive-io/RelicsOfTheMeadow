@@ -966,6 +966,52 @@ function renderInventorySidebar() {
     })
     .filter(Boolean)
     .join("");
+
+  const resourceBuckets = new Map();
+  const categoryNames = {
+    fruits: "Fruits",
+    meat: "Meat",
+    fish: "Fish",
+    grains: "Grains",
+    sweets: "Sweets",
+    ores: "Ores",
+    materials: "Materials",
+    resources: "Resources",
+    trophies: "Trophies",
+    other: "Other",
+  };
+
+  const materialKeys = new Set(["logs", "stone", "clay"]);
+  const trophyKeys = new Set(["stagHorns", "golemCore", "emberleafFur", "roothoundFur", "windclawFeathers"]);
+
+  const resourceWallet = getAllResources();
+  resourceDefinitions.forEach(def => {
+    const amount = resourceWallet[def.key] || 0;
+    if (amount <= 0) return;
+    let bucket = "other";
+    const foodCat = foodCategoryMap[def.key];
+    if (def.group === "ore") bucket = "ores";
+    else if (foodCat) bucket = foodCat;
+    else if (materialKeys.has(def.key)) bucket = "materials";
+    else if (trophyKeys.has(def.key)) bucket = "trophies";
+    else bucket = "resources";
+    if (!resourceBuckets.has(bucket)) resourceBuckets.set(bucket, []);
+    resourceBuckets.get(bucket).push({ ...def, amount });
+  });
+
+  const resourceSections = [...resourceBuckets.entries()]
+    .map(([bucket, items]) => {
+      const title = categoryNames[bucket] || bucket;
+      const rows = items
+        .map(item => `<div class="resource-row"><span>${item.icon}</span><strong>${item.name}</strong><span>${item.amount}</span></div>`)
+        .join("");
+      return `
+        <div class="inventory-subcard">
+          <div class="inventory-card-title">${title}</div>
+          <div class="resource-list">${rows}</div>
+        </div>`;
+    })
+    .join("");
   const statsPills = [
     { icon: "❤️", label: "Health", value: `${player.health}%` },
     { icon: "💖", label: "Happiness", value: `${player.happiness}%` },
@@ -1001,6 +1047,10 @@ function renderInventorySidebar() {
         <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
       </div>
       <div class="food-breakdown">${categoryMarkup || "<p class='inventory-empty'>No food stockpiles.</p>"}</div>
+    </div>
+    <div class="inventory-section">
+      <div class="inventory-card-title">Resources</div>
+      ${resourceSections || "<p class='inventory-empty'>No resources discovered yet.</p>"}
     </div>
     <div class="inventory-section">
       <div class="inventory-card-title">Stockpiles</div>
