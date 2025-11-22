@@ -551,43 +551,8 @@ function renderHUD() {
   player.happiness = getHappiness();
   player.health = getHealth();
   updateDerivedStats();
-  const goldCap = getGoldStorageCapacity();
-  const leftStats = [
-    { label: "❤️ Health", value: `${player.health}%` },
-    { label: "💖 Happiness", value: `${player.happiness}%` },
-    { label: "🛡️ Protection", value: player.protection },
-    { label: "🪖 Troops", value: player.troops },
-    { label: "💰 Gold", value: `${player.gold}/${goldCap}` },
-    { label: "⚡ Energy", value: player.energy, extraClass: "stat-energy" },
-  ];
-  const rightStats = [
-    { label: "⚔️ Prowess Rank", value: player.prowess, pillar: true },
-    { label: "🧱 Resilience Rank", value: player.resilience, pillar: true },
-    { label: "📊 Economy Rank", value: player.economy, pillar: true },
-  ];
-  const renderColumn = stats =>
-    stats
-      .map(
-        stat => {
-          const classes = ["stat-item"];
-          if (stat.pillar) classes.push("pillar-stat");
-          if (stat.extraClass) classes.push(stat.extraClass);
-          return `
-        <div class="${classes.join(" ")}">
-          <strong>${stat.label}</strong>
-          <span>${stat.value}</span>
-        </div>`;
-        }
-      )
-      .join("");
-  document.getElementById("factionList").innerHTML = `
-    <div class="stats-column">
-      ${renderColumn(leftStats)}
-    </div>
-    <div class="stats-column">
-      ${renderColumn(rightStats)}
-    </div>
-  `;
+  const factionList = document.getElementById("factionList");
+  if (factionList) factionList.style.display = "none";
   renderFactionAbilities();
   updateActionIndicators();
   renderWorldMap({
@@ -923,6 +888,18 @@ function renderInventorySidebar() {
     })
     .filter(Boolean)
     .join("");
+  const statsSection = `
+    <div class="inventory-info">
+      <div>❤️ Health: <strong>${player.health}%</strong></div>
+      <div>💖 Happiness: <strong>${player.happiness}%</strong></div>
+      <div>🛡️ Protection: <strong>${player.protection}</strong></div>
+      <div>🪖 Troops: <strong>${player.troops}</strong></div>
+      <div>⚡ Energy: <strong>${player.energy}</strong></div>
+      <div>⚔️ Prowess Rank: <strong>${player.prowess}</strong></div>
+      <div>🧱 Resilience Rank: <strong>${player.resilience}</strong></div>
+      <div>📊 Economy Rank: <strong>${player.economy}</strong></div>
+    </div>
+  `;
   container.innerHTML = `
     <div class="inventory-info">
       <div>🎁 Gifts waiting: <strong>${player.giftsWaiting}</strong></div>
@@ -931,6 +908,7 @@ function renderInventorySidebar() {
       <div>🏦 Gold Storage: <strong>${player.gold}/${getGoldStorageCapacity()}</strong></div>
       <div class="food-breakdown">${categoryMarkup}</div>
     </div>
+    ${statsSection}
     <div class="inventory-goods">
       ${goodsMarkup || "<p class='inventory-empty'>No goods harvested yet.</p>"}
     </div>
@@ -2636,29 +2614,26 @@ function buildMenu() {
       body.appendChild(header);
       const grid = document.createElement("div");
       grid.className = "build-grid";
-      defs
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .forEach(def => {
-          const { canBuild, reason, cost } = evaluateBlueprintAvailability(def, clearing, structuresHere);
-          const card = document.createElement("button");
-          card.className = "build-card";
-          card.disabled = !canBuild;
-          card.innerHTML = `
-            <strong>${def.icon || "🏗️"} ${def.name}</strong>
-            <p>${def.type === "housing" ? `+${def.beds || 0} beds` : def.produces ? formatProductionOutput(def) : ""}</p>
-            ${renderTerrainSupport(def)}
-            <div class="build-cost">${renderCostLines(cost)}</div>
-            ${reason && !canBuild ? `<small class="build-locked">${reason}</small>` : ""}
-          `;
-          if (canBuild) {
-            card.addEventListener("click", () => {
-              closeActionModal();
-              executeConstruction(def, clearing);
-            });
-          }
-          grid.appendChild(card);
-        });
+      defs.forEach(def => {
+        const { canBuild, reason, cost } = evaluateBlueprintAvailability(def, clearing, structuresHere);
+        const card = document.createElement("button");
+        card.className = "build-card";
+        card.disabled = !canBuild;
+        card.innerHTML = `
+          <strong>${def.icon || "🏗️"} ${def.name}</strong>
+          <p>${def.type === "housing" ? `+${def.beds || 0} beds` : def.produces ? formatProductionOutput(def) : ""}</p>
+          ${renderTerrainSupport(def)}
+          <div class="build-cost">${renderCostLines(cost)}</div>
+          ${reason && !canBuild ? `<small class="build-locked">${reason}</small>` : ""}
+        `;
+        if (canBuild) {
+          card.addEventListener("click", () => {
+            closeActionModal();
+            executeConstruction(def, clearing);
+          });
+        }
+        grid.appendChild(card);
+      });
       body.appendChild(grid);
     });
   });
