@@ -240,7 +240,7 @@ export const buildingDefinitions = [
     type: "production",
     icon: "🪵",
     produces: {logs: 25},
-    cost: {logs: 90, stone: 140, mythril: 2},
+    cost: {logs: 50, stone: 50, mythril: 2},
     supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
