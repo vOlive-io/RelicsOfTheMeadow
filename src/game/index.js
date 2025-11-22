@@ -660,7 +660,7 @@ function getOwnerColor(ownerName) {
 function formatOwnerLabel(ownerName) {
   if (!ownerName) return "—";
   if (ownerName === player?.faction?.name) return "You";
-  if (ownerName === NEUTRAL_OWNER) return "Unclaimed";
+  if (ownerName === NEUTRAL_OWNER) return "";
   const faction = factionLookup.get(ownerName);
   return faction ? faction.name : ownerName;
 }

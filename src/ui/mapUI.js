@@ -3,18 +3,21 @@
 /////////////////////////////////////
 import { getMapClearings, NEUTRAL_OWNER } from "../managers/mapManager.js";
 
-const terrainEmoji = {
-  Meadow: "🌿",
-  Forest: "🌲",
-  Hills: "⛰️",
-  Beach: "🏝️",
-  Mountains: "🏔️",
-  River: "🌊",
-  Marsh: "🦠",
-  "Crystal Cavern": "💎",
-  "Ancient Grove": "🌳",
-  Ocean: "🌊",
-  "Deep Ocean": "🌊",
+const coverBase = "../assets/";
+const terrainCover = {
+  Meadow: `${coverBase}meadow-map.png`,
+  Forest: `${coverBase}forest-map.png`,
+  Hills: `${coverBase}hills-map.png`,
+  Beach: `${coverBase}beach-map.png`,
+  Mountains: `${coverBase}mountains-map.png`,
+  River: `${coverBase}river-map.png`,
+  Marsh: `${coverBase}marsh-map.png`,
+  "Crystal Cavern": `${coverBase}crystal-cavern-map.png`,
+  "Ancient Grove": `${coverBase}ancient-grove-map.png`,
+  Ocean: `${coverBase}ocean-map.png`,
+  "Deep Ocean": `${coverBase}deep-ocean-map.png`,
+  "Enfenal Depths": `${coverBase}enfenal-depths-map.png`,
+  unknown: `${coverBase}unknown-map.png`,
 };
 
 /////////////////////////////////////
@@ -84,6 +87,14 @@ export function renderMap({
     }
     tile.className = classes.join(" ");
     tile.type = "button";
+    const cover = clearing.revealed ? terrainCover[clearing.terrain] || terrainCover.unknown || "assets/unknown-map.png" : "";
+    if (cover) {
+      tile.style.backgroundImage = `url(${cover})`;
+      tile.style.backgroundSize = "cover";
+      tile.style.backgroundPosition = "center";
+    } else {
+      tile.style.backgroundImage = "";
+    }
     tile.style.borderColor =
       typeof getOwnerColor === "function" ? getOwnerColor(clearing.owner) : "#5ba571";
     const structures = Array.isArray(clearing.structures) ? clearing.structures : [];
@@ -91,11 +102,7 @@ export function renderMap({
       typeof formatStructures === "function"
         ? formatStructures(structures)
         : structures.slice(-2).join(", ") || "—";
-    const terrainIcon = clearing.revealed
-      ? terrainEmoji[clearing.terrain] || "◻️"
-      : "❓";
     tile.innerHTML = `
-      <span class="clearing-terrain corner-icon">${terrainIcon}</span>
       <span class="clearing-owner">${
         clearing.revealed
           ? typeof formatOwnerLabel === "function"
