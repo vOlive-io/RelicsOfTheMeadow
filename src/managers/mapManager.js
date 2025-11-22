@@ -133,6 +133,12 @@ function enforceWaterRules(choice, row, col) {
       return "Beach";
     }
   }
+  if (choice === "Beach") {
+    const hasOceanNeighbor = terrainSet.has("Ocean");
+    if (!hasOceanNeighbor) {
+      return "Ocean";
+    }
+  }
   if (choice === "Deep Ocean" && !terrainSet.has("Ocean")) {
     return "Ocean";
   }

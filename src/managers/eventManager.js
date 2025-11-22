@@ -60,14 +60,19 @@ export function advanceEvents(onUpdate = () => {}) {
 }
 
 export function maybeTriggerRandomEvent(onUpdate = () => {}, seasonKey = null) {
-  if (Math.random() > 0.4) return null;
-  const available = seasonalEvents.filter(
-    event =>
-      !activeEvents.some(active => active.key === event.key) &&
-      (!seasonKey || !event.seasons || event.seasons.includes(seasonKey))
+  const eligible = seasonalEvents.filter(
+    event => !seasonKey || !event.seasons || event.seasons.includes(seasonKey)
   );
-  if (!available.length) return null;
-  const definition = available[Math.floor(Math.random() * available.length)];
+  if (!eligible.length) return null;
+  const available = eligible.filter(event => !activeEvents.some(active => active.key === event.key));
+  const pool = available.length ? available : eligible;
+  const definition = pool[Math.floor(Math.random() * pool.length)];
+  const existing = activeEvents.find(event => event.key === definition.key);
+  if (existing) {
+    existing.turnsRemaining = Math.max(existing.turnsRemaining, definition.duration);
+    onUpdate(`✨ ${existing.name} intensifies: ${existing.description}`);
+    return existing;
+  }
   const instance = createEventInstance(definition, "seasonal");
   activeEvents.push(instance);
   applyImmediateEffects(instance);

@@ -2601,33 +2601,61 @@ function buildMenu() {
   console.groupEnd();
   openActionModal(`🔨 Build in this Clearing`, body => {
     const summary = document.createElement("p");
-    summary.textContent = `Terrain: ${clearing.terrain}${clearing.rarity ? ` • ${clearing.rarity}` : ""}`;
+    summary.textContent = `Terrain: ${clearing.terrain}${clearing.rarity ? ` • ${clearing.rarity}` : ""} • Structures: ${structuresHere.length}/5`;
     summary.className = "clearing-summary";
     body.appendChild(summary);
-    const grid = document.createElement("div");
-    grid.className = "build-grid";
+    const typeOrder = ["housing", "production", "utility", "research", "commerce", "military", "culture", "other"];
+    const labelMap = {
+      housing: "Housing",
+      production: "Production",
+      utility: "Utility",
+      research: "Research",
+      commerce: "Commerce",
+      military: "Military",
+      culture: "Culture",
+      other: "Other",
+    };
+    const grouped = new Map();
     buildingDefinitions.forEach(def => {
       if (!hasBlueprint(def.key)) return;
-      const { canBuild, reason, cost } = evaluateBlueprintAvailability(def, clearing, structuresHere);
-      const card = document.createElement("button");
-      card.className = "build-card";
-      card.disabled = !canBuild;
-      card.innerHTML = `
-        <strong>${def.icon || "🏗️"} ${def.name}</strong>
-        <p>${def.type === "housing" ? `+${def.beds} beds` : def.produces ? formatProductionOutput(def) : ""}</p>
-        ${renderTerrainSupport(def)}
-        <div class="build-cost">${renderCostLines(cost)}</div>
-        ${reason && !canBuild ? `<small class="build-locked">${reason}</small>` : ""}
-      `;
-      if (canBuild) {
-        card.addEventListener("click", () => {
-          closeActionModal();
-          executeConstruction(def, clearing);
-        });
-      }
-      grid.appendChild(card);
+      const type = def.type || "other";
+      if (!grouped.has(type)) grouped.set(type, []);
+      grouped.get(type).push(def);
     });
-    body.appendChild(grid);
+    const orderedTypes = [...typeOrder, ...grouped.keys().filter(k => !typeOrder.includes(k))];
+    orderedTypes.forEach(type => {
+      const defs = grouped.get(type);
+      if (!defs || !defs.length) return;
+      const header = document.createElement("h4");
+      header.textContent = labelMap[type] || type;
+      body.appendChild(header);
+      const grid = document.createElement("div");
+      grid.className = "build-grid";
+      defs
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(def => {
+          const { canBuild, reason, cost } = evaluateBlueprintAvailability(def, clearing, structuresHere);
+          const card = document.createElement("button");
+          card.className = "build-card";
+          card.disabled = !canBuild;
+          card.innerHTML = `
+            <strong>${def.icon || "🏗️"} ${def.name}</strong>
+            <p>${def.type === "housing" ? `+${def.beds || 0} beds` : def.produces ? formatProductionOutput(def) : ""}</p>
+            ${renderTerrainSupport(def)}
+            <div class="build-cost">${renderCostLines(cost)}</div>
+            ${reason && !canBuild ? `<small class="build-locked">${reason}</small>` : ""}
+          `;
+          if (canBuild) {
+            card.addEventListener("click", () => {
+              closeActionModal();
+              executeConstruction(def, clearing);
+            });
+          }
+          grid.appendChild(card);
+        });
+      body.appendChild(grid);
+    });
   });
 }
 
