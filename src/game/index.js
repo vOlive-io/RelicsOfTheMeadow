@@ -861,6 +861,18 @@ function renderMapActions() {
     const hp = clearing.beast.health ? ` • ❤️ ${clearing.beast.health}` : "";
     beastInfo.textContent = `Beast present: ${clearing.beast.type} (⚔️ ${clearing.beast.strength}${hp})`;
     container.appendChild(beastInfo);
+    const beastBtn = document.createElement("button");
+    beastBtn.textContent = `Battle Here (⚡${BATTLE_ENERGY_COST})`;
+    beastBtn.className = "danger";
+    beastBtn.disabled = player.troops <= 0 || player.energy < BATTLE_ENERGY_COST;
+    beastBtn.addEventListener("click", () => battleBeastAtClearing(clearing));
+    container.appendChild(beastBtn);
+  } else {
+    const noBattle = document.createElement("button");
+    noBattle.textContent = "Battle Unavailable";
+    noBattle.disabled = true;
+    noBattle.className = "danger";
+    container.appendChild(noBattle);
   }
 
   const conquestCosts = calculateConquestCost();
