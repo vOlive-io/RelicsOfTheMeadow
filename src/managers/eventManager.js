@@ -80,6 +80,14 @@ export function maybeTriggerRandomEvent(onUpdate = () => {}, seasonKey = null) {
   return instance;
 }
 
+export function exportEventState() {
+  return activeEvents.map(event => ({ ...event }));
+}
+
+export function importEventState(state = []) {
+  activeEvents = Array.isArray(state) ? state.map(event => ({ ...event })) : [];
+}
+
 export function startFestival(onUpdate = () => {}) {
   const instance = createEventInstance(festivalDefinition, "festival");
   activeEvents.push(instance);

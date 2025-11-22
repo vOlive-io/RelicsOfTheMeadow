@@ -304,6 +304,36 @@ export function deleteFactionCapital(factionName) {
   factionCapitals.delete(factionName);
 }
 
+export function exportMapState() {
+  return {
+    mapClearings: [...mapClearings],
+    gridHalf,
+    nextClearingId,
+    oceanSeeded,
+    factionCapitals: [...factionCapitals.entries()],
+  };
+}
+
+export function importMapState(state = {}) {
+  resetMapState();
+  if (!state.mapClearings?.length) return false;
+  mapClearings = state.mapClearings.map(c => ({ ...c }));
+  gridHalf = Number.isFinite(state.gridHalf) ? state.gridHalf : INITIAL_GRID_HALF;
+  nextClearingId = Number.isFinite(state.nextClearingId) ? state.nextClearingId : mapClearings.length + 1;
+  oceanSeeded = Boolean(state.oceanSeeded);
+  clearingLookup.clear();
+  coordsToId.clear();
+  mapClearings.forEach(clearing => {
+    clearingLookup.set(clearing.id, clearing);
+    coordsToId.set(coordKey(clearing.row, clearing.col), clearing.id);
+  });
+  factionCapitals.clear();
+  if (Array.isArray(state.factionCapitals)) {
+    state.factionCapitals.forEach(([name, id]) => factionCapitals.set(name, id));
+  }
+  return true;
+}
+
 export function placeStructureOnMap(ownerName, structureName, preferredClearingId = null) {
   if (!ownerName || !structureName || !mapClearings.length) return;
   const owned = mapClearings.filter(clearing => clearing.owner === ownerName);

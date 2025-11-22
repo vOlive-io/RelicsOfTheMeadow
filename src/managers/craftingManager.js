@@ -206,6 +206,31 @@ export function getProductionEntries() {
   return entries;
 }
 
+export function exportCraftingState() {
+  return {
+    unlockedBlueprints: [...unlockedBlueprints],
+    structures: [...structures.entries()].map(([clearingId, list]) => ({
+      clearingId,
+      list: list.map(item => ({ ...item })),
+    })),
+  };
+}
+
+export function importCraftingState(state = {}) {
+  unlockedBlueprints = new Set(state.unlockedBlueprints || DEFAULT_BLUEPRINTS);
+  structures = new Map();
+  if (Array.isArray(state.structures)) {
+    state.structures.forEach(entry => {
+      if (!entry || !entry.clearingId || !Array.isArray(entry.list)) return;
+      structures.set(
+        entry.clearingId,
+        entry.list.map(item => ({ ...item }))
+      );
+    });
+  }
+  recalcHousingCapacity();
+}
+
 export function calculateProductionTotals() {
   const entries = getProductionEntries();
   const totals = {};

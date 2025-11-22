@@ -84,3 +84,16 @@ export function adjustHealth(amount) {
 function updateHomeless() {
   homeless = Math.max(0, population - housingCapacity);
 }
+
+export function exportPopulationState() {
+  return { population, housingCapacity, homeless, happiness, health };
+}
+
+export function importPopulationState(state = {}) {
+  if (Number.isFinite(state.population)) population = state.population;
+  if (Number.isFinite(state.housingCapacity)) housingCapacity = state.housingCapacity;
+  if (Number.isFinite(state.homeless)) homeless = state.homeless;
+  if (Number.isFinite(state.happiness)) happiness = state.happiness;
+  if (Number.isFinite(state.health)) health = state.health;
+  updateHomeless();
+}

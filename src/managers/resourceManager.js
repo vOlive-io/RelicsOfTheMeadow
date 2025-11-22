@@ -89,3 +89,17 @@ export function getDiscoveredResources() {
 export function markResourceDiscovered(key) {
   markDiscovered(key);
 }
+
+export function exportResourceState() {
+  return {
+    wallet: { ...wallet },
+    discovered: [...discoveredResources],
+  };
+}
+
+export function importResourceState(state = {}) {
+  if (state.wallet) {
+    wallet = { ...wallet, ...state.wallet };
+  }
+  discoveredResources = new Set(state.discovered || []);
+}

@@ -23,6 +23,8 @@ import {
   NEUTRAL_OWNER,
   expandMap,
   getGridSize,
+  exportMapState,
+  importMapState,
 } from "../managers/mapManager.js";
 import { constructBuilding } from "../managers/buildingManager.js";
 import {
@@ -32,6 +34,8 @@ import {
   calculateProductionTotals,
   getProductionEntries,
   addResources as depositProducedResources,
+  exportCraftingState,
+  importCraftingState,
 } from "../managers/craftingManager.js";
 import {
   hasResources,
@@ -40,6 +44,8 @@ import {
   getResourceAmount,
   addResource,
   getAllResources,
+  exportResourceState,
+  importResourceState,
 } from "../managers/resourceManager.js";
 import {
   getPopulation,
@@ -51,6 +57,8 @@ import {
   getHomeless,
   getHousingCapacity,
   tickPopulation,
+  exportPopulationState,
+  importPopulationState,
 } from "../managers/populationManager.js";
 import {
   applyEventProductionModifiers,
@@ -59,6 +67,8 @@ import {
   advanceEvents,
   resetEventState,
   startFestival,
+  exportEventState,
+  importEventState,
 } from "../managers/eventManager.js";
 import { resolveBeastEncounter, resetCombatState } from "../managers/combatManager.js";
 import { initMapUI, renderMap as renderWorldMap } from "../ui/mapUI.js";
@@ -141,6 +151,7 @@ let currentSeasonIndex = 0;
 const WORLD_EVENT_LIMIT = 6;
 let worldEventFeed = [];
 const WATER_TERRAINS = new Set(["Ocean", "Deep Ocean"]);
+const SAVE_KEY = "meadowSaveV1";
 const structureEmojiMap = {
   Keep: "🏰",
   "Captured Holdfast": "🏴",
@@ -219,6 +230,69 @@ function announceWorldEvent(message) {
     worldEventFeed = worldEventFeed.slice(-WORLD_EVENT_LIMIT);
   }
   renderWorldEventFeed();
+}
+
+function serializePlayerState() {
+  return {
+    ...player,
+    garrisonedClearings: [...(player.garrisonedClearings || [])],
+    relicsUsedThisTurn: [...(player.relicsUsedThisTurn || [])],
+    abilitiesUsedThisTurn: [...(player.abilitiesUsedThisTurn || [])],
+  };
+}
+
+function hydratePlayerState(saved = {}) {
+  Object.assign(player, saved);
+  player.garrisonedClearings = new Set(saved.garrisonedClearings || []);
+  player.relicsUsedThisTurn = new Set(saved.relicsUsedThisTurn || []);
+  player.abilitiesUsedThisTurn = new Map(saved.abilitiesUsedThisTurn || []);
+  player.pendingPeaceOffers = saved.pendingPeaceOffers || [];
+  player.pendingPlayerPrompts = saved.pendingPlayerPrompts || [];
+}
+
+function saveGameState() {
+  try {
+    const payload = {
+      player: serializePlayerState(),
+      map: exportMapState(),
+      crafting: exportCraftingState(),
+      resources: exportResourceState(),
+      population: exportPopulationState(),
+      events: exportEventState(),
+      worldEventFeed,
+      selectedClearingId,
+      turnCounter,
+      currentSeasonIndex,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.error("Failed to save game state", err);
+  }
+}
+
+function loadGameState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data?.player?.faction?.name || data.player.faction.name !== player?.faction?.name) {
+      return false;
+    }
+    hydratePlayerState(data.player);
+    importResourceState(data.resources || {});
+    importPopulationState(data.population || {});
+    importCraftingState(data.crafting || {});
+    importMapState(data.map || {});
+    importEventState(data.events || []);
+    worldEventFeed = Array.isArray(data.worldEventFeed) ? data.worldEventFeed : [];
+    selectedClearingId = data.selectedClearingId ?? selectedClearingId;
+    turnCounter = Number.isFinite(data.turnCounter) ? data.turnCounter : turnCounter;
+    currentSeasonIndex = Number.isFinite(data.currentSeasonIndex) ? data.currentSeasonIndex : currentSeasonIndex;
+    return true;
+  } catch (err) {
+    console.error("Failed to load saved game", err);
+    return false;
+  }
 }
 
 function renderSeasonalFx(config, seasonKey) {
@@ -568,6 +642,7 @@ function renderHUD() {
   renderInventorySidebar();
   renderWorldEventFeed();
   renderMapActions();
+  saveGameState();
 }
 
 /////////////////////////////////////
@@ -2876,6 +2951,7 @@ document.addEventListener("DOMContentLoaded", () => {
     playableFactions.find(f => f.name === chosen) ||
     fallbackFaction;
   startGame(faction);
+  initResetButton();
 }); 
 function startGame(faction) {
   resetEventState();
@@ -2901,11 +2977,23 @@ function startGame(faction) {
   player.goldStorageBonus = 0;
   enforceGoldCapacity();
   refreshHarvestAvailability();
+  const loaded = loadGameState();
   renderHUD();
   renderWorldEventFeed();
-  markRelicClaimed(faction.startingRelic);
-  factionRelics.set(faction.name, null);
-  player.pendingPeaceOffers = [];
-  player.extraHarvestGoods = [];
-  player.pendingPlayerPrompts = [];
+  if (!loaded) {
+    markRelicClaimed(faction.startingRelic);
+    factionRelics.set(faction.name, null);
+    player.pendingPeaceOffers = [];
+    player.extraHarvestGoods = [];
+    player.pendingPlayerPrompts = [];
+  }
+}
+
+function initResetButton() {
+  const btn = document.getElementById("resetGameBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    localStorage.removeItem(SAVE_KEY);
+    window.location.reload();
+  });
 }
