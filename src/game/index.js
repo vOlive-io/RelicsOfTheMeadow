@@ -896,11 +896,14 @@ function renderInventorySidebar() {
   if (!container) return;
   const categories = calculateFoodCategories();
   const categoryMarkup = Object.entries(categories)
+    .filter(([, data]) => data.total > 0 || (data.items && data.items.length > 0))
     .map(([label, data]) => {
-      const items = data.items
+      const items = (data.items || [])
+        .filter(entry => entry.amount > 0)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map(entry => `<div class="food-item">• ${entry.name}: ${entry.amount}</div>`)
         .join("");
-      return `<div class="food-category"><strong>${data.icon} ${label}: ${data.total}</strong>${
+      return `<div class="food-category"><strong>${data.icon} ${label} (${data.total})</strong>${
         items ? `<div class="food-items">${items}</div>` : ""
       }</div>`;
     })
@@ -908,6 +911,7 @@ function renderInventorySidebar() {
   const goodsMarkup = getHarvestCatalog()
     .map(g => {
       const count = (player.harvestedGoods && player.harvestedGoods[g.key]) || 0;
+      if (!count) return "";
       return `
         <div class="inventory-good">
           <span>${g.emoji}</span>
@@ -917,6 +921,7 @@ function renderInventorySidebar() {
           </div>
         </div>`;
     })
+    .filter(Boolean)
     .join("");
   container.innerHTML = `
     <div class="inventory-info">
