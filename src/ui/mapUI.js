@@ -3,21 +3,20 @@
 /////////////////////////////////////
 import { getMapClearings, NEUTRAL_OWNER } from "../managers/mapManager.js";
 
-const coverBase = "../assets/";
-const terrainCover = {
-  Meadow: `${coverBase}meadow-map.png`,
-  Forest: `${coverBase}forest-map.png`,
-  Hills: `${coverBase}hills-map.png`,
-  Beach: `${coverBase}beach-map.png`,
-  Mountains: `${coverBase}mountains-map.png`,
-  River: `${coverBase}river-map.png`,
-  Marsh: `${coverBase}marsh-map.png`,
-  "Crystal Cavern": `${coverBase}crystal-cavern-map.png`,
-  "Ancient Grove": `${coverBase}ancient-grove-map.png`,
-  Ocean: `${coverBase}ocean-map.png`,
-  "Deep Ocean": `${coverBase}deep-ocean-map.png`,
-  "Enfenal Depths": `${coverBase}enfenal-depths-map.png`,
-  unknown: `${coverBase}unknown-map.png`,
+const terrainGradients = {
+  Meadow: "linear-gradient(135deg, #b9f6cf 0%, #6ac59a 70%)",
+  Forest: "linear-gradient(135deg, #0f3d2a 0%, #1f6f50 50%, #2fa36a 100%)",
+  Hills: "linear-gradient(135deg, #c9d4a5 0%, #9aa86b 65%, #7f8c55 100%)",
+  Beach: "linear-gradient(135deg, #f5deb3 0%, #f0c987 55%, #e8b973 100%)",
+  Mountains: "linear-gradient(135deg, #dfe4ec 0%, #9ca6b7 55%, #6f7b8c 100%)",
+  River: "linear-gradient(135deg, #d9f3ff 0%, #9bd2f6 60%, #6eb7e3 100%)",
+  Marsh: "linear-gradient(135deg, #c7d7b4 0%, #7a8f6a 60%, #556a4b 100%)",
+  "Crystal Cavern": "linear-gradient(135deg, #e1d9ff 0%, #bca6ff 55%, #8d78d9 100%)",
+  "Ancient Grove": "linear-gradient(135deg, #d3f5c0 0%, #a9e08a 55%, #6fa95d 100%)",
+  Ocean: "linear-gradient(135deg, #c9ecff 0%, #8ed0f9 55%, #6bb4e8 100%)",
+  "Deep Ocean": "linear-gradient(135deg, #a8d5f5 0%, #5e9fd3 60%, #387ab1 100%)",
+  "Enfenal Depths": "linear-gradient(135deg, #d6e4ff 0%, #9ab1ff 55%, #5366ba 100%)",
+  unknown: "linear-gradient(135deg, #e8f5e9 0%, #c8d6c6 55%, #9aafa0 100%)",
 };
 
 /////////////////////////////////////
@@ -87,14 +86,11 @@ export function renderMap({
     }
     tile.className = classes.join(" ");
     tile.type = "button";
-    const cover = clearing.revealed ? terrainCover[clearing.terrain] || terrainCover.unknown || "assets/unknown-map.png" : "";
-    if (cover) {
-      tile.style.backgroundImage = `url(${cover})`;
-      tile.style.backgroundSize = "cover";
-      tile.style.backgroundPosition = "center";
-    } else {
-      tile.style.backgroundImage = "";
-    }
+    const background = clearing.revealed ? terrainGradients[clearing.terrain] || terrainGradients.unknown : "";
+    tile.style.background = background || "";
+    tile.style.backgroundImage = "";
+    tile.style.backgroundSize = "";
+    tile.style.backgroundPosition = "";
     tile.style.borderColor =
       typeof getOwnerColor === "function" ? getOwnerColor(clearing.owner) : "#5ba571";
     const structures = Array.isArray(clearing.structures) ? clearing.structures : [];

@@ -951,22 +951,6 @@ function renderInventorySidebar() {
       }</div>`;
     })
     .join("");
-  const goodsMarkup = getHarvestCatalog()
-    .map(g => {
-      const count = (player.harvestedGoods && player.harvestedGoods[g.key]) || 0;
-      if (!count) return "";
-      return `
-        <div class="inventory-good">
-          <span>${g.emoji}</span>
-          <div>
-            <strong>${g.name}</strong>
-            <small>${count} crate(s)</small>
-          </div>
-        </div>`;
-    })
-    .filter(Boolean)
-    .join("");
-
   const resourceBuckets = new Map();
   const categoryNames = {
     fruits: "Fruits",
@@ -1051,12 +1035,6 @@ function renderInventorySidebar() {
     <div class="inventory-section">
       <div class="inventory-card-title">Resources</div>
       ${resourceSections || "<p class='inventory-empty'>No resources discovered yet.</p>"}
-    </div>
-    <div class="inventory-section">
-      <div class="inventory-card-title">Stockpiles</div>
-      <div class="inventory-goods">
-        ${goodsMarkup || "<p class='inventory-empty'>No goods harvested yet.</p>"}
-      </div>
     </div>
   `;
 }
