@@ -186,7 +186,7 @@ const foodCategoryMap = {
   fruits: "fruits",
   spices: "grains",
   herbs: "grains",
-  fish: "fish",
+  fish: "meat",
   meat: "meat",
   crabMeat: "meat",
   wheat: "grains",
@@ -200,7 +200,7 @@ function formatStructureName(name) {
 }
 
 function formatStructureList(structures = []) {
-  if (!structures.length) return "Empty";
+  if (!structures.length) return "";
   const recent = structures.slice(-2).map(formatStructureName);
   const extra = structures.length - recent.length;
   return extra > 0 ? `${recent.join("<br>")} +${extra}` : recent.join("<br>");
@@ -523,6 +523,17 @@ function welcomeNewSettlers() {
   logEvent(`🎉 Word spreads of your happy people. ${arrivals} new settlers join your kingdom.`);
 }
 
+function handleUnhappyExodus() {
+  const happiness = getHappiness();
+  if (happiness >= 75) return;
+  const population = getPopulation();
+  if (population <= 0) return;
+  const losses = Math.max(1, Math.round(population * 0.02));
+  addPopulation(-losses);
+  applyHappinessDelta(-1);
+  logEvent(`🚶 Some citizens depart due to low morale (-${losses} population).`);
+}
+
 function renderWorldEventFeed() {
   const ticker = document.getElementById("eventTicker");
   if (!ticker) return;
@@ -652,9 +663,7 @@ function getOwnerColor(ownerName) {
 }
 
 function formatOwnerLabel(ownerName) {
-  if (!ownerName || ownerName === NEUTRAL_OWNER) return "";
-  if (ownerName === player?.faction?.name) return "You";
-  return ownerName;
+  return "";
 }
 
 function getSelectedClearing() {
@@ -721,10 +730,6 @@ function advanceTroops(direction) {
     return;
   }
   ensureGarrisonContainer();
-  if (!player.garrisonedClearings.has(clearing.id)) {
-    logEvent("🪖 No troops stationed there to advance.");
-    return;
-  }
   if (player.troops <= 0) {
     logEvent("🪖 No troops ready to advance.");
     return;
@@ -977,9 +982,9 @@ function renderInventorySidebar() {
   const statsPills = [
     { icon: "❤️", label: "Health", value: `${player.health}%`, cls: "stat-pink" },
     { icon: "💖", label: "Happiness", value: `${player.happiness}%`, cls: "stat-pink" },
-    { icon: "⚡", label: "Energy", value: player.energy, cls: "stat-gold" },
-    { icon: "💰", label: "Gold", value: player.gold, cls: "stat-gold" },
-    { icon: "🏦", label: "Gold Reserve", value: player.goldReserve || 0, cls: "stat-gold" },
+    { icon: "⚡", label: "Energy", value: `${player.energy} Energy`, cls: "stat-gold" },
+    { icon: "💰", label: "Gold", value: `${player.gold} Gold`, cls: "stat-gold" },
+    { icon: "🏦", label: "Gold Reserve", value: `${player.goldReserve || 0} Gold`, cls: "stat-gold" },
     { icon: "👥", label: "Population", value: getPopulation(), cls: "stat-gold" },
     { icon: "🛏️", label: "Beds", value: getHousingCapacity(), cls: "stat-gold" },
     { icon: "🛡️", label: "Protection", value: player.protection, cls: "stat-red" },
@@ -1275,14 +1280,8 @@ function handleAction(action) {
     case "harvest":
       harvestCrops();
       break;
-    case "gifts":
-      showGiftModal();
-      break;
     case "festival":
       startFestivalAction();
-      break;
-    case "collect-gift":
-      openGiftCrate();
       break;
     case "recruit":
       recruitTroops();
@@ -1727,23 +1726,6 @@ function updateActionIndicators() {
           canUse = false;
         }
         break;
-      case "gifts":
-        if (labelEl) {
-          labelEl.textContent = `🏛️ Gifts (${player.courierRuns}/${player.giftCouriers || 0})`;
-        }
-        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
-        if (!hasGiftOpportunity()) {
-          detailText += " • Nothing ready to send or collect.";
-          canUse = false;
-        }
-        break;
-      case "collect-gift":
-        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
-        if (player.giftsWaiting <= 0) {
-          detailText += " • No parcels to open.";
-          canUse = false;
-        }
-        break;
       case "festival":
         detailText += " • Costs fruits & wheat";
         if (!hasResources(FESTIVAL_COST)) {
@@ -1772,9 +1754,6 @@ function updateActionIndicators() {
         }
         break;
       }
-      case "inventory":
-        detailText += ` • Gifts waiting: ${player.giftsWaiting}`;
-        break;
       case "end-turn":
         detailText = "Recover energy, refresh harvests and trade missions.";
         break;
@@ -2016,6 +1995,7 @@ function endTurn() {
     logEvent(`❄️ Seasonal hardship hits the homeless (-${penalty} happiness).`);
   }
   welcomeNewSettlers();
+  handleUnhappyExodus();
   refreshHarvestAvailability();
   renderHUD();
   showNextPlayerPrompt();

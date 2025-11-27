@@ -26,8 +26,8 @@ export function startPlayerGame({
   player.harvestsLeft = 0;
   player.harvestedGoods = {};
   player.harvestedGoodsValue = 0;
-  player.giftCouriers = 1;
-  player.courierRuns = 1;
+  player.giftCouriers = 0;
+  player.courierRuns = 0;
   player.extraHarvestGoods = [];
   player.recruitBonus = 0;
   player.energyBonus = 0;
@@ -55,9 +55,7 @@ export function setupActionButtons(handleAction) {
     { id: "build", label: "🔨 Build", detail: "Raise new structures.", costLabel: "Varies per structure" },
     { id: "harvest", label: "🌾 Harvest", detail: "Gather crops and supplies.", cost: { energy: 1, gold: 0 } },
     { id: "conquest", label: "🏴 Conquest", detail: "Expand your realm outward.", costLabel: "Costs heavy gold & resources" },
-    { id: "gifts", label: "🏛️ Gifts", detail: "Review Keep gifts and couriers.", costLabel: "Requests cost ⚡1 each" },
     { id: "festival", label: "🎉 Festival", detail: "Boost happiness and production briefly.", costLabel: "Consumes fruits & wheat" },
-    { id: "collect-gift", label: "📥 Collect Gifts", detail: "Open one shipment instantly.", cost: { energy: 0, gold: 0 } },
     { id: "recruit", label: "🪖 Recruit", detail: "Call fresh troops.", cost: { energy: 2, gold: 40 } },
     { id: "delve", label: "🕳️ Delve Relic", detail: "Spare no expense for a relic.", cost: { energy: 5, gold: 250 } },
     { id: "use-relic", label: "🔮 Use Relic", detail: "Awaken an owned relic.", costLabel: "Varies per relic" },

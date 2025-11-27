@@ -112,7 +112,7 @@ export function renderMap({
     const structureText =
       typeof formatStructures === "function"
         ? formatStructures(structures)
-        : structures.slice(-2).join(", ") || "—";
+        : structures.slice(-2).join(", ") || "";
     const terrainEmoji = clearing.revealed ? terrainEmojis[clearing.terrain] || "◻️" : "❔";
     const troops =
       clearing.revealed && typeof getTroopCount === "function" ? getTroopCount(clearing.id) : 0;
@@ -122,7 +122,7 @@ export function renderMap({
         clearing.revealed
           ? typeof formatOwnerLabel === "function"
             ? formatOwnerLabel(clearing.owner)
-            : clearing.owner || "—"
+            : ""
           : "Unrevealed"
       }</span>
       <span class="clearing-structures">${
