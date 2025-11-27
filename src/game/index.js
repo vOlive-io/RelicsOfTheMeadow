@@ -572,14 +572,9 @@ function grantGold(amount, target = player) {
   if (!target || !amount) return 0;
   const cap = getGoldStorageCapacity(target);
   const previous = Math.max(0, target.gold || 0);
-  const next = previous + amount;
-  const stored = Math.min(cap, next);
-  const overflow = Math.max(0, next - cap);
-  target.gold = stored;
-  if (overflow) {
-    target.goldReserve = Math.max(0, (target.goldReserve || 0) + overflow);
-  }
-  return stored - previous;
+  const next = Math.min(cap, previous + amount);
+  target.gold = next;
+  return next - previous;
 }
 
 function getActiveHarvestGoods() {
@@ -976,8 +971,7 @@ function renderInventorySidebar() {
     { icon: "❤️", label: "Health", value: `${player.health}%`, cls: "stat-pink" },
     { icon: "💖", label: "Happiness", value: `${player.happiness}%`, cls: "stat-pink" },
     { icon: "⚡", label: "Energy", value: `${player.energy} Energy`, cls: "stat-gold" },
-    { icon: "💰", label: "Gold", value: `${player.gold} Gold`, cls: "stat-gold" },
-    { icon: "🏦", label: "Gold Reserve", value: `${player.goldReserve || 0} Gold`, cls: "stat-gold" },
+    { icon: "🏦", label: "Gold", value: `${player.gold} Gold`, cls: "stat-gold" },
     { icon: "👥", label: "Population", value: getPopulation(), cls: "stat-gold" },
     { icon: "🛏️", label: "Beds", value: getHousingCapacity(), cls: "stat-gold" },
     { icon: "🛡️", label: "Protection", value: player.protection, cls: "stat-red" },
@@ -2003,7 +1997,6 @@ let player = {
   gold: 0,
   goldStorageBase: BASE_GOLD_STORAGE,
   goldStorageBonus: 0,
-  goldReserve: 0,
   troops: 0,
   happiness: 0,
   health: 100,

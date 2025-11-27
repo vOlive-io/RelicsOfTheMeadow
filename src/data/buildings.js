@@ -210,7 +210,37 @@ export const buildingDefinitions = [
     blueprintTier: "apex",
     upgradeFrom: "largePasture",
   },
-
+  {
+    key: "mortarQuarry",
+    name: "Mortar Quarry",
+    type: "production",
+    icon: "🧱",
+    produces: {clay: 15},
+    cost: {logs: 90, stone: 140, mythril: 2},
+    supportedTerrains: ["Hills", "River"],
+    blueprintTier: "default",
+  },
+  {
+    key: "sawmill",
+    name: "Sawmill",
+    type: "production",
+    icon: "🪵",
+    produces: {logs: 25},
+    cost: {logs: 50, stone: 50, mythril: 2},
+    supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
+    blueprintTier: "default",
+  },
+    {
+    key: "fishmansWharf",
+    name: "Fishman's Wharf",
+    type: "production",
+    icon: "🐟",
+    produces: {fish: 10, meat: 2},
+    cost: {logs: 120, stone: 80, clay: 30},
+    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
+    blueprintTier: "defalt",
+    waterAccess: true,
+  },
   ////////////////////////////
   //  Specialized Buildings //
   ////////////////////////////
@@ -244,26 +274,8 @@ export const buildingDefinitions = [
 
 
   // Unorganized Production Buildings
-  {
-    key: "mortarQuarry",
-    name: "Mortar Quarry",
-    type: "production",
-    icon: "🧱",
-    produces: {clay: 15},
-    cost: {logs: 90, stone: 140, mythril: 2},
-    supportedTerrains: ["Hills", "River"],
-    blueprintTier: "default",
-  },
-  {
-    key: "sawmill",
-    name: "Sawmill",
-    type: "production",
-    icon: "🪵",
-    produces: {logs: 25},
-    cost: {logs: 50, stone: 50, mythril: 2},
-    supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
-    blueprintTier: "default",
-  },
+
+
   {
     key: "dock",
     name: "Dock",
@@ -272,17 +284,6 @@ export const buildingDefinitions = [
     cost: {logs: 90, stone: 60, clay: 20},
     supportedTerrains: ["Ocean", "River"],
     blueprintTier: "default",
-    waterAccess: true,
-  },
-  {
-    key: "fishmansWharf",
-    name: "Fishman's Wharf",
-    type: "production",
-    icon: "🐟",
-    produces: {fish: 10, meat: 2},
-    cost: {logs: 120, stone: 80, clay: 30},
-    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
-    blueprintTier: "library",
     waterAccess: true,
   },
 

@@ -87,7 +87,6 @@ export function setupActionButtons(handleAction) {
 function applyStartingStats(player, faction) {
   player.faction = faction;
   player.gold = 100;
-  player.goldReserve = 0;
   player.troops = 15;
   player.happiness = 1;
   player.protection = 1;
