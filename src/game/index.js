@@ -166,10 +166,17 @@ const structureEmojiMap = {
   "Pasture of the Gods": "🦬",
   Evergarden: "🌼",
   "Industry Mill": "🏭",
-  "Mortar Quarry": "🧱",
-  Sawmill: "🪵",
+  "Basic Mortar Quarry": "🧱",
+  "Large Mortar Quarry": "🧱",
+  "Mortar Quarry of the Gods": "🧱",
+  "Basic Sawmill": "🪵",
+  "Large Sawmill": "🪵",
+  "Sawmill of the Gods": "🪵",
   Dock: "⚓",
-  "Fishman's Wharf": "🐟",
+  "Basic Fishman's Wharf": "🐟",
+  "Large Fishman's Wharf": "🐟",
+  "Fishman's Wharf of the Gods": "🐟",
+  "Queen's Dock": "👑",
   "Mine Shaft": "⛏️",
   "Deep Mine Shaft": "⛏️",
   "Grand Mine": "⚒️",
@@ -736,11 +743,6 @@ function advanceTroops(direction) {
   const { clearing: result, discovered } = exploreFromClearing(clearing.id, direction);
   if (!result) {
     logEvent("🪖 Cannot advance that way.");
-    return;
-  }
-  const isWater = WATER_TERRAINS.has(result.terrain);
-  if (isWater && !hasWaterAccess(clearing.id)) {
-    logEvent("⚓ A dock or wharf is required to move troops onto the water.");
     return;
   }
   spendEnergyAndGold(ADVANCE_ENERGY_COST, 0, null, () => {

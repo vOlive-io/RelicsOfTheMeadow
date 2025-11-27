@@ -205,6 +205,9 @@ export function initializeMapState(playerFaction, factions = []) {
   const playerIndex = assignments.get(playerFaction.name);
   if (typeof playerIndex === "number") {
     const clearing = mapClearings[playerIndex];
+    // Ensure the starting keep always sits on safe land.
+    clearing.terrain = "Meadow";
+    clearing.beast = null;
     clearing.owner = playerFaction.name;
     clearing.capitalOf = playerFaction.name;
     clearing.structures = ["Keep"];

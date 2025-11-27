@@ -210,37 +210,119 @@ export const buildingDefinitions = [
     blueprintTier: "apex",
     upgradeFrom: "largePasture",
   },
+
+
+  //Basic Mortar Quarry
   {
     key: "mortarQuarry",
-    name: "Mortar Quarry",
+    name: "Basic Mortar Quarry",
     type: "production",
     icon: "🧱",
-    produces: {clay: 15},
-    cost: {logs: 90, stone: 140, mythril: 2},
+    produces: { clay: 15 },
+    cost: { logs: 90, stone: 140, mythril: 2 },
     supportedTerrains: ["Hills", "River"],
     blueprintTier: "default",
   },
+  // Large Mortar Quarry
+  {
+    key: "largeMortarQuarry",
+    name: "Large Mortar Quarry",
+    type: "production",
+    icon: "🧱",
+    produces: { clay: 30, stone: 10 },
+    cost: { logs: 130, stone: 200, mythril: 4, clay: 60 },
+    supportedTerrains: ["Hills", "River"],
+    blueprintTier: "library",
+    upgradeFrom: "mortarQuarry",
+  },
+  // Mortar Quarry of the Gods
+  {
+    key: "mortarQuarryOfTheGods",
+    name: "Mortar Quarry of the Gods",
+    type: "production",
+    icon: "🧱",
+    produces: { clay: 50, stone: 20, magicalEssence: 1 },
+    cost: { logs: 180, stone: 260, mythril: 6, clay: 100, goldOre: 6 },
+    supportedTerrains: ["Hills", "River"],
+    blueprintTier: "apex",
+    upgradeFrom: "largeMortarQuarry",
+  },
+
+  // Basic Sawmill
   {
     key: "sawmill",
-    name: "Sawmill",
+    name: "Basic Sawmill",
     type: "production",
     icon: "🪵",
-    produces: {logs: 25},
-    cost: {logs: 50, stone: 50, mythril: 2},
+    produces: { logs: 25 },
+    cost: { logs: 50, stone: 50, mythril: 2 },
     supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
-    {
+  // Large Sawmill
+  {
+    key: "largeSawmill",
+    name: "Large Sawmill",
+    type: "production",
+    icon: "🪵",
+    produces: { logs: 55 },
+    cost: { logs: 110, stone: 110, mythril: 6, clay: 30 },
+    supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
+    blueprintTier: "library",
+    upgradeFrom: "sawmill",
+  },
+  // Sawmill of the Gods
+  {
+    key: "sawmillOfTheGods",
+    name: "Sawmill of the Gods",
+    type: "production",
+    icon: "🪵",
+    produces: { logs: 90, timber: 15 },
+    cost: { logs: 160, stone: 160, mythril: 10, clay: 60, goldOre: 6 },
+    supportedTerrains: ["Hills", "River", "Forest", "Ancient Grove"],
+    blueprintTier: "apex",
+    upgradeFrom: "largeSawmill",
+  },
+
+  // Basic Fishman's Wharf
+  {
     key: "fishmansWharf",
-    name: "Fishman's Wharf",
+    name: "Basic Fishman's Wharf",
     type: "production",
     icon: "🐟",
-    produces: {fish: 10, meat: 2},
-    cost: {logs: 120, stone: 80, clay: 30},
+    produces: { fish: 10, meat: 2 },
+    cost: { logs: 120, stone: 80, clay: 30 },
     supportedTerrains: ["Ocean", "River", "Deep Ocean"],
-    blueprintTier: "defalt",
+    blueprintTier: "default",
     waterAccess: true,
   },
+  // Large Fishman's Wharf
+  {
+    key: "largeFishmansWharf",
+    name: "Large Fishman's Wharf",
+    type: "production",
+    icon: "🐟",
+    produces: { fish: 20, meat: 4 },
+    cost: { logs: 160, stone: 120, clay: 60, goldOre: 4 },
+    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
+    blueprintTier: "library",
+    upgradeFrom: "fishmansWharf",
+    waterAccess: true,
+  },
+  // Fishman's Wharf of the Gods
+  {
+    key: "fishmansWharfOfTheGods",
+    name: "Fishman's Wharf of the Gods",
+    type: "production",
+    icon: "🐟",
+    produces: { fish: 32, meat: 6, spices: 3 },
+    cost: { logs: 210, stone: 160, clay: 90, goldOre: 10, magicalEssence: 2 },
+    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
+    blueprintTier: "apex",
+    upgradeFrom: "largeFishmansWharf",
+    waterAccess: true,
+  },
+
   ////////////////////////////
   //  Specialized Buildings //
   ////////////////////////////
@@ -260,12 +342,23 @@ export const buildingDefinitions = [
     key: "industryMill",
     name: "Industry Mill",
     type: "production",
-    icon: "🏭",
+    icon: "🏗️",
     produces: { logs: 25, clay: 25, stone: 25 },
-    cost: { logs: 180, stone: 120, mythril: 4, silktoneObsidian: 2 },
+    cost: { logs: 1000, stone: 1000, mythril: 2000, silktoneObsidian: 750, lumenQuartz: 500, starpetalOre: 100, },
     supportedTerrains: ["Meadow", "Hills"],
     blueprintTier: "ultra",
     titheBonus: 10,
+  },
+  {
+    key: "queensDock",
+    name: "Queen's Dock",
+    type: "production",
+    icon: "👑",
+    produces: { fish: 24, meat: 6, gold: 35 },
+    cost: { logs: 220, stone: 160, clay: 90, goldOre: 12, magicalEssence: 4 },
+    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
+    blueprintTier: "ultra",
+    waterAccess: true,
   },
 
 
@@ -413,7 +506,9 @@ export const LIBRARY_UNLOCKS = [
   "deepMineShaft",
   "fountain",
   "villa",
-  "fishmansWharf",
+  "largeMortarQuarry",
+  "largeSawmill",
+  "largeFishmansWharf",
   "apexResearch",
 ];
 
@@ -423,9 +518,12 @@ export const APEX_UNLOCKS = [
   "herbGardenOfTheGods",
   "pastureOfTheGods",
   "grandMine",
+  "mortarQuarryOfTheGods",
+  "sawmillOfTheGods",
+  "fishmansWharfOfTheGods",
   "mansion",
   "manor",
   "apexBastion",
 ];
 
-export const ULTRA_UNLOCKS = ["mineHub", "evergarden", "industryMill"];
+export const ULTRA_UNLOCKS = ["mineHub", "evergarden", "industryMill", "queensDock"];
