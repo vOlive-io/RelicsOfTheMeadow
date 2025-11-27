@@ -783,13 +783,12 @@ function formatClearingTooltip(clearing) {
       Meadow: "🌿",
       Forest: "🌲",
       Hills: "⛰️",
-      Beach: "🏝️",
       Mountains: "🏔️",
-      River: "🌊",
+      River: "🏞️",
       Marsh: "🦠",
       "Crystal Cavern": "💎",
       "Ancient Grove": "🌳",
-      Ocean: "🌊",
+      Ocean: "🏝️",
       "Deep Ocean": "🌊",
     }[clearing.terrain] || "◻️";
   const owner =
@@ -887,16 +886,10 @@ function renderMapActions() {
   directions.forEach(dir => {
     const btn = document.createElement("button");
     btn.textContent = dir.label;
-    btn.disabled = player.energy < ADVANCE_ENERGY_COST || player.troops <= 0 || !isGarrisoned;
+    btn.disabled = player.energy < ADVANCE_ENERGY_COST || player.troops <= 0;
     btn.addEventListener("click", () => advanceTroops(dir.id));
     container.appendChild(btn);
   });
-  if (!isGarrisoned) {
-    const hint = document.createElement("p");
-    hint.className = "hint";
-    hint.textContent = "Advance troops into this clearing before moving out.";
-    container.appendChild(hint);
-  }
   if (clearing.beast) {
     const beastInfo = document.createElement("p");
     const hp = clearing.beast.health ? ` • ❤️ ${clearing.beast.health}` : "";
@@ -1955,7 +1948,7 @@ function showNextPlayerPrompt() {
 
 function endTurn() {
   const effects = aggregateEventEffects();
-  const restored = Math.round((calcStartingEnergy(player) + (player.energyBonus || 0)) * effects.energyGainMultiplier);
+  const restored = Math.round(calcStartingEnergy(player) * effects.energyGainMultiplier);
   player.energy += restored;
   logEvent(`🌙 Turn ended. Recovered ${restored} energy (total ${player.energy}).`);
   if (player.keepTithe) {
@@ -2060,6 +2053,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tooltipElementId: "clearingTooltip",
     onSelect: id => {
       selectedClearingId = id;
+      const c = getClearingById(id);
+      if (c && c.owner === player.faction.name) {
+        garrisonClearing(id, { silent: true });
+      }
       renderHUD();
     },
   });

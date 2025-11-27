@@ -14,11 +14,10 @@ const terrainWeights = [
   { type: "Meadow", weight: 24 },
   { type: "Forest", weight: 16 },
   { type: "Hills", weight: 12 },
-  { type: "Beach", weight: 8 },
   { type: "Mountains", weight: 8 },
   { type: "River", weight: 6 },
   { type: "Marsh", weight: 5 },
-  { type: "Ocean", weight: 3 },
+  { type: "Ocean", weight: 11 },
   { type: "Deep Ocean", weight: 1 },
   { type: "Enfenal Depths", weight: 1 },
   { type: "Crystal Cavern", weight: 1 },
@@ -29,7 +28,6 @@ const beastFriendlyTerrains = new Set([
   "Meadow",
   "Forest",
   "Hills",
-  "Beach",
   "Mountains",
   "River",
   "Marsh",
@@ -111,39 +109,10 @@ function pickTerrain(row, col) {
   if (choice === "Ocean") {
     if (!oceanSeeded) {
       oceanSeeded = true;
-    } else if (!hasAdjacentTerrain(row, col, "Ocean")) {
-      choice = weightedPick(terrainWeights.filter(entry => entry.type !== "Ocean"));
     }
   }
   if (choice === "Deep Ocean" && !hasAdjacentTerrain(row, col, "Ocean")) {
     choice = "Ocean";
-  }
-  return enforceWaterRules(choice, row, col);
-}
-
-function enforceWaterRules(choice, row, col) {
-  const neighbors = getNeighborCoords(row, col)
-    .map(coord => getClearingAt(coord.row, coord.col))
-    .filter(Boolean);
-  const terrainSet = new Set(neighbors.map(n => n.terrain));
-  if (choice === "Ocean") {
-    const hasBeachNeighbor = terrainSet.has("Beach");
-    const invalidNeighbor = [...terrainSet].some(t => t && t !== "Beach" && t !== "Ocean");
-    if (!hasBeachNeighbor || invalidNeighbor) {
-      return "Beach";
-    }
-  }
-  if (choice === "Beach") {
-    const hasOceanNeighbor = terrainSet.has("Ocean");
-    if (!hasOceanNeighbor) {
-      return "Ocean";
-    }
-  }
-  if (choice === "Deep Ocean" && !terrainSet.has("Ocean")) {
-    return "Ocean";
-  }
-  if (choice !== "Beach" && terrainSet.has("Ocean")) {
-    return "Beach";
   }
   return choice;
 }
@@ -156,7 +125,7 @@ function maybeSpawnBeast(terrain, row, col) {
     Meadow: { type: "Meadow Stag", chance: 0.15 },
     Forest: { type: "Forest Alpha", chance: 0.2 },
     Hills: { type: "Hills Golem", chance: 0.18 },
-    Beach: { type: "Mega Crab", chance: 0.3 },
+    Ocean: { type: "Mega Crab", chance: 0.3 },
     Mountains: { type: "Mountain Beast", chance: 0.22 },
     River: { type: "River Serpent", chance: 0.22 },
     Marsh: { type: "Marsh Horror", chance: 0.22 },

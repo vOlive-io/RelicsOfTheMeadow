@@ -43,10 +43,6 @@ function resolveStat(subject, statName) {
 }
 
 export function calcStartingEnergy(subject) {
-  const total = ["prowess", "resilience", "economy"].reduce(
-    (sum, stat) => sum + resolveStat(subject, stat),
-    0
-  );
-  const avg = total / 6;
-  return Math.max(1, Math.ceil(avg));
+  const bonus = Number.isFinite(subject?.energyBonus) ? subject.energyBonus : 0;
+  return 3 + Math.max(0, bonus);
 }

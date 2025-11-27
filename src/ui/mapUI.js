@@ -7,13 +7,12 @@ const terrainGradients = {
   Meadow: "linear-gradient(135deg, #b9f6cf 0%, #6ac59a 70%)",
   Forest: "linear-gradient(135deg, #0f3d2a 0%, #1f6f50 50%, #2fa36a 100%)",
   Hills: "linear-gradient(135deg, #c9d4a5 0%, #9aa86b 65%, #7f8c55 100%)",
-  Beach: "linear-gradient(135deg, #f5deb3 0%, #f0c987 55%, #e8b973 100%)",
   Mountains: "linear-gradient(135deg, #dfe4ec 0%, #9ca6b7 55%, #6f7b8c 100%)",
   River: "linear-gradient(135deg, #d9f3ff 0%, #9bd2f6 60%, #6eb7e3 100%)",
   Marsh: "linear-gradient(135deg, #c7d7b4 0%, #7a8f6a 60%, #556a4b 100%)",
   "Crystal Cavern": "linear-gradient(135deg, #e1d9ff 0%, #bca6ff 55%, #8d78d9 100%)",
   "Ancient Grove": "linear-gradient(135deg, #d3f5c0 0%, #a9e08a 55%, #6fa95d 100%)",
-  Ocean: "linear-gradient(135deg, #c9ecff 0%, #8ed0f9 55%, #6bb4e8 100%)",
+  Ocean: "linear-gradient(135deg, #f5deb3 0%, #f0c987 55%, #e8b973 100%)",
   "Deep Ocean": "linear-gradient(135deg, #a8d5f5 0%, #5e9fd3 60%, #387ab1 100%)",
   "Enfenal Depths": "linear-gradient(135deg, #d6e4ff 0%, #9ab1ff 55%, #5366ba 100%)",
   unknown: "linear-gradient(135deg, #e8f5e9 0%, #c8d6c6 55%, #9aafa0 100%)",
@@ -22,11 +21,10 @@ const terrainEmojis = {
   Meadow: "🌿",
   Forest: "🌲",
   Hills: "⛰️",
-  Beach: "🏝️",
   Mountains: "🏔️",
-  River: "🌊",
+  River: "🏞️",
   Marsh: "🦠",
-  Ocean: "🌊",
+  Ocean: "🏝️",
   "Deep Ocean": "🌊",
   "Enfenal Depths": "🌊",
   "Crystal Cavern": "💎",
@@ -88,6 +86,7 @@ export function renderMap({
   gridElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(64px, 1fr))`;
   ordered.forEach(clearing => {
     const tile = document.createElement("button");
+    tile.dataset.id = clearing.id;
     const classes = ["clearing-tile"];
     if (clearing.id === selectedClearingId) classes.push("clearing-selected");
     if (clearing.capitalOf) classes.push("clearing-capital");

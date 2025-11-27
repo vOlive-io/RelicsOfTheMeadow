@@ -1,72 +1,73 @@
 export const buildingDefinitions = [
-  // Housing
+  ////////////////////////
+  // Housing Structures //
+  ////////////////////////
+  //hovel
    {
     key: "hovel",
     name: "Hovel",
     type: "housing",
     icon: "🪹",
-    beds: 5,
-    cost: { logs: 30, stone: 30, mythril: 15, },
+    beds: 3,
+    cost: { logs: 15, stone: 15, mythril: 3, },
     blueprintTier: "default",
   },
-  {
-    key: "hut",
-    name: "Hut",
-    type: "housing",
-    icon: "🛖",
-    beds: 15,
-    cost: { logs: 75, stone: 75, mythril: 30, goldOre: 15, },
-    blueprintTier: "default",
-  },
+  //cottage
   {
     key: "cottage",
     name: "Cottage",
     type: "housing",
     icon: "🏡",
-    beds: 30,
-    cost: { logs: 125, stone: 125, mythril: 75, goldOre: 30, silktoneObsidian: 30, lumenQuartz: 15, },
+    beds: 10,
+    cost: { logs: 50, stone: 50, mythril: 25, goldOre: 15, },
     blueprintTier: "default",
   },
+  //villa
   {
     key: "villa",
     name: "Villa",
     type: "housing",
     icon: "🏡",
     beds: 25,
-    cost: { logs: 250, stone: 250, mythril: 125, goldOre: 75, silktoneObsidian: 25, lumenQuartz: 25, },
-    blueprintTier: "library",
+    cost: { logs: 150, stone: 100, mythril: 50, goldOre: 25, silktoneObsidian: 10, },
+    blueprintTier: "default",
   },
+  //longhouse
   {
     key: "longhouse",
     name: "Longhouse",
     type: "housing",
     icon: "🏘️",
     beds: 50,
-    cost: { logs: 500, stone: 375, mythril: 125, goldOre: 125, silktoneObsidian: 50, lumenQuartz: 50, magicalEssence: 25, starpetalOre: 5, },
-    blueprintTier: "apex",
+    cost: { logs: 300, stone: 200, mythril: 100, goldOre: 50, silktoneObsidian: 25, },
+    blueprintTier: "library",
   },
+  //holdstead
   {
     key: "holdstead",
     name: "Holdstead",
     type: "housing",
     icon: "🏛️",
     beds: 100,
-    cost: { logs: 1000, stone: 750, mythril: 250, goldOre: 250, silktoneObsidian: 100, lumenQuartz: 100, magicalEssence: 50, starpetalOre: 10, },
+    cost: { logs: 100, stone: 500, mythril: 250, goldOre: 150, silktoneObsidian: 100, lumenQuartz: 50, magicalEssence: 50, },
     upkeep: { logs: 10, mythril: 2 },
-    blueprintTier: "apex",
+    blueprintTier: "library",
   },
+  //grand holdstead
   {
     key: "grandHoldstead",
     name: "Grand Holdstead",
     type: "housing",
     icon: "🏛️",
     beds: 250,
-    cost: { logs: 2000, stone: 1500, mythril: 500, goldOre: 500, silktoneObsidian: 200, lumenQuartz: 200, magicalEssence: 100, starpetalOre: 20, },
+    cost: { logs: 1500, stone: 1000, mythril: 500, goldOre: 500, silktoneObsidian: 200, lumenQuartz: 200, magicalEssence: 100, starpetalOre: 20, },
     upkeep: { logs: 10, mythril: 2 },
     blueprintTier: "apex",
   },
-
-  // Orchard Line
+  ///////////////////////
+  //  Production Line  //
+  ///////////////////////
+  // Basic Orchard
   {
     key: "basicOrchard",
     name: "Basic Orchard",
@@ -77,6 +78,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
+  // Large Orchard
   {
     key: "largeOrchard",
     name: "Large Orchard",
@@ -88,6 +90,7 @@ export const buildingDefinitions = [
     blueprintTier: "library",
     upgradeFrom: "basicOrchard",
   },
+  // Orchard of the Gods
   {
     key: "orchardOfTheGods",
     name: "Orchard of the Gods",
@@ -100,7 +103,7 @@ export const buildingDefinitions = [
     upgradeFrom: "largeOrchard",
   },
 
-  // Farm Line
+  // Basic Farm
   {
     key: "basicFarm",
     name: "Basic Farm Field",
@@ -111,6 +114,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Meadow", "River", "Ancient Grove"],
     blueprintTier: "default",
   },
+  // Large Farm
   {
     key: "largeFarm",
     name: "Large Farm Field",
@@ -122,6 +126,7 @@ export const buildingDefinitions = [
     blueprintTier: "library",
     upgradeFrom: "basicFarm",
   },
+  // Farm of the Gods
   {
     key: "farmOfTheGods",
     name: "Farm Field of the Gods",
@@ -134,7 +139,7 @@ export const buildingDefinitions = [
     upgradeFrom: "largeFarm",
   },
 
-  // Herb Line
+  // Basic Herb Garden
   {
     key: "basicHerbGarden",
     name: "Basic Herb Garden",
@@ -145,6 +150,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Meadow", "Forest", "Ancient Grove"],
     blueprintTier: "default",
   },
+  // Large Herb Garden
   {
     key: "largeHerbGarden",
     name: "Large Herb Garden",
@@ -156,6 +162,7 @@ export const buildingDefinitions = [
     blueprintTier: "library",
     upgradeFrom: "basicHerbGarden",
   },
+  // Herb Garden of the Gods
   {
     key: "herbGardenOfTheGods",
     name: "Herb Garden of the Gods",
@@ -168,7 +175,7 @@ export const buildingDefinitions = [
     upgradeFrom: "largeHerbGarden",
   },
 
-  // Pasture / Meat Line
+  // Basic Pasture
   {
     key: "basicPasture",
     name: "Basic Pasture",
@@ -179,6 +186,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Meadow", "Hills"],
     blueprintTier: "default",
   },
+  // Large Pasture
   {
     key: "largePasture",
     name: "Large Pasture",
@@ -190,6 +198,7 @@ export const buildingDefinitions = [
     blueprintTier: "library",
     upgradeFrom: "basicPasture",
   },
+  // Pasture of the Gods
   {
     key: "pastureOfTheGods",
     name: "Pasture of the Gods",
@@ -202,7 +211,10 @@ export const buildingDefinitions = [
     upgradeFrom: "largePasture",
   },
 
-  // Evergarden & Industry Mill (Ultra)
+  ////////////////////////////
+  //  Specialized Buildings //
+  ////////////////////////////
+  // Evergarden
   {
     key: "evergarden",
     name: "Evergarden",
@@ -213,6 +225,7 @@ export const buildingDefinitions = [
     supportedTerrains: ["Meadow", "Ancient Grove"],
     blueprintTier: "ultra",
   },
+  // Industry Mill
   {
     key: "industryMill",
     name: "Industry Mill",
@@ -224,6 +237,13 @@ export const buildingDefinitions = [
     blueprintTier: "ultra",
     titheBonus: 10,
   },
+
+
+
+
+
+
+  // Unorganized Production Buildings
   {
     key: "mortarQuarry",
     name: "Mortar Quarry",
@@ -250,7 +270,7 @@ export const buildingDefinitions = [
     type: "utility",
     icon: "⚓",
     cost: {logs: 90, stone: 60, clay: 20},
-    supportedTerrains: ["Beach", "River", "Ocean"],
+    supportedTerrains: ["Ocean", "River"],
     blueprintTier: "default",
     waterAccess: true,
   },
@@ -261,7 +281,7 @@ export const buildingDefinitions = [
     icon: "🐟",
     produces: {fish: 10, meat: 2},
     cost: {logs: 120, stone: 80, clay: 30},
-    supportedTerrains: ["Beach", "River", "Ocean", "Deep Ocean"],
+    supportedTerrains: ["Ocean", "River", "Deep Ocean"],
     blueprintTier: "library",
     waterAccess: true,
   },

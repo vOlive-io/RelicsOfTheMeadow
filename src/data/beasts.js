@@ -75,7 +75,7 @@ export const beastCatalog = [
     type: "Mega Crab",
     strength: 4,
     health: 110,
-    habitats: ["Beach"],
+    habitats: ["Ocean"],
     rewards: {
       pearls: 5,
       seashells: 10,
