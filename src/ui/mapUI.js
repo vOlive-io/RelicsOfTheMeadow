@@ -18,6 +18,20 @@ const terrainGradients = {
   "Enfenal Depths": "linear-gradient(135deg, #d6e4ff 0%, #9ab1ff 55%, #5366ba 100%)",
   unknown: "linear-gradient(135deg, #e8f5e9 0%, #c8d6c6 55%, #9aafa0 100%)",
 };
+const terrainEmojis = {
+  Meadow: "🌿",
+  Forest: "🌲",
+  Hills: "⛰️",
+  Beach: "🏝️",
+  Mountains: "🏔️",
+  River: "🌊",
+  Marsh: "🦠",
+  Ocean: "🌊",
+  "Deep Ocean": "🌊",
+  "Enfenal Depths": "🌊",
+  "Crystal Cavern": "💎",
+  "Ancient Grove": "🌳",
+};
 
 /////////////////////////////////////
 /// STATE                         ///
@@ -57,6 +71,7 @@ export function renderMap({
   formatStructures,
   formatTooltip,
   isGarrisoned,
+  getTroopCount,
 }) {
   if (!gridElement) return;
   tooltipFormatter = formatTooltip || null;
@@ -98,7 +113,11 @@ export function renderMap({
       typeof formatStructures === "function"
         ? formatStructures(structures)
         : structures.slice(-2).join(", ") || "—";
+    const terrainEmoji = clearing.revealed ? terrainEmojis[clearing.terrain] || "◻️" : "❔";
+    const troops =
+      clearing.revealed && typeof getTroopCount === "function" ? getTroopCount(clearing.id) : 0;
     tile.innerHTML = `
+      <span class="clearing-terrain corner-icon">${terrainEmoji}</span>
       <span class="clearing-owner">${
         clearing.revealed
           ? typeof formatOwnerLabel === "function"
@@ -109,6 +128,7 @@ export function renderMap({
       <span class="clearing-structures">${
         clearing.revealed ? structureText : "Unknown"
       }</span>
+      ${troops > 0 ? `<span class="clearing-troops">🪖 ${troops}</span>` : ""}
     `;
     tile.addEventListener("click", () => {
       if (selectHandler) selectHandler(clearing.id);

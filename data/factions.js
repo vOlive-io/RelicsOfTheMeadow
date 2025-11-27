@@ -32,17 +32,13 @@ export const factions = [
       },
       {
         name: "Raid",
-        desc: "Unleash a rapid assault to swell ranks at the cost of morale.",
+        desc: "Unleash a rapid assault drill to swell ranks at the cost of morale.",
         cost: { energy: 2, gold: 0 },
-        logic: ({ player, logEvent, targetFaction }) => {
-          if (!targetFaction) {
-            logEvent("🐺 The Horde needs a target to raid.");
-            return;
-          }
+        logic: ({ player, logEvent }) => {
           player.troops += 8;
           player.protection = Math.max(0, player.protection + 1);
           player.happiness = Math.max(0, player.happiness - 1);
-          logEvent(`🐺 Raiders strike ${targetFaction.name}! Troops surge, but the people grow uneasy.`);
+          logEvent("🐺 Raiders drill along your borders. Troops surge, but the people grow uneasy.");
         },
       },
       {

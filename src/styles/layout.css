@@ -123,8 +123,7 @@ h1 {
   display: none;
 }
 
-.action-modal,
-.diplomacy-modal {
+.action-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -139,13 +138,11 @@ h1 {
   box-sizing: border-box;
 }
 
-.action-modal.open,
-.diplomacy-modal.open {
+.action-modal.open {
   display: flex;
 }
 
-.action-modal__content,
-.diplomacy-content {
+.action-modal__content {
   background: #fefefe;
   border-radius: 12px;
   padding: 1rem;

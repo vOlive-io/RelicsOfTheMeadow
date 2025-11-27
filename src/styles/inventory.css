@@ -58,6 +58,18 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.85);
 }
+.inventory-pill.stat-pink {
+  background: rgba(255, 228, 235, 0.9);
+  border-color: #f4b4c1;
+}
+.inventory-pill.stat-gold {
+  background: rgba(255, 240, 210, 0.9);
+  border-color: #d9b26a;
+}
+.inventory-pill.stat-red {
+  background: rgba(255, 220, 220, 0.9);
+  border-color: #d17b7b;
+}
 
 .inventory-pill span {
   font-size: 1.1rem;

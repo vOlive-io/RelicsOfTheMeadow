@@ -18,8 +18,6 @@ export function startPlayerGame({
   applyStartingStats(player, faction);
   player.relics = [faction.startingRelic || "None"];
   player.buildings = [];
-  player.declaredWars = [];
-  player.alliances = [];
   player.keepTithe = 0;
   player.economyBonus = 0;
   player.relicsUsedThisTurn = new Set();
@@ -35,7 +33,6 @@ export function startPlayerGame({
   player.energyBonus = 0;
   player.battleBonus = 0;
   player.relicShield = 0;
-  player.pendingPeaceOffers = [];
   player.unlockedAbilityTags = new Set();
   player.garrisonedClearings = new Set();
   resetResources();
@@ -91,21 +88,13 @@ export function setupActionButtons(handleAction) {
 
 function applyStartingStats(player, faction) {
   player.faction = faction;
-  player.gold = parseTraitValue(faction?.defaultTraits?.economy) * 10;
-  player.troops = parseTraitValue(faction?.defaultTraits?.prowess) * 5;
+  player.gold = 100;
+  player.goldReserve = 0;
+  player.troops = 15;
   player.happiness = 1;
   player.protection = 1;
   player.giftsWaiting = Math.floor(Math.random() * 3) + 1;
   player.relics = [];
   player.keepTithe = 0;
   player.economyBonus = 0;
-}
-
-function parseTraitValue(value) {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = parseInt(value, 10);
-    if (!Number.isNaN(parsed)) return parsed;
-  }
-  return 0;
 }
