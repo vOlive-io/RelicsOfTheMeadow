@@ -23,7 +23,7 @@ export const resources = [
   { key: "leather", name: "Leather", icon: "👝" },
   //Ores
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
-  { key: "goldOre", name: "Gold", icon: "🏵️", group: "ore" },
+{ key: "goldCoins", name: "Gold Coins", icon: "🪙", group: "ore" },
   { key: "meadowheartOpal", name: "Meadowheart Opal", icon: "💚", group: "ore" },
   { key: "silktoneObsidian", name: "Silktone Obsidian", icon: "🕸️", group: "ore" },
   { key: "starpetalOre", name: "Starpetal Ore", icon: "✨", group: "ore" },

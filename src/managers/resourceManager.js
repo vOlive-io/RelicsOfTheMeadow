@@ -12,7 +12,7 @@ const STARTER_STOCK = {
   clay: 80,
   meadowheartOpal: 8,
   mythril: 4,
-  goldOre: 6,
+  goldCoins: 6,
   fruits: 20,
   wheat: 20,
   meat: 12,

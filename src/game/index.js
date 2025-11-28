@@ -74,6 +74,7 @@ import { renderResourcePanel } from "../ui/resourceUI.js";
 import { renderPopulationPanel } from "../ui/populationUI.js";
 import { getBeastDefinition } from "../data/beasts.js";
 import { isNearKeep } from "../managers/mapManager.js";
+import { resources as resourceDefinitions } from "../data/resources.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
@@ -386,7 +387,7 @@ function calculateConquestCost() {
     stone: 350 * factor,
     clay: 220 * factor,
     mythril: 30 * factor,
-    goldOre: 40 * factor,
+    goldCoins: 40 * factor,
   };
   return { goldCost: gold, resourcesCost: resources, nextSize: currentSize + 2 };
 }
@@ -1011,6 +1012,10 @@ function battleBeastAtClearing(clearing) {
   }
   if (player.energy < BATTLE_ENERGY_COST) {
     logEvent("⚡ Not enough energy to battle.");
+    return;
+  }
+  if (!isClearingGarrisoned(clearing.id)) {
+    logEvent("🪖 Move your troops into that clearing before engaging the beast.");
     return;
   }
   spendEnergyAndGold(BATTLE_ENERGY_COST, 0, `⚔️ Battle at the clearing.`, () => {
@@ -1847,6 +1852,14 @@ function renderCostLines(cost = {}) {
 }
 
 function executeConstruction(definition, clearing) {
+  if (definition.type === "production" && !definition.upgradeFrom) {
+    const energyCost = 2;
+    if (player.energy < energyCost) {
+      logEvent("⚡ Need more energy to start construction.");
+      return;
+    }
+    player.energy -= energyCost;
+  }
   const result = constructBuilding({ clearingId: clearing.id, blueprintKey: definition.key });
   if (!result.success) {
     logEvent(`🚫 Could not build ${definition.name}: ${result.reason || "unknown issue"}.`);
@@ -2069,6 +2082,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fallbackFaction;
   startGame(faction);
   initResetButton();
+  initCheatButton();
 }); 
 function startGame(faction) {
   resetEventState();
@@ -2110,5 +2124,16 @@ function initResetButton() {
   btn.addEventListener("click", () => {
     localStorage.removeItem(SAVE_KEY);
     window.location.reload();
+  });
+}
+
+function initCheatButton() {
+  const btn = document.getElementById("cheatAllBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    resourceDefinitions.forEach(res => addResource(res.key, 100));
+    logEvent("🧺 Secret supplies delivered: +100 of every resource.");
+    renderResourcePanel();
+    renderHUD();
   });
 }

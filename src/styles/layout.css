@@ -119,6 +119,21 @@ h1 {
   opacity: 0.8;
 }
 
+.cheat-btn {
+  right: 48px;
+  bottom: 8px;
+  opacity: 0.05;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.cheat-btn:hover {
+  opacity: 0.4;
+}
+
 .hidden {
   display: none;
 }
