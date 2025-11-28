@@ -75,7 +75,6 @@ import { renderResourcePanel } from "../ui/resourceUI.js";
 import { renderPopulationPanel } from "../ui/populationUI.js";
 import { getBeastDefinition } from "../data/beasts.js";
 import { isNearKeep } from "../managers/mapManager.js";
-import { resources as resourceDefinitions } from "../data/resources.js";
 console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
