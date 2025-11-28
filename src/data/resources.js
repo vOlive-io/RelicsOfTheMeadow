@@ -21,9 +21,10 @@ export const resources = [
   { key: "resin", name: "Tree Resin", icon: "🧴" },
   { key: "nectarSap", name: "Nectar Sap", icon: "🍯" },
   { key: "leather", name: "Leather", icon: "👝" },
+  //currency
+  { key: "goldCoins", name: "Gold Coins", icon: "🪙" },
   //Ores
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
-{ key: "goldCoins", name: "Gold Coins", icon: "🪙", group: "ore" },
   { key: "meadowheartOpal", name: "Meadowheart Opal", icon: "💚", group: "ore" },
   { key: "silktoneObsidian", name: "Silktone Obsidian", icon: "🕸️", group: "ore" },
   { key: "starpetalOre", name: "Starpetal Ore", icon: "✨", group: "ore" },
