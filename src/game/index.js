@@ -820,6 +820,18 @@ function evaluateBlueprintAvailability(definition, clearing, structuresHere = nu
   if (!hasBlueprint(definition.key)) {
     return { canBuild: false, reason: "Blueprint locked", cost: getScaledCostForBlueprint(definition.key) };
   }
+  const higherUnlocked = buildingDefinitions.some(
+    def => def.upgradeFrom === definition.key && hasBlueprint(def.key)
+  );
+  if (!definition.upgradeFrom && higherUnlocked) {
+    return { canBuild: false, reason: "Higher tier available", cost: getScaledCostForBlueprint(definition.key) };
+  }
+  const higherForTier = buildingDefinitions.some(
+    def => def.upgradeFrom === definition.upgradeFrom && def.key !== definition.key && hasBlueprint(def.key)
+  );
+  if (definition.upgradeFrom && higherForTier) {
+    return { canBuild: false, reason: "Higher tier available", cost: getScaledCostForBlueprint(definition.key) };
+  }
   if (clearing.beast) {
     return { canBuild: false, reason: "Beast present", cost: getScaledCostForBlueprint(definition.key) };
   }

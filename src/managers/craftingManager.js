@@ -150,12 +150,7 @@ export function buildStructure({ clearingId, key, terrain, rarity }) {
   let replacedInstance = null;
   if (def.upgradeFrom) {
     replaceIndex = list.findIndex(instance => instance.key === def.upgradeFrom);
-    if (replaceIndex === -1) {
-      const previous = getDefinition(def.upgradeFrom);
-      const label = previous?.name || "previous tier";
-      return { success: false, reason: `Requires existing ${label}` };
-    }
-    replacedInstance = list[replaceIndex];
+    replacedInstance = replaceIndex >= 0 ? list[replaceIndex] : null;
   } else if (list.length >= 5) {
     return { success: false, reason: "Clearing at structure capacity (5)" };
   }
