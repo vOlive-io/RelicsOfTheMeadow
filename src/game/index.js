@@ -196,6 +196,7 @@ const foodCategoryMap = {
   fish: "meat",
   meat: "meat",
   crabMeat: "meat",
+  leviathanSteak: "meat",
   wheat: "grains",
   seaweed: "grains",
 };

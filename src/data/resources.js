@@ -16,6 +16,11 @@ export const resources = [
   { key: "fish", name: "Fish", icon: "🐟" },
   { key: "spices", name: "Spices", icon: "🌶️" },
   { key: "crabMeat", name: "Crab Meat", icon: "🦀" },
+  { key: "leviathanSteak", name: "Leviathan Steak", icon: "🐋" },
+  { key: "timber", name: "Timber", icon: "🪚" },
+  { key: "resin", name: "Tree Resin", icon: "🧴" },
+  { key: "nectarSap", name: "Nectar Sap", icon: "🍯" },
+  { key: "leather", name: "Leather", icon: "👝" },
   //Ores
   { key: "mythril", name: "Mythril", icon: "⚙️", group: "ore" },
   { key: "goldOre", name: "Gold", icon: "🏵️", group: "ore" },
