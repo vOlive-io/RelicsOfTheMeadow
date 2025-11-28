@@ -1984,6 +1984,11 @@ function endTurn() {
     applyHappinessDelta(-penalty);
     logEvent(`❄️ Seasonal hardship hits the homeless (-${penalty} happiness).`);
   }
+  const swing = Math.floor(Math.random() * 5) - 1; // -1 to +3
+  if (swing !== 0) {
+    applyHappinessDelta(swing);
+    logEvent(`😊 Morale shifts ${swing > 0 ? `+${swing}` : swing}.`);
+  }
   welcomeNewSettlers();
   handleUnhappyExodus();
   refreshHarvestAvailability();

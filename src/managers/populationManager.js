@@ -8,7 +8,7 @@
 let population = 20;
 let housingCapacity = 20;
 let homeless = 0;
-let happiness = 60;
+let happiness = 80;
 let health = 100;
 
 /////////////////////////////////////
@@ -27,7 +27,7 @@ export function resetPopulationState() {
   population = 20;
   housingCapacity = KEEP_STARTING_BEDS;
   homeless = 0;
-  happiness = 60;
+  happiness = 80;
   health = HEALTH_MAX;
 }
 
@@ -61,7 +61,7 @@ export function tickPopulation() {
     updateHomeless();
     adjustHappiness(-2);
   } else {
-    adjustHappiness(1);
+    adjustHappiness(2);
   }
 }
 

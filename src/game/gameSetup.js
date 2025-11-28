@@ -88,7 +88,7 @@ function applyStartingStats(player, faction) {
   player.faction = faction;
   player.gold = 100;
   player.troops = 15;
-  player.happiness = 1;
+  player.happiness = 80;
   player.protection = 1;
   player.giftsWaiting = Math.floor(Math.random() * 3) + 1;
   player.relics = [];

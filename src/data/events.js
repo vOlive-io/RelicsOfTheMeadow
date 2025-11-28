@@ -84,6 +84,14 @@ export const seasonalEvents = [
     seasons: ["spring", "summer", "fall", "winter"],
     effects: { housingHappinessBonus: 2, happinessShift: 2 },
   },
+  {
+    key: "shimmerfall",
+    name: "Shimmerfall",
+    duration: 1,
+    description: "Lumen shards rain from the sky, glinting across your realm.",
+    seasons: ["spring", "summer", "fall", "winter"],
+    effects: { resourceReward: { lumenQuartz: 6 }, happinessShift: 1 },
+  },
 ];
 
 export const festivalDefinition = {

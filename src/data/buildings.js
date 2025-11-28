@@ -349,6 +349,7 @@ export const buildingDefinitions = [
     blueprintTier: "ultra",
     titheBonus: 10,
   },
+  // Queen's Dock
   {
     key: "queensDock",
     name: "Queen's Dock",
@@ -368,25 +369,13 @@ export const buildingDefinitions = [
 
   // Unorganized Production Buildings
 
-
-  {
-    key: "dock",
-    name: "Dock",
-    type: "utility",
-    icon: "⚓",
-    cost: {logs: 90, stone: 60, clay: 20},
-    supportedTerrains: ["Ocean", "River"],
-    blueprintTier: "default",
-    waterAccess: true,
-  },
-
   // Mines
   {
     key: "mineShaft",
     name: "Mine Shaft",
     type: "production",
     icon: "⛏️",
-    produces: { stone: 20 },
+    produces: { stone: 20, mythril: 5 },
     cost: { logs: 60, stone: 80 },
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
     blueprintTier: "default",
@@ -396,7 +385,7 @@ export const buildingDefinitions = [
     name: "Deep Mine Shaft",
     type: "production",
     icon: "⛏️",
-    produces: { stone: 60, mythril: 9 },
+    produces: { stone: 100, mythril: 10, gold: 25 },
     cost: { logs: 80, stone: 120, mythril: 4 },
     supportedTerrains: ["Hills", "Mountains", "Crystal Cavern"],
     blueprintTier: "library",
@@ -407,7 +396,7 @@ export const buildingDefinitions = [
     name: "Grand Mine",
     type: "production",
     icon: "⚒️",
-    produces: { stone: 100, mythril: 27, goldOre: 12 },
+    produces: { stone: 200, mythril: 20, gold: 50, silktoneObsidian: 5 },
     cost: { logs: 110, stone: 160, mythril: 6, starpetalOre: 2 },
     supportedTerrains: ["Mountains", "Crystal Cavern"],
     blueprintTier: "apex",
@@ -418,7 +407,7 @@ export const buildingDefinitions = [
     name: "Mine Hub",
     type: "production",
     icon: "🏗️",
-    produces: {stone: 250,  mythril: 50, meadowheartOpal: 50, goldOre: 25, silktoneObsidian: 20, lumenQuartz: 20, starpetalOre: 2, gold: 75 },
+    produces: {stone: 250,  mythril: 50, meadowheartOpal: 50, goldOre: 25, silktoneObsidian: 20, lumenQuartz: 20, starpetalOre: 2, gold: 100 },
     cost: { logs: 160, stone: 220, mythril: 8, starpetalOre: 6, lumenQuartz: 2 },
     supportedTerrains: ["Mountains", "Crystal Cavern"],
     blueprintTier: "ultra",

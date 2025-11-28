@@ -3,6 +3,7 @@
 /////////////////////////////////////
 import { seasonalEvents, festivalDefinition } from "../data/events.js";
 import { adjustHappiness } from "./populationManager.js";
+import { addResource } from "./resourceManager.js";
 
 /////////////////////////////////////
 /// STATE                         ///
@@ -20,9 +21,21 @@ function createEventInstance(definition, source = "world") {
   };
 }
 
-function applyImmediateEffects(event) {
-  if (event.effects?.happinessShift) {
-    adjustHappiness(event.effects.happinessShift);
+function applyImmediateEffects(event, onUpdate = () => {}) {
+  const effects = event.effects || {};
+  if (effects.happinessShift) {
+    adjustHappiness(effects.happinessShift);
+  }
+  if (effects.resourceReward) {
+    const parts = [];
+    Object.entries(effects.resourceReward).forEach(([key, amount]) => {
+      if (!amount) return;
+      addResource(key, amount);
+      parts.push(`${amount} ${key}`);
+    });
+    if (parts.length) {
+      onUpdate(`📦 ${event.name} delivers: ${parts.join(", ")}.`);
+    }
   }
 }
 
@@ -75,7 +88,7 @@ export function maybeTriggerRandomEvent(onUpdate = () => {}, seasonKey = null) {
   }
   const instance = createEventInstance(definition, "seasonal");
   activeEvents.push(instance);
-  applyImmediateEffects(instance);
+  applyImmediateEffects(instance, onUpdate);
   onUpdate(`✨ ${instance.name} begins: ${instance.description}`);
   return instance;
 }
@@ -91,7 +104,7 @@ export function importEventState(state = []) {
 export function startFestival(onUpdate = () => {}) {
   const instance = createEventInstance(festivalDefinition, "festival");
   activeEvents.push(instance);
-  applyImmediateEffects(instance);
+  applyImmediateEffects(instance, onUpdate);
   onUpdate(`🎉 ${instance.name} erupts across the realm!`);
   return instance;
 }
