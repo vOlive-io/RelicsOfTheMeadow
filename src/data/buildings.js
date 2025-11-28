@@ -367,6 +367,37 @@ export const buildingDefinitions = [
 
 
 
+  // Vaults
+  {
+    key: "vault",
+    name: "Vault",
+    type: "utility",
+    icon: "🏦",
+    goldStorageBonus: 100,
+    cost: { stone: 120, logs: 90, goldCoins: 20 },
+    blueprintTier: "default",
+  },
+  {
+    key: "superVault",
+    name: "Super Vault",
+    type: "utility",
+    icon: "🏦",
+    goldStorageBonus: 250,
+    cost: { stone: 240, logs: 140, mythril: 20, goldCoins: 40 },
+    blueprintTier: "library",
+    upgradeFrom: "vault",
+  },
+  {
+    key: "apexVault",
+    name: "Apex Vault",
+    type: "utility",
+    icon: "🏛️",
+    goldStorageBonus: 500,
+    cost: { stone: 400, logs: 200, mythril: 60, silktoneObsidian: 25, magicalEssence: 6, goldCoins: 90 },
+    blueprintTier: "apex",
+    upgradeFrom: "superVault",
+  },
+
   // Unorganized Production Buildings
 
   // Mines
@@ -499,6 +530,7 @@ export const LIBRARY_UNLOCKS = [
   "largeSawmill",
   "largeFishmansWharf",
   "apexResearch",
+  "superVault",
 ];
 
 export const APEX_UNLOCKS = [
@@ -513,6 +545,7 @@ export const APEX_UNLOCKS = [
   "mansion",
   "manor",
   "apexBastion",
+  "apexVault",
 ];
 
 export const ULTRA_UNLOCKS = ["mineHub", "evergarden", "industryMill", "queensDock"];

@@ -31,6 +31,7 @@ import {
   getStructuresInClearing,
   calculateProductionTotals,
   getProductionEntries,
+  calculateGoldStorageBonus,
   addResources as depositProducedResources,
   exportCraftingState,
   importCraftingState,
@@ -189,6 +190,9 @@ const structureEmojiMap = {
   Library: "📚",
   "Apex Research Laboratory": "🔬",
   "Ultra Apex Bastion": "🏯",
+  Vault: "🏦",
+  "Super Vault": "🏦",
+  "Apex Vault": "🏛️",
 };
 const foodCategoryMap = {
   fruits: "fruits",
@@ -283,6 +287,7 @@ function loadGameState() {
     importResourceState(data.resources || {});
     importPopulationState(data.population || {});
     importCraftingState(data.crafting || {});
+    refreshGoldStorageBonus();
     if (data.map?.mapClearings?.length) {
       importMapState(data.map);
     }
@@ -584,6 +589,13 @@ function grantGold(amount, target = player) {
   const next = Math.min(cap, previous + amount);
   target.gold = next;
   return next - previous;
+}
+
+function refreshGoldStorageBonus() {
+  const bonus = calculateGoldStorageBonus();
+  player.goldStorageBonus = Number.isFinite(bonus) ? bonus : 0;
+  enforceGoldCapacity();
+  return player.goldStorageBonus;
 }
 
 function getActiveHarvestGoods() {
@@ -1824,9 +1836,17 @@ function buildMenu() {
         const card = document.createElement("button");
         card.className = "build-card";
         card.disabled = !canBuild;
+        const detailLine =
+          def.type === "housing"
+            ? `+${def.beds || 0} beds`
+            : def.produces
+            ? formatProductionOutput(def)
+            : def.goldStorageBonus
+            ? `Gold storage: +${def.goldStorageBonus}`
+            : "";
         card.innerHTML = `
           <strong>${def.icon || "🏗️"} ${def.name}</strong>
-          <p>${def.type === "housing" ? `+${def.beds || 0} beds` : def.produces ? formatProductionOutput(def) : ""}</p>
+          <p>${detailLine}</p>
           ${renderTerrainSupport(def)}
           <div class="build-cost">${renderCostLines(cost)}</div>
           ${reason && !canBuild ? `<small class="build-locked">${reason}</small>` : ""}
@@ -1864,6 +1884,7 @@ function renderCostLines(cost = {}) {
 }
 
 function executeConstruction(definition, clearing) {
+  const previousCap = getGoldStorageCapacity();
   if (definition.type === "production" && !definition.upgradeFrom) {
     const energyCost = 2;
     if (player.energy < energyCost) {
@@ -1888,6 +1909,12 @@ function executeConstruction(definition, clearing) {
   if (definition.titheBonus) {
     player.keepTithe = Math.max(0, (player.keepTithe || 0) + definition.titheBonus);
     logEvent(`🏦 Keep tithes grow by ${definition.titheBonus}.`);
+  }
+  refreshGoldStorageBonus();
+  const nextCap = getGoldStorageCapacity();
+  if (nextCap !== previousCap) {
+    const direction = nextCap > previousCap ? "increased" : "adjusted";
+    logEvent(`🏦 Gold storage ${direction} to ${nextCap}.`);
   }
   if (definition.type === "production") {
     refreshHarvestAvailability();

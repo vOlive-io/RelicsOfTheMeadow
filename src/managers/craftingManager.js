@@ -20,6 +20,7 @@ const DEFAULT_BLUEPRINTS = [
   "mineShaft",
   "techLab",
   "library",
+  "vault",
   "statue",
   "banner",
   "mortarQuarry",
@@ -165,6 +166,7 @@ export function buildStructure({ clearingId, key, terrain, rarity }) {
     beds: def.beds || 0,
     produces: def.produces || null,
     happinessBonus: def.happinessBonus || 0,
+    goldStorageBonus: def.goldStorageBonus || 0,
     icon: def.icon || null,
     waterAccess: Boolean(def.waterAccess),
     multiplier,
@@ -237,6 +239,16 @@ export function calculateProductionTotals() {
     });
   });
   return { totals, entries };
+}
+
+export function calculateGoldStorageBonus() {
+  let bonus = 0;
+  structures.forEach(list => {
+    list.forEach(instance => {
+      bonus += instance.goldStorageBonus || 0;
+    });
+  });
+  return bonus;
 }
 
 export function addResources(resourcesObj) {
