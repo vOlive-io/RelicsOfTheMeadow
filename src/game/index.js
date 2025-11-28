@@ -75,7 +75,6 @@ import { renderResourcePanel } from "../ui/resourceUI.js";
 import { renderPopulationPanel } from "../ui/populationUI.js";
 import { getBeastDefinition } from "../data/beasts.js";
 import { isNearKeep } from "../managers/mapManager.js";
-console.log("✅ Game JS loaded!");
 
 const relicCatalog = new Map(relicLibrary.map(relic => [relic.name, relic]));
 const availableDelveRelics = new Set(relicLibrary.map(relic => relic.name));
@@ -1791,13 +1790,6 @@ function buildMenu() {
   }
   const structuresHere = getStructuresInClearing(clearing.id);
 
-  // DEBUG: list all blueprints and why they are not buildable (temporary)
-  console.groupCollapsed("DEBUG: build options for clearing", clearing.id);
-  buildingDefinitions.forEach(def => {
-    const info = evaluateBlueprintAvailability(def, clearing, structuresHere);
-    console.log(`${def.name || def.key}: canBuild=${info.canBuild} reason="${info.reason}" cost=`, info.cost);
-  });
-  console.groupEnd();
   openActionModal(`🔨 Build in this Clearing`, body => {
     const summary = document.createElement("p");
     summary.textContent = `Terrain: ${clearing.terrain}${clearing.rarity ? ` • ${clearing.rarity}` : ""} • Structures: ${structuresHere.length}/5`;
